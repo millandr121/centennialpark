@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Eileen Scott Centennial Park — camping and moorage in Bamfield, BC. Book online.">
+  <title>Eileen Scott Centennial Park — Bamfield, BC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin>
+  <link rel="icon" href="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png">
+</head>
+<body class="one-page">
+  <div id="site-header"></div>
+
+  <nav class="section-dots" aria-label="Page sections">
+    <a href="#home"    data-section="home"    aria-label="Home"><span></span></a>
+    <a href="#stay"    data-section="stay"    aria-label="Stay"><span></span></a>
+    <a href="#rates"   data-section="rates"   aria-label="Rates"><span></span></a>
+    <a href="#book"    data-section="book"    aria-label="Book"><span></span></a>
+    <a href="#visit"   data-section="visit"   aria-label="Visit"><span></span></a>
+    <a href="#contact" data-section="contact" aria-label="Contact"><span></span></a>
+  </nav>
+
+  <main id="main" class="one-page-main">
+
+    <!-- ═══════════════════════════════════════════════════════ HERO -->
+    <section id="home" class="panel panel-hero" aria-label="Welcome">
+      <div class="hero-media" aria-hidden="true">
+        <img src="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg" alt="" width="1600" height="400" fetchpriority="high" decoding="async">
+      </div>
+      <div class="panel-inner hero-inner">
+        <div class="hero-brand" data-reveal>
+          <img class="hero-logo" src="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png" alt="" width="100" height="100">
+          <h1>
+            <span class="title-line">Eileen Scott</span>
+            <span class="title-line title-sub">Centennial Park</span>
+          </h1>
+        </div>
+        <p class="lead" data-reveal>West coast camping &amp; moorage — rainforest sites, protected harbour, steps from the village.</p>
+        <ul class="hero-stats" data-reveal>
+          <li><strong>14</strong><span>campsites</span></li>
+          <li><strong>1967</strong><span>est.</span></li>
+          <li><strong>Year-round</strong><span>open</span></li>
+        </ul>
+        <div class="hero-cta" data-reveal>
+          <a href="#book" class="btn btn-primary btn-lg">Book your stay</a>
+        </div>
+        <a href="#stay" class="scroll-hint" aria-label="Scroll down">
+          <span class="scroll-line"></span>
+          <span>Scroll</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ STAY -->
+    <section id="stay" class="panel panel-stay" aria-labelledby="stay-heading">
+      <div class="panel-inner">
+        <header class="panel-head panel-head-center" data-reveal>
+          <h2 id="stay-heading">What we offer</h2>
+          <p class="panel-intro">Tap a question to learn more</p>
+        </header>
+        <div class="pick-list" data-pick-accordion>
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-camp">Need a place to camp?</button>
+            <div id="pick-camp" class="pick-a" hidden>
+              <article class="stay-stamp stay-stamp--inline" style="--tilt: -1deg">
+                <div class="stay-stamp-inner">
+                  <div class="stay-stamp-photo">
+                    <img src="https://bamfieldparks.com/wp-content/uploads/2017/03/campground.jpg" alt="Tent and RV camping among cedar trees" width="800" height="500" loading="lazy">
+                  </div>
+                  <div class="stay-stamp-caption">
+                    <span class="stay-tag">Camping</span>
+                    <h3>Forest sites</h3>
+                    <p>Fourteen sites tucked against the rainforest — picnic tables, fire pits, a cook house with bear-proof bins, and showers (by donation). Kids love the play area. Park your vehicle at your site. Summer fills fast.</p>
+                    <a href="#book" class="pick-link">Book a campsite &rarr;</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-moor">Bringing a boat?</button>
+            <div id="pick-moor" class="pick-a" hidden>
+              <article class="stay-stamp stay-stamp--inline" style="--tilt: 1deg">
+                <div class="stay-stamp-inner">
+                  <div class="stay-stamp-photo">
+                    <img src="https://bamfieldparks.com/wp-content/uploads/2017/05/mist-over-boat-launch-1-e1494860221194.jpg" alt="Boat moorage at Port Desire" width="800" height="500" loading="lazy">
+                  </div>
+                  <div class="stay-stamp-caption">
+                    <span class="stay-tag">Moorage</span>
+                    <h3>Port Desire</h3>
+                    <p>Protected moorage in Port Desire with a public boat launch, kayak staging, and trailer parking. Space is limited — include your overall boat length (bowsprit to stern gear) when you book.</p>
+                    <a href="#book" class="pick-link">Reserve moorage &rarr;</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-shop">Stopping by the gift shop?</button>
+            <div id="pick-shop" class="pick-a" hidden>
+              <article class="stay-stamp stay-stamp--inline" style="--tilt: -0.5deg">
+                <div class="stay-stamp-inner">
+                  <div class="stay-stamp-photo">
+                    <img src="https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg" alt="Park office and gift shop" width="800" height="500" loading="lazy">
+                  </div>
+                  <div class="stay-stamp-caption">
+                    <span class="stay-tag">Park office</span>
+                    <h3>Gift shop</h3>
+                    <p>Gift shop in the park office — local items and visitor essentials. Washrooms, Wi‑Fi, picnic areas, and year-round access; manager on site May 15 &ndash; Sept 30.</p>
+                    <a href="#contact" class="pick-link">Contact us &rarr;</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-things">Looking for things to do?</button>
+            <div id="pick-things" class="pick-a" hidden>
+              <p>Beaches, fishing, kayaking, the boardwalk, and the West Coast Trail terminus — Bamfield is a small village with a lot to explore.</p>
+              <ul class="stay-things-list">
+                <li>Brady&rsquo;s Beach &amp; the Bamfield Boardwalk</li>
+                <li>Sports fishing &amp; wildlife tours in Barkley Sound</li>
+                <li>Kayaking the Broken Group Islands</li>
+              </ul>
+              <a href="/bamfield.html" class="pick-link">Things to do in Bamfield &rarr;</a>
+            </div>
+          </div>
+        </div>
+        <p class="panel-note" data-reveal><a href="/facilities.html">All facilities →</a></p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ RATES -->
+    <section id="rates" class="panel panel-rates" aria-labelledby="rates-heading">
+      <div class="panel-inner">
+        <header class="panel-head" data-reveal>
+          <h2 id="rates-heading">Simple pricing</h2>
+          <p>2025 · <span class="money-label">Canadian dollars (CAD)</span> · +5% GST · <button type="button" class="rates-sheet-link" id="rates-toggle" aria-expanded="false">See full rates</button></p>
+        </header>
+        <div class="rates-summary" id="rates-summary">
+          <ul class="rate-cards" data-rate-cards>
+            <li class="rate-card" data-reveal>
+              <button type="button" class="rate-card-btn" aria-expanded="false" aria-controls="rate-detail-camp">
+                <span class="rate-name">Campsite</span>
+                <span class="rate-price"><span class="money notranslate" translate="no">C$30</span></span>
+                <span class="rate-unit">per night</span>
+                <span class="rate-alt"><span class="money notranslate" translate="no">C$187.50</span> / week</span>
+              </button>
+              <div id="rate-detail-camp" class="rate-card-detail" hidden>
+                <p>Forest sites with picnic table, fire pit, and access to cook house, bear-proof bins, and showers (by donation).</p>
+                <ul>
+                  <li>Daily <span class="money notranslate" translate="no">C$30</span> · Weekly <span class="money notranslate" translate="no">C$187.50</span> · Monthly <span class="money notranslate" translate="no">C$735</span></li>
+                  <li>Includes up to 4 adults; children under 18 no limit</li>
+                  <li>Car parking from <span class="money notranslate" translate="no">C$6.50</span>/day; trailer combos available</li>
+                </ul>
+              </div>
+            </li>
+            <li class="rate-card" data-reveal>
+              <button type="button" class="rate-card-btn" aria-expanded="false" aria-controls="rate-detail-moor">
+                <span class="rate-name">Moorage</span>
+                <span class="rate-price"><span class="money notranslate" translate="no">C$1</span></span>
+                <span class="rate-unit">per ft / day</span>
+                <span class="rate-alt"><span class="money notranslate" translate="no">C$5.60</span> / ft week</span>
+              </button>
+              <div id="rate-detail-moor" class="rate-card-detail" hidden>
+                <p>Protected moorage in Port Desire. Book overall boat length (bowsprit to stern gear).</p>
+                <ul>
+                  <li>Daily <span class="money notranslate" translate="no">C$1</span>/ft · Weekly <span class="money notranslate" translate="no">C$5.60</span>/ft · Monthly <span class="money notranslate" translate="no">C$9.10</span>/ft</li>
+                  <li>Annual <span class="money notranslate" translate="no">C$66</span>/ft</li>
+                  <li>Kayak staging and trailer parking on site</li>
+                </ul>
+              </div>
+            </li>
+            <li class="rate-card" data-reveal>
+              <button type="button" class="rate-card-btn" aria-expanded="false" aria-controls="rate-detail-launch">
+                <span class="rate-name">Boat launch</span>
+                <span class="rate-price"><span class="money notranslate" translate="no">C$20</span></span>
+                <span class="rate-unit">in &amp; out</span>
+                <span class="rate-alt">GST included</span>
+              </button>
+              <div id="rate-detail-launch" class="rate-card-detail" hidden>
+                <p>Public boat launch at the park with wash-down nearby.</p>
+                <ul>
+                  <li>Daily in &amp; out <span class="money notranslate" translate="no">C$20</span> (GST included)</li>
+                  <li>Seasonal pass <span class="money notranslate" translate="no">C$142</span> · Annual <span class="money notranslate" translate="no">C$216</span></li>
+                  <li>Boat wash <span class="money notranslate" translate="no">C$5</span> · Freezer space <span class="money notranslate" translate="no">C$5</span>/day</li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="rates-full" id="rates-full" hidden>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">Camping, moorage, and parking rates 2025 in Canadian dollars</caption>
+              <thead>
+                <tr><th>Service</th><th>Daily</th><th>Weekly</th><th>Monthly</th><th>Annual</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Campsite**</td><td><span class="money notranslate" translate="no">C$30.00</span></td><td><span class="money notranslate" translate="no">C$187.50</span></td><td><span class="money notranslate" translate="no">C$735.00</span></td><td>n/a</td></tr>
+                <tr><td>Moorage</td><td><span class="money notranslate" translate="no">C$1.00</span>/ft</td><td><span class="money notranslate" translate="no">C$5.60</span>/ft</td><td><span class="money notranslate" translate="no">C$9.10</span>/ft</td><td><span class="money notranslate" translate="no">C$66.00</span>/ft</td></tr>
+                <tr><td>Parking: car</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40.00</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td><td>n/a</td></tr>
+                <tr><td>Parking: trailer</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40.00</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td><td>n/a</td></tr>
+                <tr><td>Parking: car + trailer</td><td><span class="money notranslate" translate="no">C$11.00</span></td><td><span class="money notranslate" translate="no">C$55.00</span></td><td><span class="money notranslate" translate="no">C$236.50</span></td><td>n/a</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><small>** Campsite rates include up to 4 adults. No limit on children under 18. All amounts in CAD.</small></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Service</th><th>Daily / other</th><th>Seasonal</th><th>Annual</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Boat launch</td><td><span class="money notranslate" translate="no">C$20.00</span> (in &amp; out) *GST incl.</td><td><span class="money notranslate" translate="no">C$142.00</span></td><td><span class="money notranslate" translate="no">C$216.00</span></td></tr>
+                <tr><td>Boat wash</td><td><span class="money notranslate" translate="no">C$5.00</span></td><td>—</td><td>—</td></tr>
+                <tr><td>Freezer space</td><td><span class="money notranslate" translate="no">C$5.00</span></td><td>—</td><td>—</td></tr>
+                <tr><td>Showers</td><td>By donation</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <a href="#book" class="btn btn-primary btn-lg" data-reveal>Request booking</a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ BOOK -->
+    <section id="book" class="panel panel-book" aria-labelledby="book-heading">
+      <div class="panel-inner panel-inner-narrow">
+        <header class="panel-head" data-reveal>
+          <h2 id="book-heading">Reserve your stay</h2>
+          <p>Quick steps — confirmation email with reference number.</p>
+        </header>
+
+        <form data-form="booking" class="booking-wizard" novalidate data-reveal>
+          <div class="hp-field" aria-hidden="true">
+            <label for="bk-website">Website</label>
+            <input type="text" id="bk-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="wizard-bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" aria-label="Booking progress">
+            <div class="wizard-bar-fill" id="wizard-bar-fill"></div>
+          </div>
+          <ol class="wizard-steps">
+            <li class="is-active" data-step-indicator="1">Your trip</li>
+            <li data-step-indicator="2">About you</li>
+            <li data-step-indicator="3">Details</li>
+            <li data-step-indicator="4">Confirm</li>
+          </ol>
+
+          <div class="wizard-panels">
+            <fieldset class="wizard-panel is-active" data-wizard-step="1">
+              <legend class="sr-only">What do you need?</legend>
+              <p class="wizard-question">What are you booking?</p>
+              <div class="choice-chips">
+                <label class="choice-chip">
+                  <input type="checkbox" id="needCampsiteChip" value="yes">
+                  <span>Campsite</span>
+                </label>
+                <label class="choice-chip">
+                  <input type="checkbox" id="needMoorageChip" value="yes">
+                  <span>Moorage</span>
+                </label>
+              </div>
+              <p class="field-hint wizard-hint">Pick one or both</p>
+              <input type="hidden" name="needCampsite" id="needCampsite" value="no">
+              <input type="hidden" name="needMoorage" id="needMoorage" value="no">
+            </fieldset>
+
+            <fieldset class="wizard-panel" data-wizard-step="2">
+              <legend class="sr-only">Your details</legend>
+              <div class="form-field">
+                <input type="text" id="firstName" name="firstName" required autocomplete="given-name" placeholder=" ">
+                <label for="firstName">First name</label>
+              </div>
+              <div class="form-field">
+                <input type="text" id="lastName" name="lastName" required autocomplete="family-name" placeholder=" ">
+                <label for="lastName">Last name</label>
+              </div>
+              <div class="form-field">
+                <input type="email" id="email" name="email" required autocomplete="email" placeholder=" ">
+                <label for="email">Email</label>
+              </div>
+            </fieldset>
+
+            <fieldset class="wizard-panel" data-wizard-step="3">
+              <legend class="sr-only">Stay details</legend>
+              <div class="booking-section is-hidden" data-booking-section="camping">
+                <p class="wizard-subhead">Camping</p>
+                <div class="form-row">
+                  <div class="form-field">
+                    <input type="number" id="siteCount" name="siteCount" min="1" max="14" value="1" placeholder=" ">
+                    <label for="siteCount">Sites</label>
+                  </div>
+                  <div class="form-field">
+                    <input type="number" id="groupSize" name="groupSize" min="1" placeholder=" ">
+                    <label for="groupSize">People</label>
+                  </div>
+                </div>
+              </div>
+              <div class="booking-section is-hidden" data-booking-section="moorage">
+                <p class="wizard-subhead">Moorage</p>
+                <div class="form-field">
+                  <input type="text" id="boatLength" name="boatLength" inputmode="decimal" placeholder=" ">
+                  <label for="boatLength">Boat length (ft)</label>
+                </div>
+              </div>
+              <div class="booking-section is-hidden" data-booking-section="dates">
+                <p class="wizard-subhead">Dates</p>
+                <div class="form-row">
+                  <div class="form-field">
+                    <input type="date" id="checkIn" name="checkIn">
+                    <label for="checkIn">Check-in</label>
+                  </div>
+                  <div class="form-field">
+                    <input type="date" id="checkOut" name="checkOut">
+                    <label for="checkOut">Check-out</label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="wizard-panel" data-wizard-step="4">
+              <legend class="sr-only">Review and send</legend>
+              <div class="wizard-review" id="booking-review" aria-live="polite"></div>
+              <div class="form-field">
+                <textarea id="additionalRequests" name="additionalRequests" rows="2" placeholder=" "></textarea>
+                <label for="additionalRequests">Notes (optional)</label>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="wizard-nav">
+            <button type="button" class="btn btn-text wizard-back" hidden>← Back</button>
+            <button type="button" class="btn btn-primary wizard-primary" id="wizard-primary">Continue</button>
+          </div>
+          <div class="form-status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ VISIT -->
+    <section id="visit" class="panel panel-visit" aria-labelledby="visit-heading">
+      <div class="panel-inner">
+        <header class="panel-head" data-reveal>
+          <h2 id="visit-heading">Getting here</h2>
+        </header>
+        <p class="panel-intro panel-intro-center" data-reveal>How are you getting to Bamfield?</p>
+        <div class="pick-list" data-pick-accordion>
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-drive">I'm driving here</button>
+            <div id="pick-drive" class="pick-a" hidden>
+              <div class="route-map" data-driving-map>
+                <div class="drive-view drive-view--map" data-drive-view="map">
+                  <p class="route-map-lead">Three road approaches — tap a route on the map or a button below.</p>
+                  <div class="map-wrap">
+                    <div id="drive-map-leaflet" class="leaflet-map" role="application" aria-label="Driving routes to Centennial Park"></div>
+                    <div class="map-toolbar">
+                      <button type="button" class="map-expand-btn" data-map-expand="drive" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
+                      <button type="button" class="map-refresh-btn map-refresh-btn--icon" data-map-refresh="drive" aria-label="Refresh map" title="Reload if the map is stuck">↻</button>
+                    </div>
+                  </div>
+                  <div class="route-picker" role="group" aria-label="Choose a driving route">
+                    <button type="button" class="route-btn is-active" data-route-id="alberni" aria-pressed="true">Port Alberni <span class="route-btn-tag">Recommended</span></button>
+                    <button type="button" class="route-btn" data-route-id="duncan" aria-pressed="false">Duncan / Youbou</button>
+                    <button type="button" class="route-btn" data-route-id="renfrew" aria-pressed="false">Port Renfrew</button>
+                  </div>
+                  <div class="route-details">
+
+                    <article class="route-detail is-active" data-route-panel="alberni">
+                      <h3>Port Alberni &rarr; Bamfield <span class="route-time">90 km &middot; about 1 hr 40 min</span></h3>
+                      <p class="route-badge route-badge-good">Chipsealed &middot; highly recommended</p>
+                      <div class="route-advisory route-advisory--recommend">
+                        <strong>&#9733; This is the recommended route for all visitors.</strong>
+                        The Port Alberni road is fully chipsealed — a smooth, well-maintained surface all the way into Bamfield. Whether you are in a car, truck, RV, or camper van, this is the easiest and most reliable drive. First-time visitors and anyone towing a trailer or bringing an RV should use this route.
+                      </div>
+                      <p>Yellow kilometre markers line the road each km so you always know how far you have to go. Mind one-lane bridges — about 60&nbsp;km/h is typical. Logging trucks have right of way; drive with headlights on.</p>
+                      <ul>
+                        <li>Fill up in Port Alberni — there is no gas station on the road.</li>
+                        <li>Logging trucks have right of way; use headlights at all times.</li>
+                        <li>One-lane bridge sections — slow down and yield oncoming traffic.</li>
+                      </ul>
+                    </article>
+
+                    <article class="route-detail" data-route-panel="duncan" hidden>
+                      <h3>Duncan &rarr; Bamfield <span class="route-time">via Youbou &middot; about 2 hr 30 min</span></h3>
+                      <p class="route-badge route-badge-mixed">Paved Hwy 18 + logging road</p>
+                      <div class="route-advisory route-advisory--caution">
+                        <strong>&#9888; Logging road — not recommended for RVs, campers, or first-time visitors.</strong>
+                        After the Youbou area the road becomes an active logging road. Conditions vary significantly depending on recent grading — speeds can drop to <strong>10–20&nbsp;km/h</strong> on rough sections. Grading maintenance is unpredictable and not on a fixed schedule. If you are towing a trailer, bringing an RV or camper, or visiting Bamfield for the first time, <strong>we strongly advise taking the Port Alberni route instead.</strong>
+                      </div>
+                      <p>Start from <strong>Duncan</strong> on Hwy&nbsp;18 toward <strong>Youbou</strong> — you do not need to drive through Lake Cowichan village. Hwy&nbsp;18 is paved to the Youbou area; after that, Bamfield Main is a logging road. Chipseal returns around km&nbsp;32 into Bamfield.</p>
+                      <ul>
+                        <li><strong>Lake Cowichan</strong> — handy fuel, food, and washroom stop along Hwy&nbsp;18.</li>
+                        <li><strong>Youbou</strong> has a gas bar; hours may be limited — fill up in Duncan when possible.</li>
+                      </ul>
+                    </article>
+
+                    <article class="route-detail" data-route-panel="renfrew" hidden>
+                      <h3>Port Renfrew / Nitinat <span class="route-time">185 km &middot; about 3 hr 45 min</span></h3>
+                      <p class="route-badge route-badge-rough">South Island · logging road</p>
+                      <div class="route-advisory route-advisory--caution">
+                        <strong>&#9888; Logging road — not recommended for RVs, campers, or first-time visitors.</strong>
+                        This route uses active logging roads from the Nitinat area into Bamfield. Road conditions are highly variable and dependent on recent grading — expect speeds of <strong>10–20&nbsp;km/h</strong> on ungraded sections. Maintenance is unpredictable. If you are in an RV, camper, or towing a trailer, or if this is your first trip to Bamfield, <strong>we strongly recommend the Port Alberni route.</strong>
+                      </div>
+                      <p>Best if you are already on the south coast (Port Renfrew, Sooke, Victoria area). Paved highway to the Nitinat area, then logging road onto Bamfield Main — allow extra time; grading varies.</p>
+                    </article>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-ferry">I'm taking the ferry</button>
+            <div id="pick-ferry" class="pick-a" hidden>
+              <p class="route-map-lead">The M/V Francis Barkley follows the Alberni Inlet — tap a stop.</p>
+              <div class="route-map route-map-ferry" data-ferry-map>
+                <div class="map-wrap">
+                  <div id="ferry-map-leaflet" class="leaflet-map" role="application" aria-label="Ferry route on the Alberni Inlet to Bamfield"></div>
+                  <div class="map-toolbar">
+                    <button type="button" class="map-expand-btn" data-map-expand="ferry" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
+                    <button type="button" class="map-refresh-btn map-refresh-btn--icon" data-map-refresh="ferry" aria-label="Refresh map" title="Reload if the map is stuck">↻</button>
+                  </div>
+                </div>
+                <div class="ferry-detail" data-ferry-detail></div>
+                <p class="ferry-address"><strong>Lady Rose Marine</strong><br>5425 Argyle Street, Port Alberni BC V9Y 1T6<br>(Alberni Harbour Quay)</p>
+                <p class="ferry-note"><strong>East dock</strong> is the stop for the park. Tue, Thu, Sat (+ summer extras). <a href="tel:+12507238313">250-723-8313</a></p>
+                <a href="https://www.ladyrosemarine.com/" class="btn btn-primary ferry-book-btn" target="_blank" rel="noopener">Book your ferry</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="pick-item">
+            <button type="button" class="pick-q" aria-expanded="false" aria-controls="pick-fly">I'm flying in</button>
+            <div id="pick-fly" class="pick-a" hidden>
+              <p class="route-map-lead">Floatplane routes to the Bamfield inlet — dashed lines show typical flight paths.</p>
+              <div class="route-map route-map-fly" data-fly-map>
+                <div class="map-wrap">
+                  <div id="fly-map-leaflet" class="leaflet-map" role="application" aria-label="Floatplane routes to Bamfield"></div>
+                  <div class="map-toolbar">
+                    <button type="button" class="map-expand-btn" data-map-expand="fly" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
+                    <button type="button" class="map-refresh-btn map-refresh-btn--icon" data-map-refresh="fly" aria-label="Refresh map" title="Reload if the map is stuck">↻</button>
+                  </div>
+                </div>
+              </div>
+              <p>Confirm baggage limits and weather when you book.</p>
+              <ul class="fly-operators">
+                <li><a href="https://www.westcoastwildair.com/" target="_blank" rel="noopener">West Coast Wild Air</a></li>
+                <li><a href="http://www.harbour-air.com/" target="_blank" rel="noopener">Harbour Air</a></li>
+                <li><a href="http://www.seairseaplanes.com/" target="_blank" rel="noopener">Seair Seaplanes</a></li>
+                <li><a href="http://www.tofinoair.ca" target="_blank" rel="noopener">Tofino Air</a></li>
+                <li>KD Air · Pacific Seaplanes · NorthStar Air Tours</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ CONTACT -->
+    <section id="contact" class="panel panel-contact" aria-labelledby="contact-heading">
+      <div class="panel-inner">
+        <header class="panel-head" data-reveal>
+          <h2 id="contact-heading">Questions?</h2>
+          <p>Year-round · Manager May 15 – Sept 30</p>
+        </header>
+        <div class="contact-block" data-reveal>
+          <a href="tel:+12507283006" class="contact-big">250-728-3006</a>
+          <a href="mailto:bamfieldcentennialpark@gmail.com" class="contact-email">bamfieldcentennialpark@gmail.com</a>
+          <p class="contact-address">PO Box 931, Bamfield BC</p>
+        </div>
+        <div class="contact-inquire" data-reveal>
+          <div class="inquire-panel" id="inquire-panel" hidden>
+            <form data-form="contact" id="contact-inline-form" class="inquire-inline-form" novalidate>
+              <div class="hp-field" aria-hidden="true">
+                <label for="inq-website">Website</label>
+                <input type="text" id="inq-website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+              <div class="form-field">
+                <input type="text" id="inq-name" name="name" required autocomplete="name" placeholder=" ">
+                <label for="inq-name">Name</label>
+              </div>
+              <div class="form-field">
+                <input type="email" id="inq-email" name="email" required autocomplete="email" placeholder=" ">
+                <label for="inq-email">Email</label>
+              </div>
+              <div class="form-field">
+                <input type="text" id="inq-subject" name="subject" autocomplete="off" placeholder=" ">
+                <label for="inq-subject">Subject</label>
+              </div>
+              <div class="form-field">
+                <textarea id="inq-message" name="message" required rows="4" placeholder=" "></textarea>
+                <label for="inq-message">Message</label>
+              </div>
+              <div class="form-status inquire-form-status" role="status" aria-live="polite"></div>
+            </form>
+          </div>
+          <button type="button" class="link-pill link-pill-light" id="contact-action-btn" aria-expanded="false" aria-controls="inquire-panel">Send a message</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/js/layout.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/sp38=" crossorigin></script>
+  <script src="/js/map-icons.js"></script>
+  <script src="/js/route-map.js"></script>
+  <script src="/js/translate.js" defer></script>
+  <script src="/js/home.js" defer></script>
+  <script src="/js/booking-wizard.js" defer></script>
+  <script src="/js/booking-form.js" defer></script>
+  <script src="/js/forms.js" defer></script>
+</body>
+</html>
