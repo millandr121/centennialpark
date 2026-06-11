@@ -58,7 +58,7 @@
     if (current === 2) updateStep3Sections();
     if (current === 3) buildReview();
     backBtn.hidden    = current === 0;
-    primaryBtn.textContent = current === panels.length - 1 ? 'Send request' : 'Continue';
+    primaryBtn.innerHTML = '<span>' + (current === panels.length - 1 ? 'Send request' : 'Continue') + '</span>';
     updateProgress();
   }
 
@@ -130,7 +130,7 @@
   function submitForm() {
     var status = form.querySelector('.form-status');
     primaryBtn.disabled = true;
-    primaryBtn.textContent = 'Sending…';
+    primaryBtn.innerHTML = '<span>Sending…</span>';
     if (status) { status.textContent = ''; status.className = 'form-status'; }
 
     var data = {};
@@ -156,7 +156,7 @@
         status.className   = 'form-status is-error';
       }
       primaryBtn.disabled    = false;
-      primaryBtn.textContent = 'Send request';
+      primaryBtn.innerHTML = '<span>Send request</span>';
     });
   }
 

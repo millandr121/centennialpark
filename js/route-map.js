@@ -1,199 +1,257 @@
-/* route-map.js — Leaflet maps for driving, ferry, and floatplane sections */
+/* route-map.js — immersive animated travel maps
+   Routes draw themselves in; a little vehicle travels the line. */
 
 (function () {
   'use strict';
   if (typeof L === 'undefined') return;
 
-  var BAMFIELD = [48.833, -125.133];
-  var TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  var TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>';
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ── Helpers ──────────────────────────────────────────── */
+  var BAMFIELD  = [48.833, -125.133];
+  var TILE_URL  = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+  var LABEL_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png';
+  var TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
   function baseMap(id, center, zoom) {
     var map = L.map(id, { zoomControl: true, scrollWheelZoom: false }).setView(center, zoom);
-    L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 15 }).addTo(map);
+    L.tileLayer(TILE_URL,  { attribution: TILE_ATTR, maxZoom: 15 }).addTo(map);
+    L.tileLayer(LABEL_URL, { maxZoom: 15, pane: 'shadowPane' }).addTo(map);
     return map;
+  }
+
+  function parkMarker(map) {
+    var icon = L.divIcon({
+      html: '<div class="pulse-marker vehicle-marker">🏕️</div>',
+      iconSize: [28, 28], iconAnchor: [14, 22], className: ''
+    });
+    return L.marker(BAMFIELD, { icon: icon }).addTo(map)
+      .bindPopup('<strong>Centennial Park</strong><br>You made it. Welcome to Bamfield.');
+  }
+
+  /* densify a polyline so animation is smooth */
+  function densify(latlngs, perSeg) {
+    var out = [];
+    for (var i = 0; i < latlngs.length - 1; i++) {
+      var a = latlngs[i], b = latlngs[i + 1];
+      for (var t = 0; t < perSeg; t++) {
+        var f = t / perSeg;
+        out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      }
+    }
+    out.push(latlngs[latlngs.length - 1]);
+    return out;
+  }
+
+  /* animate a route drawing in + vehicle traveling along it */
+  function animateRoute(map, line, vehicleEmoji, durMs, state) {
+    var pts = densify(line.fullPts, 14);
+    if (prefersReduced) {
+      line.poly.setLatLngs(pts);
+      return null;
+    }
+    line.poly.setLatLngs([pts[0]]);
+    var vIcon = L.divIcon({
+      html: '<div class="vehicle-marker">' + vehicleEmoji + '</div>',
+      iconSize: [24, 24], iconAnchor: [12, 12], className: ''
+    });
+    var vehicle = L.marker(pts[0], { icon: vIcon, interactive: false }).addTo(map);
+    var start = null, raf;
+    function frame(ts) {
+      if (state.cancelled) { map.removeLayer(vehicle); return; }
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / durMs, 1);
+      var eased = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var idx = Math.max(1, Math.floor(eased * (pts.length - 1)));
+      line.poly.setLatLngs(pts.slice(0, idx + 1));
+      vehicle.setLatLng(pts[idx]);
+      if (p < 1) { raf = requestAnimationFrame(frame); }
+      else { setTimeout(function () { if (!state.cancelled) map.removeLayer(vehicle); }, 1200); }
+    }
+    raf = requestAnimationFrame(frame);
+    return vehicle;
   }
 
   function initWhenVisible(el, cb) {
     if (!el) return;
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { cb(); io.disconnect(); }
-        });
+        entries.forEach(function (e) { if (e.isIntersecting) { cb(); io.disconnect(); } });
       }, { threshold: 0.1 });
       io.observe(el);
-    } else {
-      cb();
-    }
+    } else { cb(); }
   }
 
-  /* ═══ DRIVING MAP ═══════════════════════════════════════ */
-  var driveWrap = document.querySelector('[data-driving-map]');
-  if (driveWrap) {
-    var driveMapEl = document.getElementById('drive-map-leaflet');
-    initWhenVisible(driveMapEl, function () {
-      var map = baseMap('drive-map-leaflet', [49.0, -124.5], 8);
-      if (window.ParkIcons && window.ParkIcons.park) {
-        L.marker(BAMFIELD, { icon: window.ParkIcons.park }).addTo(map)
-          .bindPopup('<strong>Centennial Park</strong><br>Bamfield, BC');
-      }
+  /* expand buttons */
+  document.querySelectorAll('[data-map-expand]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var wrap = btn.closest('.map-wrap');
+      var expanded = wrap.classList.toggle('map-expanded');
+      btn.setAttribute('aria-pressed', String(expanded));
+      window.dispatchEvent(new Event('mapresize'));
+    });
+  });
 
-      /* ── Route polylines (approximate corridors) ──── */
-      var PORT_ALBERNI = [49.234, -124.805];
-      var DUNCAN       = [48.778, -123.707];
-      var YOUBOU       = [48.850, -124.143];
-      var PT_RENFREW   = [48.558, -124.420];
-      var NITINAT      = [48.940, -124.660];
+  /* ═══ DRIVE ═════════════════════════════════════════════ */
+  var driveMapEl = document.getElementById('drive-map-leaflet');
+  var driveMap = null;
+  var drivePolys = {}, driveAnimState = { cancelled: false };
 
-      var routes = {
-        alberni: {
-          latlngs: [PORT_ALBERNI, [49.18,-124.92], [49.08,-125.01], [48.98,-125.05], [48.92,-125.10], BAMFIELD],
-          color: '#2c5f2e', weight: 4
-        },
-        duncan: {
-          latlngs: [DUNCAN, [48.82,-123.92], YOUBOU, [48.87,-124.35], [48.88,-124.55], [48.87,-124.82], BAMFIELD],
-          color: '#d4830a', weight: 3, dashArray: '6 4'
-        },
-        renfrew: {
-          latlngs: [PT_RENFREW, [48.62,-124.55], NITINAT, [48.90,-124.88], BAMFIELD],
-          color: '#c0392b', weight: 3, dashArray: '6 4'
-        }
+  var PORT_ALBERNI = [49.234, -124.805];
+  var DUNCAN       = [48.778, -123.707];
+  var YOUBOU       = [48.850, -124.143];
+  var PT_RENFREW   = [48.558, -124.420];
+  var NITINAT      = [48.940, -124.660];
+
+  var driveRoutes = {
+    alberni: {
+      pts: [PORT_ALBERNI, [49.18, -124.92], [49.08, -125.01], [48.98, -125.05], [48.92, -125.10], BAMFIELD],
+      color: '#2e5d33', weight: 5
+    },
+    duncan: {
+      pts: [DUNCAN, [48.82, -123.92], YOUBOU, [48.87, -124.35], [48.88, -124.55], [48.87, -124.82], BAMFIELD],
+      color: '#d4830a', weight: 4, dash: '7 5'
+    },
+    renfrew: {
+      pts: [PT_RENFREW, [48.62, -124.55], NITINAT, [48.90, -124.88], BAMFIELD],
+      color: '#b8402f', weight: 4, dash: '7 5'
+    }
+  };
+
+  function initDriveMap() {
+    if (driveMap || !driveMapEl) return;
+    driveMap = baseMap('drive-map-leaflet', [49.0, -124.5], 8);
+    parkMarker(driveMap);
+
+    Object.keys(driveRoutes).forEach(function (key) {
+      var r = driveRoutes[key];
+      drivePolys[key] = {
+        fullPts: r.pts,
+        poly: L.polyline([r.pts[0]], {
+          color: r.color, weight: r.weight, dashArray: r.dash || null, opacity: .85,
+          lineCap: 'round', lineJoin: 'round'
+        }).addTo(driveMap)
       };
-
-      var polylines = {};
-      Object.keys(routes).forEach(function (key) {
-        var r = routes[key];
-        polylines[key] = L.polyline(r.latlngs, {
-          color: r.color, weight: r.weight || 4,
-          dashArray: r.dashArray || null, opacity: .7
-        }).addTo(map);
-      });
-
-      /* add start markers */
-      if (window.ParkIcons && window.ParkIcons.dot) {
-        L.marker(PORT_ALBERNI, { icon: window.ParkIcons.dot }).addTo(map).bindPopup('Port Alberni');
-        L.marker(DUNCAN,       { icon: window.ParkIcons.dot }).addTo(map).bindPopup('Duncan');
-        L.marker(PT_RENFREW,   { icon: window.ParkIcons.dot }).addTo(map).bindPopup('Port Renfrew');
-      }
-
-      /* ── Route button switching ───────────────────── */
-      var routeBtns   = driveWrap.querySelectorAll('[data-route-id]');
-      var routePanels = driveWrap.querySelectorAll('[data-route-panel]');
-
-      function activateRoute(id) {
-        routeBtns.forEach(function (b) {
-          var active = b.getAttribute('data-route-id') === id;
-          b.classList.toggle('is-active', active);
-          b.setAttribute('aria-pressed', String(active));
-        });
-        routePanels.forEach(function (p) {
-          p.classList.toggle('is-active', p.getAttribute('data-route-panel') === id);
-          p.hidden = p.getAttribute('data-route-panel') !== id;
-        });
-        /* bold active line */
-        Object.keys(polylines).forEach(function (k) {
-          polylines[k].setStyle({ opacity: k === id ? 1 : .3, weight: k === id ? 5 : 3 });
-        });
-        var ply = polylines[id];
-        if (ply) map.fitBounds(ply.getBounds(), { padding: [40, 40] });
-      }
-
-      routeBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          activateRoute(btn.getAttribute('data-route-id'));
-        });
-      });
-
-      /* default highlight */
-      activateRoute('alberni');
     });
 
-    /* expand button */
-    var expandBtn = driveWrap.querySelector('[data-map-expand="drive"]');
-    if (expandBtn) {
-      expandBtn.addEventListener('click', function () {
-        var wrap = expandBtn.closest('.map-wrap');
-        var expanded = wrap.classList.toggle('map-expanded');
-        expandBtn.setAttribute('aria-pressed', String(expanded));
-        expandBtn.title = expanded ? 'Collapse map' : 'Full screen';
-      });
-    }
+    var dotIcon = L.divIcon({ html: '<div class="vehicle-marker" style="font-size:16px">📍</div>', iconSize: [16,16], iconAnchor: [8,14], className: '' });
+    L.marker(PORT_ALBERNI, { icon: dotIcon }).addTo(driveMap).bindPopup('Port Alberni — fuel up here');
+    L.marker(DUNCAN,       { icon: dotIcon }).addTo(driveMap).bindPopup('Duncan');
+    L.marker(PT_RENFREW,   { icon: dotIcon }).addTo(driveMap).bindPopup('Port Renfrew');
 
-    /* refresh button */
-    var refreshBtn = driveWrap.querySelector('[data-map-refresh="drive"]');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', function () {
-        var mapEl = document.getElementById('drive-map-leaflet');
-        if (mapEl && mapEl._leaflet_id) {
-          var m = mapEl._leaflet_map;
-          if (m) m.invalidateSize();
-        }
-      });
-    }
+    activateDriveRoute('alberni');
   }
 
-  /* ═══ FERRY MAP ═════════════════════════════════════════ */
-  var ferryWrap = document.querySelector('[data-ferry-map]');
-  if (ferryWrap) {
-    var ferryMapEl = document.getElementById('ferry-map-leaflet');
-    initWhenVisible(ferryMapEl, function () {
-      var PORT_ALBERNI_QUAY = [49.2335, -124.800];
-      var map = baseMap('ferry-map-leaflet', [49.0, -124.97], 9);
+  function activateDriveRoute(id) {
+    if (!driveMap) return;
+    driveAnimState.cancelled = true;
+    driveAnimState = { cancelled: false };
 
-      var stops = [
-        { pos: PORT_ALBERNI_QUAY,   label: 'Port Alberni (Harbour Quay)',  info: 'Departure: Tue, Thu, Sat + summer extras. Lady Rose Marine, 5425 Argyle St.' },
-        { pos: [48.973, -124.931],  label: 'Kildonan / Sarita',            info: 'Midway stop on the inlet.' },
-        { pos: [48.880, -125.020],  label: 'Ucluelet Junction (optional)', info: 'Seasonal stop depending on schedule.' },
-        { pos: BAMFIELD,            label: 'Bamfield (East dock)',          info: 'Your stop for Centennial Park. East dock only.' }
-      ];
-
-      var routeLine = stops.map(function (s) { return s.pos; });
-      L.polyline(routeLine, { color: '#1a5580', weight: 4, opacity: .8 }).addTo(map);
-
-      var icon = (window.ParkIcons && window.ParkIcons.ferry) ? window.ParkIcons.ferry : null;
-      var parkIcon = (window.ParkIcons && window.ParkIcons.park) ? window.ParkIcons.park : null;
-      stops.forEach(function (s, i) {
-        var mk = L.marker(s.pos, { icon: i === stops.length - 1 ? parkIcon : icon });
-        if (mk) mk.addTo(map).bindPopup('<strong>' + s.label + '</strong><br>' + s.info);
-      });
-
-      var detail = ferryWrap.querySelector('[data-ferry-detail]');
-      map.on('popupopen', function (e) {
-        if (detail) detail.innerHTML = e.popup.getContent();
-      });
+    document.querySelectorAll('[data-route-id]').forEach(function (b) {
+      var active = b.getAttribute('data-route-id') === id;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-pressed', String(active));
     });
-  }
+    document.querySelectorAll('[data-route-panel]').forEach(function (p) {
+      var active = p.getAttribute('data-route-panel') === id;
+      p.classList.toggle('is-active', active);
+      p.hidden = !active;
+    });
 
-  /* ═══ FLY MAP ═══════════════════════════════════════════ */
-  var flyWrap = document.querySelector('[data-fly-map]');
-  if (flyWrap) {
-    var flyMapEl = document.getElementById('fly-map-leaflet');
-    initWhenVisible(flyMapEl, function () {
-      var map = baseMap('fly-map-leaflet', [49.05, -124.3], 8);
-
-      var airports = [
-        { pos: [49.053, -122.360], label: 'Abbotsford / Vancouver area' },
-        { pos: [49.193, -123.183], label: 'Vancouver Harbour (Coal Harbour)' },
-        { pos: [48.650, -123.425], label: 'Victoria Harbour / Swartz Bay' },
-        { pos: [49.163, -123.930], label: 'Nanaimo Harbour' },
-        { pos: [49.152, -125.906], label: 'Tofino Harbour' }
-      ];
-
-      airports.forEach(function (a) {
-        var icon = window.ParkIcons && window.ParkIcons.airport ? window.ParkIcons.airport : null;
-        var mk = L.marker(a.pos, { icon: icon });
-        if (mk) mk.addTo(map).bindPopup(a.label);
-        /* dashed flight path */
-        L.polyline([a.pos, BAMFIELD], { color: '#7a4000', weight: 2, dashArray: '6 5', opacity: .5 }).addTo(map);
-      });
-
-      if (window.ParkIcons && window.ParkIcons.park) {
-        L.marker(BAMFIELD, { icon: window.ParkIcons.park }).addTo(map)
-          .bindPopup('<strong>Bamfield Inlet</strong><br>Floatplane landing area');
+    Object.keys(drivePolys).forEach(function (k) {
+      var line = drivePolys[k];
+      if (k === id) {
+        line.poly.setStyle({ opacity: 1 });
+        driveMap.fitBounds(L.latLngBounds(line.fullPts), { padding: [44, 44] });
+        animateRoute(driveMap, line, '🚗', 2600, driveAnimState);
+      } else {
+        line.poly.setLatLngs(densify(line.fullPts, 14));
+        line.poly.setStyle({ opacity: .22 });
       }
     });
   }
+
+  document.querySelectorAll('[data-route-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activateDriveRoute(btn.getAttribute('data-route-id'));
+    });
+  });
+
+  initWhenVisible(driveMapEl, initDriveMap);
+
+  /* ═══ FERRY ═════════════════════════════════════════════ */
+  var ferryMap = null, ferryAnimState = { cancelled: false };
+  function initFerryMap() {
+    if (ferryMap) return;
+    var el = document.getElementById('ferry-map-leaflet');
+    if (!el || el.offsetParent === null) return;
+    ferryMap = baseMap('ferry-map-leaflet', [49.0, -124.97], 9);
+    parkMarker(ferryMap);
+
+    var stops = [
+      { pos: [49.2335, -124.800], label: 'Port Alberni · Harbour Quay', info: 'Departs Tue, Thu, Sat + summer extras.' },
+      { pos: [48.973, -124.931],  label: 'Kildonan',                    info: 'Midway stop on the inlet.' },
+      { pos: BAMFIELD,            label: 'Bamfield · East dock',        info: 'Your stop for the park.' }
+    ];
+
+    var line = {
+      fullPts: stops.map(function (s) { return s.pos; }),
+      poly: L.polyline([stops[0].pos], { color: '#1a5580', weight: 4, opacity: .9, lineCap: 'round' }).addTo(ferryMap)
+    };
+
+    var dotIcon = L.divIcon({ html: '<div class="vehicle-marker" style="font-size:16px">⚓</div>', iconSize: [16,16], iconAnchor: [8,8], className: '' });
+    stops.forEach(function (s) {
+      L.marker(s.pos, { icon: dotIcon }).addTo(ferryMap)
+        .bindPopup('<strong>' + s.label + '</strong><br>' + s.info);
+    });
+
+    ferryMap.fitBounds(L.latLngBounds(line.fullPts), { padding: [44, 44] });
+    animateRoute(ferryMap, line, '⛴️', 3400, ferryAnimState);
+  }
+
+  /* ═══ FLY ═══════════════════════════════════════════════ */
+  var flyMap = null;
+  function initFlyMap() {
+    if (flyMap) return;
+    var el = document.getElementById('fly-map-leaflet');
+    if (!el || el.offsetParent === null) return;
+    flyMap = baseMap('fly-map-leaflet', [49.05, -124.3], 7);
+    parkMarker(flyMap);
+
+    var origins = [
+      { pos: [49.290, -123.115], label: 'Vancouver Harbour' },
+      { pos: [48.423, -123.371], label: 'Victoria Harbour' },
+      { pos: [49.166, -123.933], label: 'Nanaimo Harbour' },
+      { pos: [49.153, -125.905], label: 'Tofino Harbour' }
+    ];
+
+    var dotIcon = L.divIcon({ html: '<div class="vehicle-marker" style="font-size:16px">🛬</div>', iconSize: [16,16], iconAnchor: [8,8], className: '' });
+    origins.forEach(function (o, i) {
+      L.marker(o.pos, { icon: dotIcon }).addTo(flyMap).bindPopup(o.label);
+      var line = {
+        fullPts: [o.pos, BAMFIELD],
+        poly: L.polyline([o.pos], { color: '#7a4000', weight: 2, dashArray: '6 6', opacity: .55 }).addTo(flyMap)
+      };
+      /* stagger the flight path animations */
+      setTimeout(function () {
+        animateRoute(flyMap, line, '🛩️', 2200, { cancelled: false });
+      }, i * 500);
+    });
+
+    flyMap.fitBounds(L.latLngBounds(origins.map(function (o) { return o.pos; }).concat([BAMFIELD])), { padding: [36, 36] });
+  }
+
+  /* init maps when their tab opens */
+  window.addEventListener('travelpane', function (e) {
+    setTimeout(function () {
+      if (e.detail === 'travel-ferry') initFerryMap();
+      if (e.detail === 'travel-fly')   initFlyMap();
+      [driveMap, ferryMap, flyMap].forEach(function (m) { if (m) m.invalidateSize(); });
+    }, 60);
+  });
+  window.addEventListener('mapresize', function () {
+    setTimeout(function () {
+      [driveMap, ferryMap, flyMap].forEach(function (m) { if (m) m.invalidateSize(); });
+    }, 60);
+  });
 
 })();

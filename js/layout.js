@@ -6,10 +6,10 @@
     header.innerHTML =
       '<div class="site-header-bar">' +
         '<a href="#home" class="site-header-brand">' +
-          '<img src="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png" alt="Park bear logo" width="32" height="32">' +
+          '<img src="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png" alt="Park bear logo" width="34" height="34">' +
           '<span>Centennial Park</span>' +
         '</a>' +
-        '<a href="#book" class="btn btn-primary site-header-cta">Book now</a>' +
+        '<a href="#book" class="btn btn-primary site-header-cta"><span>Book now</span></a>' +
       '</div>';
   }
 
@@ -26,8 +26,9 @@
           '<a href="mailto:bamfieldcentennialpark@gmail.com" style="color:rgba(255,255,255,.6);font-size:.85rem">bamfieldcentennialpark@gmail.com</a>' +
         '</div>' +
       '</div>' +
-      '<p class="site-footer-copy" style="max-width:var(--inner-max);margin:1.5rem auto 0">' +
-        '&copy; ' + new Date().getFullYear() + ' Eileen Scott Centennial Park. All rights reserved.' +
+      '<p class="site-footer-copy">' +
+        '<span class="site-footer-hand">see you at the end of the road</span><br>' +
+        '&copy; ' + new Date().getFullYear() + ' Eileen Scott Centennial Park' +
       '</p>';
   }
 })();
