@@ -4,6 +4,39 @@
   'use strict';
   if (typeof L === 'undefined') return;
 
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* densify a polyline so short segments animate smoothly */
+  function densify(pts, n) {
+    var out = [];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i], b = pts[i + 1];
+      for (var t = 0; t < n; t++) {
+        var f = t / n;
+        out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  /* animate a polyline drawing itself in */
+  function animateLine(poly, pts, durMs, state) {
+    if (prefersReduced) { poly.setLatLngs(pts); return; }
+    poly.setLatLngs([pts[0]]);
+    var start = null;
+    function frame(ts) {
+      if (state.cancelled) return;
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / durMs, 1);
+      var eased = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var idx = Math.max(1, Math.floor(eased * (pts.length - 1)));
+      poly.setLatLngs(pts.slice(0, idx + 1));
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
   /* ── Constants ──────────────────────────────────────────── */
   var PARK           = [48.8276, -125.1308];
   var BAMFIELD_INLET = [48.826,  -125.135];
@@ -146,7 +179,8 @@
   });
 
   /* ═══ DRIVE MAP ══════════════════════════════════════════ */
-  var driveMap = null, driveLayers = {};
+  var driveMap = null, driveLayers = {}, drivePoints = {};
+  var driveAnimState = { cancelled: false };
 
   function updateDrivePanels(id) {
     document.querySelectorAll('[data-route-id]').forEach(function (b) {
@@ -162,14 +196,21 @@
   }
 
   function selectRoute(id) {
+    driveAnimState.cancelled = true;
+    driveAnimState = { cancelled: false };
+
     Object.keys(driveLayers).forEach(function (k) {
-      var line = driveLayers[k];
-      if (!line || !driveMap) return;
+      var line = driveLayers[k], pts = drivePoints[k];
+      if (!line || !driveMap || !pts) return;
       var on = k === id;
-      line.setStyle({ opacity: on ? 1 : 0.25, weight: on ? (k === 'alberni' ? 5 : 4) : 3 });
       if (on) {
+        line.setStyle({ opacity: 1, weight: k === 'alberni' ? 5 : 4 });
         line.bringToFront();
         driveMap.fitBounds(line.getBounds(), { padding: [44, 44], maxZoom: 11 });
+        animateLine(line, pts, 2600, driveAnimState);
+      } else {
+        line.setLatLngs(pts);
+        line.setStyle({ opacity: 0.22, weight: 3 });
       }
     });
     updateDrivePanels(id);
@@ -197,14 +238,20 @@
     function onRouteLoad(id, latlngs) {
       pending--;
       if (latlngs && latlngs.length > 1 && driveMap) {
-        driveLayers[id] = L.polyline(latlngs, ROUTE_STYLE[id]).addTo(driveMap);
+        drivePoints[id] = latlngs;
+        driveLayers[id] = L.polyline([latlngs[0]], ROUTE_STYLE[id]).addTo(driveMap);
         driveLayers[id].on('click', function () { selectRoute(id); });
       }
       if (pending === 0) {
         if (chip.parentNode) chip.parentNode.removeChild(chip);
         var ids = Object.keys(driveLayers);
         if (ids.length) {
-          var group = L.featureGroup(ids.map(function (k) { return driveLayers[k]; }));
+          /* fit to all routes first, then animate into alberni */
+          var group = L.featureGroup(ids.map(function (k) {
+            /* temporarily set full pts for bounds calc */
+            driveLayers[k].setLatLngs(drivePoints[k]);
+            return driveLayers[k];
+          }));
           driveMap.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 9 });
           selectRoute('alberni');
         }
@@ -246,11 +293,13 @@
     /* try JSON first, fall back to inline */
     function drawFerryLine(pts) {
       if (!ferryMap) return;
-      L.polyline(pts, {
+      var dense = densify(pts, 8);
+      var poly = L.polyline([dense[0]], {
         color: '#1e6aad', weight: 5, opacity: 0.92,
         dashArray: '10 8', lineCap: 'round', lineJoin: 'round'
       }).addTo(ferryMap);
       ferryMap.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 11 });
+      animateLine(poly, dense, 3200, { cancelled: false });
       ferryMap.invalidateSize();
     }
 
@@ -286,11 +335,15 @@
     L.marker(BAMFIELD_INLET, { icon: dotIcon }).addTo(flyMap)
       .bindPopup('Bamfield Inlet — floatplane landing');
 
-    FLY_DEPARTURES.forEach(function (dep) {
+    FLY_DEPARTURES.forEach(function (dep, i) {
       L.marker(dep.pos, { icon: dotIcon }).addTo(flyMap).bindPopup(dep.label);
-      L.polyline(arcPoints(dep.pos, BAMFIELD_INLET, 24), {
+      var pts = arcPoints(dep.pos, BAMFIELD_INLET, 24);
+      var poly = L.polyline([pts[0]], {
         color: '#7b9e8a', weight: 4, opacity: 0.85, dashArray: '9 7', lineCap: 'round'
       }).addTo(flyMap);
+      setTimeout(function () {
+        animateLine(poly, pts, 1800, { cancelled: false });
+      }, i * 350);
     });
 
     var bounds = L.latLngBounds([BAMFIELD_INLET]);
