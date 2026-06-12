@@ -167,20 +167,27 @@
     });
   });
 
-  /* init drive map as soon as the map element is in the DOM and visible */
+  /* init drive map on DOMContentLoaded OR IntersectionObserver, whichever fires first */
   (function () {
     var el = document.getElementById('drive-map-leaflet');
     if (!el) return;
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { initDriveMap(); io.disconnect(); }
-        });
-      }, { threshold: 0.1 });
-      io.observe(el);
-    } else {
+    var initialized = false;
+    function tryInit() {
+      if (initialized) return;
+      initialized = true;
       initDriveMap();
     }
+    /* try immediately if element already has layout */
+    if (el.offsetHeight > 0) { tryInit(); return; }
+    /* fall back to IntersectionObserver */
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { tryInit(); io.disconnect(); } });
+      }, { threshold: 0.01 });
+      io.observe(el);
+    }
+    /* also fire after full page load as a safety net */
+    window.addEventListener('load', function () { setTimeout(tryInit, 200); }, { once: true });
   })();
 
   /* ═══ FERRY MAP ══════════════════════════════════════════ */
