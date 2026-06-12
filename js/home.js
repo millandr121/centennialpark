@@ -1,21 +1,18 @@
-/* home.js — scroll experience: reveals, word splits, parallax,
-   progress bar, travel tabs, rate cards, contact toggle */
+/* home.js — animations, tabs, rate cards, contact toggle, photo modal */
 
 (function () {
   'use strict';
 
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ── Split titles into animated words ─────────────────── */
+  /* ── Split hero titles into word-reveal spans ─────────── */
   document.querySelectorAll('[data-words]').forEach(function (el) {
     var words = el.textContent.trim().split(/\s+/);
     el.textContent = '';
     words.forEach(function (word, i) {
-      var w = document.createElement('span');
-      w.className = 'w';
+      var w = document.createElement('span'); w.className = 'w';
       var inner = document.createElement('i');
-      inner.textContent = word;
-      inner.style.setProperty('--wi', i);
+      inner.textContent = word; inner.style.setProperty('--wi', i);
       w.appendChild(inner);
       el.appendChild(w);
       if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
@@ -25,32 +22,29 @@
 
   /* ── Reveal on scroll ─────────────────────────────────── */
   var revealEls = document.querySelectorAll('[data-reveal], .word-reveal, .hand');
-  if ('IntersectionObserver' in window && revealEls.length && !prefersReduced) {
+  if ('IntersectionObserver' in window && !prefersReduced) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
       });
-    }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
+    }, { threshold: 0.13, rootMargin: '0px 0px -4% 0px' });
     revealEls.forEach(function (el) { io.observe(el); });
   } else {
     revealEls.forEach(function (el) { el.classList.add('is-visible'); });
   }
 
-  /* ── Scroll progress + header hide + hero parallax ────── */
+  /* ── Scroll progress bar ──────────────────────────────── */
   var progressBar = document.getElementById('scroll-progress-bar');
-  var header      = document.getElementById('site-header');
-  var heroMedia   = document.querySelector('[data-parallax]');
-  var lastY = 0, ticking = false;
-
+  var ticking = false;
   function onScroll() {
     var y = window.scrollY;
     var max = document.documentElement.scrollHeight - window.innerHeight;
     if (progressBar && max > 0) progressBar.style.width = (y / max * 100) + '%';
-    if (header) header.classList.toggle('is-hidden-up', y > 320 && y > lastY);
+    /* hero parallax */
+    var heroMedia = document.querySelector('[data-parallax]');
     if (heroMedia && !prefersReduced && y < window.innerHeight) {
       heroMedia.style.transform = 'translateY(' + (y * 0.35) + 'px)';
     }
-    lastY = y;
     ticking = false;
   }
   window.addEventListener('scroll', function () {
@@ -76,15 +70,13 @@
 
   /* ── Count-up rate prices ─────────────────────────────── */
   var counters = document.querySelectorAll('[data-count]');
-  if ('IntersectionObserver' in window && counters.length && !prefersReduced) {
+  if ('IntersectionObserver' in window && !prefersReduced) {
     var cIO = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (!e.isIntersecting) return;
         cIO.unobserve(e.target);
-        var el = e.target;
-        var target = parseFloat(el.getAttribute('data-count'));
-        var prefix = el.getAttribute('data-prefix') || '';
-        var start = null, dur = 900;
+        var el = e.target, target = parseFloat(el.getAttribute('data-count'));
+        var prefix = el.getAttribute('data-prefix') || '', start = null, dur = 900;
         function tick(ts) {
           if (!start) start = ts;
           var p = Math.min((ts - start) / dur, 1);
@@ -113,7 +105,6 @@
         p.classList.toggle('is-active', active);
         p.hidden = !active;
       });
-      /* notify maps to (re)initialize / resize */
       window.dispatchEvent(new CustomEvent('travelpane', { detail: tab.getAttribute('aria-controls') }));
     });
   });
@@ -144,6 +135,39 @@
         var first = inquirePanel.querySelector('input:not([tabindex="-1"]),textarea');
         if (first) first.focus();
       }
+    });
+  }
+
+  /* ── Photo lightbox ───────────────────────────────────── */
+  var modal    = document.getElementById('photo-modal');
+  var modalImg = document.getElementById('photo-modal-img');
+  var modalCap = document.getElementById('photo-modal-cap');
+
+  function openModal(src, alt) {
+    if (!modal) return;
+    modalImg.src = src; modalImg.alt = alt;
+    if (modalCap) modalCap.textContent = alt;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('.photo-modal-close').focus();
+  }
+  function closeModal() {
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.offer-photo-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openModal(btn.getAttribute('data-photo-src'), btn.getAttribute('data-photo-alt'));
+    });
+  });
+
+  if (modal) {
+    modal.querySelector('.photo-modal-close').addEventListener('click', closeModal);
+    modal.querySelector('.photo-modal-backdrop').addEventListener('click', closeModal);
+    modal.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeModal();
     });
   }
 

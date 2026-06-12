@@ -7,7 +7,7 @@
   <title>Eileen Scott Centennial Park — Bamfield, BC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&family=Caveat:wght@600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/home.css">
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
@@ -16,8 +16,6 @@
 </head>
 <body class="one-page">
   <div class="scroll-progress" aria-hidden="true"><span id="scroll-progress-bar"></span></div>
-  <div id="site-header"></div>
-
   <nav class="section-dots" aria-label="Page sections">
     <a href="#home"    data-section="home"    aria-label="Home"><span></span></a>
     <a href="#stay"    data-section="stay"    aria-label="Stay"><span></span></a>
@@ -83,34 +81,46 @@
         </header>
 
         <div class="offer-grid">
-          <article class="offer-card" data-reveal data-tilt>
-            <div class="offer-photo">
-              <img src="https://bamfieldparks.com/wp-content/uploads/2017/03/campground.jpg" alt="Tent and RV camping among cedar trees" width="800" height="500" loading="lazy">
-              <span class="offer-num" aria-hidden="true">01</span>
+          <article class="offer-card" data-reveal>
+            <div class="offer-visual offer-visual--1">
+              <span class="offer-big-num">01</span>
+              <button class="offer-photo-btn"
+                data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/03/campground.jpg"
+                data-photo-alt="Forest camping sites at Centennial Park">View photos</button>
             </div>
-            <h3>Forest camping</h3>
-            <p>Fourteen sites against the rainforest — picnic tables, fire pits, a cook house with bear-proof bins, and a play area the kids claim instantly. Summer fills fast.</p>
-            <a href="#book" class="arrow-link">Book a campsite</a>
+            <div class="offer-body">
+              <h3>Forest camping</h3>
+              <p>Fourteen sites against the rainforest — picnic tables, fire pits, a cook house with bear-proof bins, and a play area the kids claim instantly. Summer fills fast.</p>
+              <a href="#book" class="arrow-link">Book a campsite</a>
+            </div>
           </article>
 
-          <article class="offer-card offer-card--push" data-reveal data-reveal-delay="1" data-tilt>
-            <div class="offer-photo">
-              <img src="https://bamfieldparks.com/wp-content/uploads/2017/05/mist-over-boat-launch-1-e1494860221194.jpg" alt="Boat moorage at Port Desire" width="800" height="500" loading="lazy">
-              <span class="offer-num" aria-hidden="true">02</span>
+          <article class="offer-card" data-reveal data-reveal-delay="1">
+            <div class="offer-visual offer-visual--2">
+              <span class="offer-big-num">02</span>
+              <button class="offer-photo-btn"
+                data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/05/mist-over-boat-launch-1-e1494860221194.jpg"
+                data-photo-alt="Morning mist over Port Desire moorage">View photos</button>
             </div>
-            <h3>Moorage at Port Desire</h3>
-            <p>Protected moorage with a public boat launch, kayak staging, and trailer parking. Space is limited — book your overall boat length, bowsprit to stern gear.</p>
-            <a href="#book" class="arrow-link">Reserve moorage</a>
+            <div class="offer-body">
+              <h3>Moorage at Port Desire</h3>
+              <p>Protected moorage with a public boat launch, kayak staging, and trailer parking. Space is limited — book your overall boat length, bowsprit to stern gear.</p>
+              <a href="#book" class="arrow-link">Reserve moorage</a>
+            </div>
           </article>
 
-          <article class="offer-card" data-reveal data-reveal-delay="2" data-tilt>
-            <div class="offer-photo">
-              <img src="https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg" alt="Park office and gift shop" width="800" height="500" loading="lazy">
-              <span class="offer-num" aria-hidden="true">03</span>
+          <article class="offer-card" data-reveal data-reveal-delay="2">
+            <div class="offer-visual offer-visual--3">
+              <span class="offer-big-num">03</span>
+              <button class="offer-photo-btn"
+                data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg"
+                data-photo-alt="Park office and gift shop">View photos</button>
             </div>
-            <h3>Park office &amp; gift shop</h3>
-            <p>Local finds and visitor essentials, plus washrooms, Wi&#8209;Fi, and picnic areas. Open year-round; manager on site May&nbsp;15&nbsp;&ndash;&nbsp;Sept&nbsp;30.</p>
-            <a href="#contact" class="arrow-link">Say hello</a>
+            <div class="offer-body">
+              <h3>Park office &amp; gift shop</h3>
+              <p>Local finds and visitor essentials, plus washrooms, Wi&#8209;Fi, and picnic areas. Open year-round; manager on site May&nbsp;15&nbsp;&ndash;&nbsp;Sept&nbsp;30.</p>
+              <a href="#contact" class="arrow-link">Say hello</a>
+            </div>
           </article>
         </div>
 
@@ -170,18 +180,33 @@
         </ul>
 
         <details class="rates-fine" data-reveal>
-          <summary>Full rate sheet — parking &amp; extras</summary>
+          <summary>Full rate sheet</summary>
           <div class="table-wrap">
             <table>
-              <caption class="sr-only">Parking rates 2025 in Canadian dollars</caption>
-              <thead><tr><th>Parking</th><th>Daily</th><th>Weekly</th><th>Monthly</th></tr></thead>
+              <caption class="sr-only">Camping and moorage rates 2025 in Canadian dollars</caption>
+              <thead><tr><th>Service</th><th>Daily</th><th>Weekly</th><th>Monthly</th><th>Annual</th></tr></thead>
               <tbody>
-                <tr><td>Car</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td></tr>
-                <tr><td>Trailer</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td></tr>
-                <tr><td>Car + trailer</td><td><span class="money notranslate" translate="no">C$11</span></td><td><span class="money notranslate" translate="no">C$55</span></td><td><span class="money notranslate" translate="no">C$236.50</span></td></tr>
+                <tr><td>Campsite <small>*</small></td><td><span class="money notranslate" translate="no">C$30.00</span></td><td><span class="money notranslate" translate="no">C$187.50</span></td><td><span class="money notranslate" translate="no">C$735.00</span></td><td>n/a</td></tr>
+                <tr><td>Moorage</td><td><span class="money notranslate" translate="no">C$1.00</span>/ft</td><td><span class="money notranslate" translate="no">C$5.60</span>/ft</td><td><span class="money notranslate" translate="no">C$9.10</span>/ft</td><td><span class="money notranslate" translate="no">C$66.00</span>/ft</td></tr>
+                <tr><td>Parking — car</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40.00</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td><td>n/a</td></tr>
+                <tr><td>Parking — trailer</td><td><span class="money notranslate" translate="no">C$6.50</span></td><td><span class="money notranslate" translate="no">C$40.00</span></td><td><span class="money notranslate" translate="no">C$136.50</span></td><td>n/a</td></tr>
+                <tr><td>Parking — car + trailer</td><td><span class="money notranslate" translate="no">C$11.00</span></td><td><span class="money notranslate" translate="no">C$55.00</span></td><td><span class="money notranslate" translate="no">C$236.50</span></td><td>n/a</td></tr>
               </tbody>
             </table>
           </div>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">Boat launch and amenity rates 2025</caption>
+              <thead><tr><th>Service</th><th>Daily / unit</th><th>Seasonal</th><th>Annual</th></tr></thead>
+              <tbody>
+                <tr><td>Boat launch (in &amp; out)</td><td><span class="money notranslate" translate="no">C$20.00</span> <small>GST incl.</small></td><td><span class="money notranslate" translate="no">C$142.00</span></td><td><span class="money notranslate" translate="no">C$216.00</span></td></tr>
+                <tr><td>Boat wash</td><td><span class="money notranslate" translate="no">C$5.00</span></td><td>—</td><td>—</td></tr>
+                <tr><td>Freezer space</td><td><span class="money notranslate" translate="no">C$5.00</span>/day</td><td>—</td><td>—</td></tr>
+                <tr><td>Showers</td><td>By donation</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="rates-fine-note"><small>* Campsite includes up to 4 adults; children under 18 free, no limit. All prices CAD, +5% GST unless noted.</small></p>
         </details>
       </div>
     </section>
@@ -217,11 +242,11 @@
               <div class="choice-chips">
                 <label class="choice-chip">
                   <input type="checkbox" id="needCampsiteChip" value="yes">
-                  <span>⛺ Campsite</span>
+                  <span>Campsite</span>
                 </label>
                 <label class="choice-chip">
                   <input type="checkbox" id="needMoorageChip" value="yes">
-                  <span>⛵ Moorage</span>
+                  <span>Moorage</span>
                 </label>
               </div>
               <p class="field-hint wizard-hint">Pick one or both</p>
@@ -311,15 +336,9 @@
         </header>
 
         <div class="travel-tabs" role="tablist" aria-label="Ways to get to Bamfield" data-reveal>
-          <button type="button" class="travel-tab is-active" role="tab" aria-selected="true" aria-controls="travel-drive" id="tab-drive">
-            <span class="travel-tab-icon" aria-hidden="true">🚗</span> Drive
-          </button>
-          <button type="button" class="travel-tab" role="tab" aria-selected="false" aria-controls="travel-ferry" id="tab-ferry">
-            <span class="travel-tab-icon" aria-hidden="true">⛴️</span> Ferry
-          </button>
-          <button type="button" class="travel-tab" role="tab" aria-selected="false" aria-controls="travel-fly" id="tab-fly">
-            <span class="travel-tab-icon" aria-hidden="true">🛩️</span> Fly
-          </button>
+          <button type="button" class="travel-tab is-active" role="tab" aria-selected="true" aria-controls="travel-drive" id="tab-drive">Drive</button>
+          <button type="button" class="travel-tab" role="tab" aria-selected="false" aria-controls="travel-ferry" id="tab-ferry">Ferry</button>
+          <button type="button" class="travel-tab" role="tab" aria-selected="false" aria-controls="travel-fly" id="tab-fly">Fly</button>
         </div>
 
         <!-- DRIVE -->
@@ -342,7 +361,7 @@
             <article class="route-detail is-active" data-route-panel="alberni">
               <h3>Port Alberni → Bamfield <span class="route-time">90 km · about 1 hr 40 min</span></h3>
               <div class="route-advisory route-advisory--recommend">
-                <strong>★ The route we recommend for everyone.</strong>
+                <strong>The route we recommend for everyone.</strong>
                 Fully chipsealed and well maintained all the way in. If you're towing, bringing an RV or camper, or it's your first trip — take this one.
               </div>
               <ul class="route-tips">
@@ -354,7 +373,7 @@
             <article class="route-detail" data-route-panel="duncan" hidden>
               <h3>Duncan → Bamfield <span class="route-time">via Youbou · about 2 hr 30 min</span></h3>
               <div class="route-advisory route-advisory--caution">
-                <strong>⚠ Active logging road past Youbou.</strong>
+                <strong>Active logging road past Youbou.</strong>
                 Speeds can drop to 10–20 km/h on rough stretches and grading is unpredictable. Not recommended for RVs, campers, trailers, or first-time visitors — take Port Alberni instead.
               </div>
               <ul class="route-tips">
@@ -365,7 +384,7 @@
             <article class="route-detail" data-route-panel="renfrew" hidden>
               <h3>Port Renfrew / Nitinat <span class="route-time">185 km · about 3 hr 45 min</span></h3>
               <div class="route-advisory route-advisory--caution">
-                <strong>⚠ Active logging road from Nitinat.</strong>
+                <strong>Active logging road from Nitinat.</strong>
                 Expect 10–20 km/h on ungraded sections; maintenance isn't scheduled. RVs, campers, and first-timers should take the Port Alberni route.
               </div>
               <ul class="route-tips">
@@ -467,6 +486,16 @@
     </section>
 
   </main>
+
+  <!-- Photo lightbox -->
+  <div class="photo-modal" id="photo-modal" role="dialog" aria-modal="true" aria-label="Site photo" hidden>
+    <div class="photo-modal-backdrop"></div>
+    <div class="photo-modal-content">
+      <button class="photo-modal-close" aria-label="Close photo">&times;</button>
+      <img id="photo-modal-img" src="" alt="" loading="lazy">
+      <p id="photo-modal-cap" class="photo-modal-cap"></p>
+    </div>
+  </div>
 
   <div id="site-footer"></div>
 
