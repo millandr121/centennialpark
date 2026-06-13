@@ -98,8 +98,9 @@
    */
   var DRIVE_OSRM = {
     alberni: [[-124.8149, 49.2354], [-125.1308, 48.8276]],
-    duncan:  [[-124.048,  48.822],  [-124.143,  48.850],  [-125.1308, 48.8276]],
-    renfrew: [[-124.421,  48.554],  [-124.048,  48.822],  [-124.805, 49.234], [-125.1308, 48.8276]]
+    /* Lake Cowichan → Carmanah Main / Bamfield Rd junction → Bamfield */
+    duncan:  [[-124.048, 48.822], [-124.815, 48.843], [-125.1308, 48.8276]],
+    renfrew: [[-124.421, 48.554], [-124.048, 48.822], [-124.805, 49.234], [-125.1308, 48.8276]]
   };
 
   var ROUTE_STYLE = {
@@ -119,12 +120,12 @@
       label: "<strong>Ostrom's Gas Bar, Bamfield</strong><br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
     },
     {
-      pos:   [48.822, -124.048],
-      label: '<strong>Lake Cowichan</strong> — fuel available in town.'
+      pos:   [48.826, -124.054],
+      label: '<strong>Co-op Gas Bar, Lake Cowichan</strong> — fuel available on the main road through town.'
     },
     {
-      pos:   [48.850, -124.143],
-      label: '<strong>Youbou</strong> — small gas bar, limited hours. Do not rely on it.'
+      pos:   [48.851, -124.144],
+      label: '<strong>Youbou Gas Bar</strong> — small gas bar, limited hours. Do not rely on it.'
     }
   ];
 
@@ -202,37 +203,28 @@
     return L.marker(pos, { icon: icon, zIndexOffset: 600 }).bindPopup(popup);
   }
 
-  /* "open in maps" link injection for each route panel */
-  var ROUTE_MAP_LINKS = {
-    alberni: {
-      google: 'https://www.google.com/maps/dir/49.2354,-124.8149/48.8276,-125.1308/',
-      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=49.2354%2C-124.8149%3B48.8276%2C-125.1308'
-    },
-    duncan: {
-      google: 'https://www.google.com/maps/dir/48.822,-124.048/48.8276,-125.1308/',
-      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=48.822%2C-124.048%3B48.8276%2C-125.1308'
-    },
-    renfrew: {
-      google: 'https://www.google.com/maps/dir/48.554,-124.421/48.822,-124.048/49.2354,-124.8149/48.8276,-125.1308/',
-      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=48.554%2C-124.421%3B48.822%2C-124.048%3B49.2354%2C-124.8149%3B48.8276%2C-125.1308'
-    }
+  /* Google Maps direction links — one per route, with correct waypoints */
+  var ROUTE_GMAPS = {
+    /* Port Alberni Co-op → Bamfield */
+    alberni: 'https://www.google.com/maps/dir/49.246,-124.798/48.8276,-125.1308/',
+    /* Lake Cowichan Co-op → Carmanah Main / Bamfield Rd junction → Bamfield */
+    duncan:  'https://www.google.com/maps/dir/48.826,-124.054/48.843,-124.815/48.8276,-125.1308/',
+    /* Port Renfrew → Lake Cowichan Co-op → Port Alberni Co-op → Bamfield */
+    renfrew: 'https://www.google.com/maps/dir/48.554,-124.421/48.826,-124.054/49.246,-124.798/48.8276,-125.1308/'
   };
 
   function injectMapsLinks() {
-    var btnStyle = 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;' +
-      'font-size:.78rem;font-weight:600;text-decoration:none;border:1.5px solid currentColor;' +
-      'transition:background .15s,color .15s;white-space:nowrap';
+    var btnStyle = 'display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;' +
+      'font-size:.78rem;font-weight:600;text-decoration:none;background:#1a73e8;color:#fff;' +
+      'box-shadow:0 1px 4px rgba(0,0,0,.18);white-space:nowrap';
     var pinSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-    Object.keys(ROUTE_MAP_LINKS).forEach(function (id) {
+    Object.keys(ROUTE_GMAPS).forEach(function (id) {
       var panel = document.querySelector('[data-route-panel="' + id + '"]');
       if (!panel || panel.querySelector('.route-map-links')) return;
-      var lnks = ROUTE_MAP_LINKS[id];
       var div = document.createElement('div');
       div.className = 'route-map-links';
-      div.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08)';
-      div.innerHTML =
-        '<a href="' + lnks.google + '" target="_blank" rel="noopener" style="' + btnStyle + 'color:#1a73e8">' + pinSvg + 'Google Maps</a>' +
-        '<a href="' + lnks.osm + '" target="_blank" rel="noopener" style="' + btnStyle + 'color:#4a7c59">' + pinSvg + 'OpenStreetMap</a>';
+      div.style.cssText = 'margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08)';
+      div.innerHTML = '<a href="' + ROUTE_GMAPS[id] + '" target="_blank" rel="noopener" style="' + btnStyle + '">' + pinSvg + ' Open in Google Maps</a>';
       panel.appendChild(div);
     });
   }
@@ -343,32 +335,26 @@
     /* markers in Cowichan Lake area — will cluster at low zoom */
     var lakeGasMark   = gasMarker(driveMap, GAS_BARS[2].pos, GAS_BARS[2].label);
     var youbouGasMark = gasMarker(driveMap, GAS_BARS[3].pos, GAS_BARS[3].label);
-    var warnMark = warningMarker(driveMap, [48.857, -124.24],
+    var warnMark = warningMarker(driveMap, [48.864, -124.220],
       '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
       'Past Youbou on the north shore. Active industrial road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
 
-    /* Bamfield area gas — will cluster at low zoom */
-    var ostromsMark = gasMarker(driveMap, GAS_BARS[1].pos, GAS_BARS[1].label);
+    /* Bamfield area gas — only 1 marker, show directly (no cluster) */
+    gasMarker(driveMap, GAS_BARS[1].pos, GAS_BARS[1].label);
 
-    /* chip-seal intersection marker — only shown on logging road route */
-    chipSealMark = chipSealMarker(driveMap, [48.835, -124.855]);
+    /* chip-seal intersection: Carmanah Main / Bamfield Rd junction */
+    chipSealMark = chipSealMarker(driveMap, [48.843, -124.815]);
     driveMap.removeLayer(chipSealMark);
 
-    /* cluster bubbles for zoomed-out view */
+    /* cluster bubble for Cowichan Lake area (3 markers) */
     var cowichanCluster = makeClusterMarker(
-      [48.850, -124.17],
+      [48.855, -124.17],
       'Cowichan Lake Area',
-      ['Lake Cowichan — fuel available in town', 'Youbou — small gas bar, limited hours', 'Logging road starts at 11457 N Shore Rd (past Youbou)']
-    );
-    var bamfieldCluster = makeClusterMarker(
-      [48.827, -125.131],
-      'Bamfield',
-      ["Ostrom's Gas Bar — 8 am–8 pm summer"]
+      ['Co-op Gas Bar, Lake Cowichan', 'Youbou Gas Bar — limited hours', 'Logging road starts at 11457 N Shore Rd']
     );
 
     var cowichanGroup = [lakeGasMark, youbouGasMark, warnMark];
-    var bamfieldGroup = [ostromsMark];
 
     function updateClusters() {
       if (!driveMap) return;
@@ -380,14 +366,6 @@
       });
       if (cowOff) { if (!driveMap.hasLayer(cowichanCluster)) cowichanCluster.addTo(driveMap); }
       else        { if (driveMap.hasLayer(cowichanCluster)) driveMap.removeLayer(cowichanCluster); }
-
-      var bamOff = z < 13;
-      bamfieldGroup.forEach(function (m) {
-        if (bamOff) { if (driveMap.hasLayer(m)) driveMap.removeLayer(m); }
-        else        { if (!driveMap.hasLayer(m)) m.addTo(driveMap); }
-      });
-      if (bamOff) { if (!driveMap.hasLayer(bamfieldCluster)) bamfieldCluster.addTo(driveMap); }
-      else        { if (driveMap.hasLayer(bamfieldCluster)) driveMap.removeLayer(bamfieldCluster); }
     }
 
     driveMap.on('zoomend', updateClusters);
