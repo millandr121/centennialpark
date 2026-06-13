@@ -37,10 +37,20 @@
     requestAnimationFrame(frame);
   }
 
+  /* nearest vertex on a polyline to a target [lat,lng] — keeps markers on the road */
+  function nearestOnRoute(pts, target) {
+    var best = pts[0], bd = Infinity;
+    for (var i = 0; i < pts.length; i++) {
+      var d = Math.hypot(pts[i][0] - target[0], pts[i][1] - target[1]);
+      if (d < bd) { bd = d; best = pts[i]; }
+    }
+    return best;
+  }
+
   /* ── Constants ──────────────────────────────────────────── */
   var PARK            = [48.8276, -125.1308];
   var BAMFIELD_INLET  = [48.826,  -125.135];
-  var PORT_ALBERNI_PT = [49.234,  -124.805];
+  var PORT_ALBERNI_PT = [49.246,  -124.798];   /* Co-op, 3820 10th Ave */
 
   var FERRY_STOPS = {
     alberni: { pos: [49.23538, -124.81485], label: 'Port Alberni · Lady Rose Marine — departs Tue, Thu, Sat' },
@@ -83,7 +93,7 @@
   var FLY_DEPARTURES = [
     { pos: [48.4222, -123.3693], label: 'Victoria Harbour' },
     { pos: [49.1645, -123.936],  label: 'Nanaimo Harbour' },
-    { pos: [49.1939, -123.184],  label: 'Vancouver (YVR) Harbour' },
+    { pos: [49.17705, -123.16815], label: 'Vancouver International Seaplane Base' },
     { pos: [49.2896, -123.1162], label: 'Vancouver Downtown Harbour' }
   ];
 
@@ -97,10 +107,12 @@
    *            Chip-seal / highway all the way; avoids Youbou logging road entirely.
    */
   var DRIVE_OSRM = {
-    alberni: [[-124.8149, 49.2354], [-125.1308, 48.8276]],
-    /* Lake Cowichan → north shore / Youbou → Bamfield (lets OSRM trace the real road) */
-    duncan:  [[-124.048, 48.822], [-124.143, 48.850], [-125.1308, 48.8276]],
-    renfrew: [[-124.421, 48.554], [-124.048, 48.822], [-124.805, 49.234], [-125.1308, 48.8276]]
+    /* Port Alberni Co-op (10th Ave) → Bamfield — leaves town via 10th Ave / Anderson */
+    alberni: [[-124.798, 49.246], [-125.1308, 48.8276]],
+    /* Lake Cowichan Co-op → Youbou (north shore road) → Bamfield */
+    duncan:  [[-124.0482022, 48.8284988], [-124.198, 48.866], [-125.1308, 48.8276]],
+    /* Port Renfrew → Lake Cowichan Co-op → Port Alberni Co-op → Bamfield */
+    renfrew: [[-124.421, 48.554], [-124.0482022, 48.8284988], [-124.798, 49.246], [-125.1308, 48.8276]]
   };
 
   var ROUTE_STYLE = {
@@ -113,19 +125,19 @@
   var GAS_BARS = [
     {
       pos:   PORT_ALBERNI_PT,
-      label: '<strong>Port Alberni</strong> — fill up here. This is truly the last gas stop before Bamfield.'
+      label: "<strong>Co-op Gas Bar, Port Alberni</strong> (3820 10th Ave) — fill up here. This is truly the last gas stop before Bamfield."
     },
     {
-      pos:   [48.827, -125.130],
-      label: "<strong>Ostrom's Gas Bar, Bamfield</strong><br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
+      pos:   [48.834, -125.135],
+      label: "<strong>Ostrom's Gas Bar, Bamfield</strong> (448 Seaboard Rd)<br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
     },
     {
       pos:   [48.8284988, -124.0482022],
       label: '<strong>Co-op Gas Bar, Lake Cowichan</strong> — fuel available on the main road through town.'
     },
     {
-      pos:   [48.866, -124.198],
-      label: '<strong>Youbou Gas Bar</strong> — small gas bar, limited hours. Do not rely on it.'
+      pos:   [48.867, -124.197],
+      label: "<strong>Daly's Gas Bar, Youbou</strong> (10514 Youbou Rd) — limited hours; check with the business. Do not rely on it."
     }
   ];
 
@@ -335,7 +347,7 @@
     /* markers in Cowichan Lake area — will cluster at low zoom */
     var lakeGasMark   = gasMarker(driveMap, GAS_BARS[2].pos, GAS_BARS[2].label);
     var youbouGasMark = gasMarker(driveMap, GAS_BARS[3].pos, GAS_BARS[3].label);
-    var warnMark = warningMarker(driveMap, [48.872, -124.224],
+    var warnMark = warningMarker(driveMap, [48.875, -124.235],
       '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
       'Just west of Youbou the pavement ends and North Shore Rd becomes an active gravel logging road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
@@ -389,6 +401,11 @@
         drivePoints[id] = latlngs;
         driveLayers[id] = L.polyline([latlngs[0]], ROUTE_STYLE[id]).addTo(driveMap);
         driveLayers[id].on('click', function () { selectRoute(id); });
+        /* snap the logging-road markers onto the real road so they can't drift into the lake */
+        if (id === 'duncan' && latlngs.length > 2) {
+          warnMark.setLatLng(nearestOnRoute(latlngs, [48.875, -124.235]));
+          chipSealMark.setLatLng(nearestOnRoute(latlngs, [48.9722287, -124.748308]));
+        }
       }
       if (pending === 0) {
         if (chip.parentNode) chip.parentNode.removeChild(chip);
