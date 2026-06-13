@@ -98,8 +98,8 @@
    */
   var DRIVE_OSRM = {
     alberni: [[-124.8149, 49.2354], [-125.1308, 48.8276]],
-    /* Lake Cowichan → Carmanah Main / Bamfield Rd junction → Bamfield */
-    duncan:  [[-124.048, 48.822], [-124.815, 48.843], [-125.1308, 48.8276]],
+    /* Lake Cowichan → north shore / Youbou → Bamfield (lets OSRM trace the real road) */
+    duncan:  [[-124.048, 48.822], [-124.143, 48.850], [-125.1308, 48.8276]],
     renfrew: [[-124.421, 48.554], [-124.048, 48.822], [-124.805, 49.234], [-125.1308, 48.8276]]
   };
 
@@ -120,11 +120,11 @@
       label: "<strong>Ostrom's Gas Bar, Bamfield</strong><br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
     },
     {
-      pos:   [48.826, -124.054],
+      pos:   [48.8284988, -124.0482022],
       label: '<strong>Co-op Gas Bar, Lake Cowichan</strong> — fuel available on the main road through town.'
     },
     {
-      pos:   [48.851, -124.144],
+      pos:   [48.866, -124.198],
       label: '<strong>Youbou Gas Bar</strong> — small gas bar, limited hours. Do not rely on it.'
     }
   ];
@@ -187,7 +187,7 @@
       iconSize: [22, 22], iconAnchor: [11, 11], className: ''
     });
     return L.marker(pos, { icon: icon, zIndexOffset: 350 }).addTo(map)
-      .bindPopup('<strong>Chip-seal ends here</strong><br>Bamfield Main intersection (N Shore Rd).<br>Active logging road begins — rough surface, industrial traffic.');
+      .bindPopup('<strong>Carmanah Mainline / Bamfield Rd junction</strong><br>About 32 km from Bamfield. Chip-seal resumes here for the run into Bamfield; the mainline back toward Youbou is rough logging road.');
   }
 
   /* cluster bubble for zoomed-out view */
@@ -208,9 +208,9 @@
     /* Port Alberni Co-op → Bamfield */
     alberni: 'https://www.google.com/maps/dir/49.246,-124.798/48.8276,-125.1308/',
     /* Lake Cowichan Co-op → Carmanah Main / Bamfield Rd junction → Bamfield */
-    duncan:  'https://www.google.com/maps/dir/48.826,-124.054/48.843,-124.815/48.8276,-125.1308/',
+    duncan:  'https://www.google.com/maps/dir/48.8284988,-124.0482022/48.9722287,-124.748308/48.8276,-125.1308/',
     /* Port Renfrew → Lake Cowichan Co-op → Port Alberni Co-op → Bamfield */
-    renfrew: 'https://www.google.com/maps/dir/48.554,-124.421/48.826,-124.054/49.246,-124.798/48.8276,-125.1308/'
+    renfrew: 'https://www.google.com/maps/dir/48.554,-124.421/48.8284988,-124.0482022/49.246,-124.798/48.8276,-125.1308/'
   };
 
   function injectMapsLinks() {
@@ -335,23 +335,23 @@
     /* markers in Cowichan Lake area — will cluster at low zoom */
     var lakeGasMark   = gasMarker(driveMap, GAS_BARS[2].pos, GAS_BARS[2].label);
     var youbouGasMark = gasMarker(driveMap, GAS_BARS[3].pos, GAS_BARS[3].label);
-    var warnMark = warningMarker(driveMap, [48.864, -124.220],
+    var warnMark = warningMarker(driveMap, [48.872, -124.224],
       '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
-      'Past Youbou on the north shore. Active industrial road — very rough, no maintenance schedule.<br>' +
+      'Just west of Youbou the pavement ends and North Shore Rd becomes an active gravel logging road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
 
     /* Bamfield area gas — only 1 marker, show directly (no cluster) */
     gasMarker(driveMap, GAS_BARS[1].pos, GAS_BARS[1].label);
 
-    /* chip-seal intersection: Carmanah Main / Bamfield Rd junction */
-    chipSealMark = chipSealMarker(driveMap, [48.843, -124.815]);
+    /* chip-seal intersection: Carmanah Mainline / Bamfield Rd junction (~32 km from Bamfield) */
+    chipSealMark = chipSealMarker(driveMap, [48.9722287, -124.748308]);
     driveMap.removeLayer(chipSealMark);
 
     /* cluster bubble for Cowichan Lake area (3 markers) */
     var cowichanCluster = makeClusterMarker(
-      [48.855, -124.17],
+      [48.85, -124.13],
       'Cowichan Lake Area',
-      ['Co-op Gas Bar, Lake Cowichan', 'Youbou Gas Bar — limited hours', 'Logging road starts at 11457 N Shore Rd']
+      ['Co-op Gas Bar, Lake Cowichan', 'Youbou Gas Bar — limited hours', 'Logging road starts west of Youbou (11457 N Shore Rd)']
     );
 
     var cowichanGroup = [lakeGasMark, youbouGasMark, warnMark];
@@ -448,30 +448,42 @@
       ferryMap.invalidateSize();
     }
 
-    /* try local JSON → Overpass API → fallback inline coords */
+    /* OSM Lady Rose route = way 537084871 (Bamfield ↔ Port Alberni).
+       Fetched live so the line matches the dashed ferry track on the tiles exactly. */
+    var EAST_DOCK_TAIL = [[48.831, -125.138], [48.8285, -125.1372], FERRY_STOPS.east.pos];
+
+    function orientAndExtend(pts) {
+      var p = pts.slice();
+      if (p[0][0] < p[p.length - 1][0]) p.reverse();   /* run north (Port Alberni) → south (Bamfield) */
+      var last = p[p.length - 1], east = FERRY_STOPS.east.pos;
+      if (Math.hypot(last[0] - east[0], last[1] - east[1]) > 0.006) p = p.concat(EAST_DOCK_TAIL);
+      return p;
+    }
+
+    function fetchFerryWay(cb) {
+      var q = '[out:json][timeout:25];way(537084871);out geom;';
+      fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          var w = d && d.elements && d.elements[0];
+          if (!w || !w.geometry) { cb(null); return; }
+          cb(w.geometry.map(function (g) { return [g.lat, g.lon]; }));
+        })
+        .catch(function () { cb(null); });
+    }
+
+    function drawBest(pts) {
+      drawFerryLine(orientAndExtend(pts && pts.length > 4 ? pts : FERRY_INLINE));
+    }
+
+    /* local JSON first (if ever added), else live OSM way, else inline fallback */
     fetch('/js/ferry-route.json')
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (Array.isArray(data) && data.length > 4) { drawFerryLine(data); return; }
-        return fetch(
-          'https://overpass-api.de/api/interpreter?data=' +
-          encodeURIComponent('[out:json][timeout:20];relation[route=ferry][name~"Barkley"](49.0,-125.3,49.3,-124.6);(._;>;);out geom;')
-        )
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (d) {
-            if (!d || !d.elements) { drawFerryLine(FERRY_INLINE); return; }
-            /* extract coordinates from first way of the relation */
-            var coords = [];
-            d.elements.forEach(function (el) {
-              if (el.type === 'way' && el.geometry) {
-                el.geometry.forEach(function (g) { coords.push([g.lat, g.lon]); });
-              }
-            });
-            drawFerryLine(coords.length > 4 ? coords : FERRY_INLINE);
-          })
-          .catch(function () { drawFerryLine(FERRY_INLINE); });
+        if (Array.isArray(data) && data.length > 4) { drawBest(data); return; }
+        fetchFerryWay(drawBest);
       })
-      .catch(function () { drawFerryLine(FERRY_INLINE); });
+      .catch(function () { fetchFerryWay(drawBest); });
 
     ferryMap.fitBounds(
       L.latLngBounds([FERRY_STOPS.alberni.pos, FERRY_STOPS.west.pos, FERRY_STOPS.east.pos, PARK]),
