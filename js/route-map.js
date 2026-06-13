@@ -49,32 +49,35 @@
   };
 
   /*
-   * Alberni Inlet GPS trace — corrected N→S fjord path.
-   * Upper section (Port Alberni → Kildonan): mostly south, gentle west lean.
-   * Lower section (Kildonan → Bamfield): swings more SW as inlet opens to Barkley Sound.
+   * Alberni Inlet GPS trace — N→S down fjord then SW through Barkley Sound.
+   * Upper section stays in the narrow inlet channel.
+   * Lower section passes east of Tzartus Island before swinging west to Bamfield.
+   * Fetched at runtime via Overpass if possible; this is the offline fallback.
    */
   var FERRY_INLINE = [
-    [49.235, -124.815],
-    [49.205, -124.822],
-    [49.175, -124.829],
-    [49.145, -124.838],
-    [49.115, -124.849],
-    [49.085, -124.862],
-    [49.055, -124.876],
-    [49.025, -124.891],
-    [48.997, -124.907],
-    [48.973, -124.921],  /* Kildonan */
-    [48.950, -124.937],
-    [48.927, -124.956],
-    [48.905, -124.978],
-    [48.883, -125.006],
-    [48.864, -125.040],
-    [48.848, -125.077],
-    [48.836, -125.114],
-    [48.8355,-125.1392], /* West dock */
+    [49.235, -124.815],   /* Port Alberni dock */
+    [49.208, -124.820],
+    [49.181, -124.827],
+    [49.155, -124.836],
+    [49.128, -124.847],
+    [49.101, -124.858],
+    [49.073, -124.869],
+    [49.045, -124.882],
+    [49.016, -124.897],
+    [48.988, -124.912],
+    [48.973, -124.921],   /* Kildonan stop */
+    [48.953, -124.934],
+    [48.932, -124.950],
+    [48.911, -124.967],
+    [48.890, -124.984],   /* inlet mouth / east of Tzartus Island */
+    [48.872, -125.005],
+    [48.857, -125.030],
+    [48.845, -125.063],
+    [48.837, -125.100],
+    [48.8355,-125.1392],  /* West Bamfield dock */
     [48.831, -125.138],
     [48.8285,-125.1372],
-    [48.8259,-125.1367]  /* East dock */
+    [48.8259,-125.1367]   /* East Bamfield dock */
   ];
 
   var FLY_DEPARTURES = [
@@ -186,7 +189,53 @@
       .bindPopup('<strong>Chip-seal ends here</strong><br>Bamfield Main intersection (N Shore Rd).<br>Active logging road begins — rough surface, industrial traffic.');
   }
 
-  /* ── Arc curve for fly routes ───────────────────────────── */
+  /* cluster bubble for zoomed-out view */
+  function makeClusterMarker(pos, areaName, items) {
+    var icon = L.divIcon({
+      html: '<div style="width:28px;height:28px;background:rgba(55,55,55,.92);border:2.5px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.45);cursor:pointer">' + items.length + '</div>',
+      iconSize: [28, 28], iconAnchor: [14, 14], className: ''
+    });
+    var popup = '<strong>' + areaName + '</strong>' +
+      '<ul style="margin:.35em 0 0;padding-left:1.1em;font-size:.83em;line-height:1.5">' +
+      items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>' +
+      '<em style="font-size:.75em;color:#999">Zoom in to see individual markers</em>';
+    return L.marker(pos, { icon: icon, zIndexOffset: 600 }).bindPopup(popup);
+  }
+
+  /* "open in maps" link injection for each route panel */
+  var ROUTE_MAP_LINKS = {
+    alberni: {
+      google: 'https://www.google.com/maps/dir/49.2354,-124.8149/48.8276,-125.1308/',
+      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=49.2354%2C-124.8149%3B48.8276%2C-125.1308'
+    },
+    duncan: {
+      google: 'https://www.google.com/maps/dir/48.822,-124.048/48.8276,-125.1308/',
+      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=48.822%2C-124.048%3B48.8276%2C-125.1308'
+    },
+    renfrew: {
+      google: 'https://www.google.com/maps/dir/48.554,-124.421/48.822,-124.048/49.2354,-124.8149/48.8276,-125.1308/',
+      osm:    'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=48.554%2C-124.421%3B48.822%2C-124.048%3B49.2354%2C-124.8149%3B48.8276%2C-125.1308'
+    }
+  };
+
+  function injectMapsLinks() {
+    var btnStyle = 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;' +
+      'font-size:.78rem;font-weight:600;text-decoration:none;border:1.5px solid currentColor;' +
+      'transition:background .15s,color .15s;white-space:nowrap';
+    var pinSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+    Object.keys(ROUTE_MAP_LINKS).forEach(function (id) {
+      var panel = document.querySelector('[data-route-panel="' + id + '"]');
+      if (!panel || panel.querySelector('.route-map-links')) return;
+      var lnks = ROUTE_MAP_LINKS[id];
+      var div = document.createElement('div');
+      div.className = 'route-map-links';
+      div.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08)';
+      div.innerHTML =
+        '<a href="' + lnks.google + '" target="_blank" rel="noopener" style="' + btnStyle + 'color:#1a73e8">' + pinSvg + 'Google Maps</a>' +
+        '<a href="' + lnks.osm + '" target="_blank" rel="noopener" style="' + btnStyle + 'color:#4a7c59">' + pinSvg + 'OpenStreetMap</a>';
+      panel.appendChild(div);
+    });
+  } for fly routes ───────────────────────────── */
   function arcPoints(from, to, steps) {
     var mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2];
     var dx = to[1] - from[1], dy = to[0] - from[0];
@@ -286,18 +335,64 @@
     parkMarker(driveMap);
     driveMap.setView([49.0, -124.3], 8);
 
-    /* gas bar markers — always visible */
-    GAS_BARS.forEach(function (g) { gasMarker(driveMap, g.pos, g.label); });
+    /* always-visible: Port Alberni gas (standalone, far from others) */
+    gasMarker(driveMap, GAS_BARS[0].pos, GAS_BARS[0].label);
 
-    /* logging road danger marker at Youbou */
-    warningMarker(driveMap, [48.850, -124.143],
-      '<strong>Logging road begins at Youbou</strong><br>' +
-      'Active industrial road — very rough, not maintained on a schedule.<br>' +
+    /* markers in Cowichan Lake area — will cluster at low zoom */
+    var lakeGasMark   = gasMarker(driveMap, GAS_BARS[2].pos, GAS_BARS[2].label);
+    var youbouGasMark = gasMarker(driveMap, GAS_BARS[3].pos, GAS_BARS[3].label);
+    var warnMark = warningMarker(driveMap, [48.857, -124.24],
+      '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
+      'Past Youbou on the north shore. Active industrial road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
 
+    /* Bamfield area gas — will cluster at low zoom */
+    var ostromsMark = gasMarker(driveMap, GAS_BARS[1].pos, GAS_BARS[1].label);
+
     /* chip-seal intersection marker — only shown on logging road route */
-    chipSealMark = chipSealMarker(driveMap, [48.843, -124.876]);
+    chipSealMark = chipSealMarker(driveMap, [48.835, -124.855]);
     driveMap.removeLayer(chipSealMark);
+
+    /* cluster bubbles for zoomed-out view */
+    var cowichanCluster = makeClusterMarker(
+      [48.850, -124.17],
+      'Cowichan Lake Area',
+      ['Lake Cowichan — fuel available in town', 'Youbou — small gas bar, limited hours', 'Logging road starts at 11457 N Shore Rd (past Youbou)']
+    );
+    var bamfieldCluster = makeClusterMarker(
+      [48.827, -125.131],
+      'Bamfield',
+      ["Ostrom's Gas Bar — 8 am–8 pm summer"]
+    );
+
+    var cowichanGroup = [lakeGasMark, youbouGasMark, warnMark];
+    var bamfieldGroup = [ostromsMark];
+
+    function updateClusters() {
+      if (!driveMap) return;
+      var z = driveMap.getZoom();
+      var cowOff = z < 11;
+      cowichanGroup.forEach(function (m) {
+        if (cowOff) { if (driveMap.hasLayer(m)) driveMap.removeLayer(m); }
+        else        { if (!driveMap.hasLayer(m)) m.addTo(driveMap); }
+      });
+      if (cowOff) { if (!driveMap.hasLayer(cowichanCluster)) cowichanCluster.addTo(driveMap); }
+      else        { if (driveMap.hasLayer(cowichanCluster)) driveMap.removeLayer(cowichanCluster); }
+
+      var bamOff = z < 13;
+      bamfieldGroup.forEach(function (m) {
+        if (bamOff) { if (driveMap.hasLayer(m)) driveMap.removeLayer(m); }
+        else        { if (!driveMap.hasLayer(m)) m.addTo(driveMap); }
+      });
+      if (bamOff) { if (!driveMap.hasLayer(bamfieldCluster)) bamfieldCluster.addTo(driveMap); }
+      else        { if (driveMap.hasLayer(bamfieldCluster)) driveMap.removeLayer(bamfieldCluster); }
+    }
+
+    driveMap.on('zoomend', updateClusters);
+    updateClusters();
+
+    /* inject "open in maps" links */
+    injectMapsLinks();
 
     /* loading chip */
     var chip = document.createElement('div');
@@ -373,10 +468,28 @@
       ferryMap.invalidateSize();
     }
 
+    /* try local JSON → Overpass API → fallback inline coords */
     fetch('/js/ferry-route.json')
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        drawFerryLine((Array.isArray(data) && data.length > 4) ? data : FERRY_INLINE);
+        if (Array.isArray(data) && data.length > 4) { drawFerryLine(data); return; }
+        return fetch(
+          'https://overpass-api.de/api/interpreter?data=' +
+          encodeURIComponent('[out:json][timeout:20];relation[route=ferry][name~"Barkley"](49.0,-125.3,49.3,-124.6);(._;>;);out geom;')
+        )
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d || !d.elements) { drawFerryLine(FERRY_INLINE); return; }
+            /* extract coordinates from first way of the relation */
+            var coords = [];
+            d.elements.forEach(function (el) {
+              if (el.type === 'way' && el.geometry) {
+                el.geometry.forEach(function (g) { coords.push([g.lat, g.lon]); });
+              }
+            });
+            drawFerryLine(coords.length > 4 ? coords : FERRY_INLINE);
+          })
+          .catch(function () { drawFerryLine(FERRY_INLINE); });
       })
       .catch(function () { drawFerryLine(FERRY_INLINE); });
 
