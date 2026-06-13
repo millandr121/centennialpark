@@ -105,20 +105,11 @@
     renfrew: { color: '#7b5ea7', weight: 4, opacity: 0.9 }
   };
 
-  /* cities that connect to Port Alberni via main highways */
-  var FEEDER_CITIES = [
-    { pos: [48.4284, -123.3656], label: 'Victoria — Hwy 1 north → Parksville → Hwy 4' },
-    { pos: [48.374,  -123.730],  label: 'Sooke — Hwy 14 east → Hwy 1 north → Parksville → Hwy 4' },
-    { pos: [48.778,  -123.707],  label: 'Duncan — Hwy 1 north → Parksville → Hwy 4' },
-    { pos: [49.166,  -123.936],  label: 'Nanaimo — Hwy 19 north → Parksville → Hwy 4' },
-    { pos: [49.685,  -124.989],  label: 'Courtenay — Hwy 19 south → Parksville → Hwy 4' }
-  ];
-
   /* gas bars on the routes */
   var GAS_BARS = [
     {
       pos:   PORT_ALBERNI_PT,
-      label: '<strong>Port Alberni</strong> — fill up here. Last reliable fuel before Bamfield.'
+      label: '<strong>Port Alberni</strong> — fill up here. This is truly the last gas stop before Bamfield.'
     },
     {
       pos:   [48.827, -125.130],
@@ -186,12 +177,13 @@
     return L.marker(pos, { icon: icon, zIndexOffset: 400 }).addTo(map).bindPopup(label);
   }
 
-  function cityMarker(map, pos, label) {
+  function chipSealMarker(map, pos) {
     var icon = L.divIcon({
-      html: '<div style="width:8px;height:8px;background:#888;border:1.5px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>',
-      iconSize: [8, 8], iconAnchor: [4, 4], className: ''
+      html: '<div style="width:22px;height:22px;background:#fff;border:2.5px solid #d4830a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#d4830a;box-shadow:0 1px 5px rgba(0,0,0,.35);line-height:1;letter-spacing:-.5px">CS</div>',
+      iconSize: [22, 22], iconAnchor: [11, 11], className: ''
     });
-    return L.marker(pos, { icon: icon, zIndexOffset: 100 }).addTo(map).bindPopup(label);
+    return L.marker(pos, { icon: icon, zIndexOffset: 350 }).addTo(map)
+      .bindPopup('<strong>Chip-seal ends here</strong><br>Bamfield Main intersection (N Shore Rd).<br>Active logging road begins — rough surface, industrial traffic.');
   }
 
   /* ── Arc curve for fly routes ───────────────────────────── */
@@ -241,7 +233,7 @@
   /* ═══ DRIVE MAP ══════════════════════════════════════════ */
   var driveMap = null, driveLayers = {}, drivePoints = {};
   var driveAnimState = { cancelled: false };
-  var feederLayer = null;   /* city → Port Alberni hint lines, visible on alberni route */
+  var chipSealMark = null;
 
   function updateDrivePanels(id) {
     document.querySelectorAll('[data-route-id]').forEach(function (b) {
@@ -275,35 +267,13 @@
       }
     });
 
-    /* show feeder city lines only on the recommended alberni route */
-    if (feederLayer) {
-      if (id === 'alberni') feederLayer.addTo(driveMap);
-      else if (driveMap.hasLayer(feederLayer)) driveMap.removeLayer(feederLayer);
+    /* chip-seal marker only visible on logging road route */
+    if (chipSealMark) {
+      if (id === 'duncan') chipSealMark.addTo(driveMap);
+      else if (driveMap.hasLayer(chipSealMark)) driveMap.removeLayer(chipSealMark);
     }
 
     updateDrivePanels(id);
-  }
-
-  function buildFeederLayer() {
-    var layers = [];
-    FEEDER_CITIES.forEach(function (city) {
-      var m = L.marker(city.pos, {
-        icon: L.divIcon({
-          html: '<div style="width:8px;height:8px;background:#999;border:1.5px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div>',
-          iconSize: [8, 8], iconAnchor: [4, 4], className: ''
-        }),
-        zIndexOffset: 50
-      }).bindPopup('<strong>' + city.label.split(' — ')[0] + '</strong><br><span style="font-size:.85em">' + (city.label.split(' — ')[1] || '') + '</span>');
-      layers.push(m);
-
-      /* straight dashed line city → Port Alberni */
-      var line = L.polyline([city.pos, PORT_ALBERNI_PT], {
-        color: '#999', weight: 1.5, opacity: 0.45,
-        dashArray: '5 7', lineCap: 'round'
-      });
-      layers.push(line);
-    });
-    return L.layerGroup(layers);
   }
 
   function initDriveMap() {
@@ -316,9 +286,6 @@
     parkMarker(driveMap);
     driveMap.setView([49.0, -124.3], 8);
 
-    /* feeder city lines (shown on alberni route) */
-    feederLayer = buildFeederLayer();
-
     /* gas bar markers — always visible */
     GAS_BARS.forEach(function (g) { gasMarker(driveMap, g.pos, g.label); });
 
@@ -327,6 +294,10 @@
       '<strong>Logging road begins at Youbou</strong><br>' +
       'Active industrial road — very rough, not maintained on a schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
+
+    /* chip-seal intersection marker — only shown on logging road route */
+    chipSealMark = chipSealMarker(driveMap, [48.843, -124.876]);
+    driveMap.removeLayer(chipSealMark);
 
     /* loading chip */
     var chip = document.createElement('div');
