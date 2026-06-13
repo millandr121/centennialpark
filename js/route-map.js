@@ -235,7 +235,9 @@
         '<a href="' + lnks.osm + '" target="_blank" rel="noopener" style="' + btnStyle + 'color:#4a7c59">' + pinSvg + 'OpenStreetMap</a>';
       panel.appendChild(div);
     });
-  } for fly routes ───────────────────────────── */
+  }
+
+  /* ── Arc curve for fly routes ───────────────────────────── */
   function arcPoints(from, to, steps) {
     var mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2];
     var dx = to[1] - from[1], dy = to[0] - from[0];
