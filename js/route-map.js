@@ -38,8 +38,9 @@
   }
 
   /* ── Constants ──────────────────────────────────────────── */
-  var PARK           = [48.8276, -125.1308];
-  var BAMFIELD_INLET = [48.826,  -125.135];
+  var PARK            = [48.8276, -125.1308];
+  var BAMFIELD_INLET  = [48.826,  -125.135];
+  var PORT_ALBERNI_PT = [49.234,  -124.805];
 
   var FERRY_STOPS = {
     alberni: { pos: [49.23538, -124.81485], label: 'Port Alberni · Lady Rose Marine — departs Tue, Thu, Sat' },
@@ -47,35 +48,33 @@
     east:    { pos: [48.8259,  -125.1367],  label: 'East Bamfield (Park Exit) — your stop' }
   };
 
-  /* Alberni Inlet GPS trace — tight N→S fjord path */
+  /*
+   * Alberni Inlet GPS trace — corrected N→S fjord path.
+   * Upper section (Port Alberni → Kildonan): mostly south, gentle west lean.
+   * Lower section (Kildonan → Bamfield): swings more SW as inlet opens to Barkley Sound.
+   */
   var FERRY_INLINE = [
-    [49.23538,-124.81485],
-    [49.208,  -124.8225],
-    [49.180,  -124.8305],
-    [49.152,  -124.8373],
-    [49.123,  -124.8436],
-    [49.093,  -124.8497],
-    [49.062,  -124.8556],
-    [49.030,  -124.8615],
-    [48.998,  -124.8676],
-    [48.966,  -124.8738],
-    [48.973,  -124.931],   /* Kildonan */
-    [48.950,  -124.9395],
-    [48.924,  -124.9487],
-    [48.898,  -124.9588],
-    [48.871,  -124.9703],
-    [48.854,  -124.9845],
-    [48.842,  -125.0012],
-    [48.834,  -125.0195],
-    [48.831,  -125.0394],
-    [48.831,  -125.0598],
-    [48.833,  -125.0802],
-    [48.836,  -125.1005],
-    [48.836,  -125.120],
-    [48.8355, -125.1392],  /* West dock */
-    [48.831,  -125.138],
-    [48.8285, -125.1372],
-    [48.8259, -125.1367]   /* East dock */
+    [49.235, -124.815],
+    [49.205, -124.822],
+    [49.175, -124.829],
+    [49.145, -124.838],
+    [49.115, -124.849],
+    [49.085, -124.862],
+    [49.055, -124.876],
+    [49.025, -124.891],
+    [48.997, -124.907],
+    [48.973, -124.921],  /* Kildonan */
+    [48.950, -124.937],
+    [48.927, -124.956],
+    [48.905, -124.978],
+    [48.883, -125.006],
+    [48.864, -125.040],
+    [48.848, -125.077],
+    [48.836, -125.114],
+    [48.8355,-125.1392], /* West dock */
+    [48.831, -125.138],
+    [48.8285,-125.1372],
+    [48.8259,-125.1367]  /* East dock */
   ];
 
   var FLY_DEPARTURES = [
@@ -85,18 +84,55 @@
     { pos: [49.2896, -123.1162], label: 'Vancouver Downtown Harbour' }
   ];
 
-  /* OSRM waypoints [lng, lat] — engine returns real road geometry */
+  /*
+   * OSRM waypoints [lng, lat].
+   *
+   * alberni  — direct Port Alberni → Bamfield chip-seal.
+   * duncan   — Lake Cowichan town → Youbou area → Bamfield via logging road
+   *            (OSRM may not have the logging road; result shown is indicative).
+   * renfrew  — SAFE route: Port Renfrew → Lake Cowichan → Port Alberni → Bamfield.
+   *            Chip-seal / highway all the way; avoids Youbou logging road entirely.
+   */
   var DRIVE_OSRM = {
     alberni: [[-124.8149, 49.2354], [-125.1308, 48.8276]],
-    duncan:  [[-123.707, 48.779], [-124.178, 48.868], [-125.1308, 48.8276]],
-    renfrew: [[-124.421, 48.554], [-125.1308, 48.8276]]
+    duncan:  [[-124.048,  48.822],  [-124.143,  48.850],  [-125.1308, 48.8276]],
+    renfrew: [[-124.421,  48.554],  [-124.048,  48.822],  [-124.805, 49.234], [-125.1308, 48.8276]]
   };
 
   var ROUTE_STYLE = {
     alberni: { color: '#2e5d33', weight: 5, opacity: 0.95 },
     duncan:  { color: '#d4830a', weight: 4, opacity: 0.9, dashArray: '7 5' },
-    renfrew: { color: '#b8402f', weight: 4, opacity: 0.9, dashArray: '7 5' }
+    renfrew: { color: '#7b5ea7', weight: 4, opacity: 0.9 }
   };
+
+  /* cities that connect to Port Alberni via main highways */
+  var FEEDER_CITIES = [
+    { pos: [48.4284, -123.3656], label: 'Victoria — Hwy 1 north → Parksville → Hwy 4' },
+    { pos: [48.374,  -123.730],  label: 'Sooke — Hwy 14 east → Hwy 1 north → Parksville → Hwy 4' },
+    { pos: [48.778,  -123.707],  label: 'Duncan — Hwy 1 north → Parksville → Hwy 4' },
+    { pos: [49.166,  -123.936],  label: 'Nanaimo — Hwy 19 north → Parksville → Hwy 4' },
+    { pos: [49.685,  -124.989],  label: 'Courtenay — Hwy 19 south → Parksville → Hwy 4' }
+  ];
+
+  /* gas bars on the routes */
+  var GAS_BARS = [
+    {
+      pos:   PORT_ALBERNI_PT,
+      label: '<strong>Port Alberni</strong> — fill up here. Last reliable fuel before Bamfield.'
+    },
+    {
+      pos:   [48.827, -125.130],
+      label: "<strong>Ostrom's Gas Bar, Bamfield</strong><br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
+    },
+    {
+      pos:   [48.822, -124.048],
+      label: '<strong>Lake Cowichan</strong> — fuel available in town.'
+    },
+    {
+      pos:   [48.850, -124.143],
+      label: '<strong>Youbou</strong> — small gas bar, limited hours. Do not rely on it.'
+    }
+  ];
 
   /* ── Tile layer with OSM → CARTO fallback ─────────────── */
   function addTiles(map) {
@@ -132,6 +168,30 @@
       iconSize: [12, 12], iconAnchor: [6, 6], className: ''
     });
     return L.marker(pos, { icon: icon }).addTo(map).bindPopup(label);
+  }
+
+  function gasMarker(map, pos, label) {
+    var icon = L.divIcon({
+      html: '<div style="width:20px;height:20px;background:#f5a623;border:2px solid #fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 5px rgba(0,0,0,.35);font-weight:700;color:#fff;line-height:1">G</div>',
+      iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+    });
+    return L.marker(pos, { icon: icon, zIndexOffset: 300 }).addTo(map).bindPopup(label);
+  }
+
+  function warningMarker(map, pos, label) {
+    var icon = L.divIcon({
+      html: '<div style="width:22px;height:22px;background:#c0392b;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;box-shadow:0 1px 5px rgba(0,0,0,.4);line-height:1">!</div>',
+      iconSize: [22, 22], iconAnchor: [11, 11], className: ''
+    });
+    return L.marker(pos, { icon: icon, zIndexOffset: 400 }).addTo(map).bindPopup(label);
+  }
+
+  function cityMarker(map, pos, label) {
+    var icon = L.divIcon({
+      html: '<div style="width:8px;height:8px;background:#888;border:1.5px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>',
+      iconSize: [8, 8], iconAnchor: [4, 4], className: ''
+    });
+    return L.marker(pos, { icon: icon, zIndexOffset: 100 }).addTo(map).bindPopup(label);
   }
 
   /* ── Arc curve for fly routes ───────────────────────────── */
@@ -181,6 +241,7 @@
   /* ═══ DRIVE MAP ══════════════════════════════════════════ */
   var driveMap = null, driveLayers = {}, drivePoints = {};
   var driveAnimState = { cancelled: false };
+  var feederLayer = null;   /* city → Port Alberni hint lines, visible on alberni route */
 
   function updateDrivePanels(id) {
     document.querySelectorAll('[data-route-id]').forEach(function (b) {
@@ -204,16 +265,45 @@
       if (!line || !driveMap || !pts) return;
       var on = k === id;
       if (on) {
-        line.setStyle({ opacity: 1, weight: k === 'alberni' ? 5 : 4 });
+        line.setStyle({ opacity: 1, weight: ROUTE_STYLE[k].weight || 4 });
         line.bringToFront();
         driveMap.fitBounds(line.getBounds(), { padding: [44, 44], maxZoom: 11 });
         animateLine(line, pts, 2600, driveAnimState);
       } else {
         line.setLatLngs(pts);
-        line.setStyle({ opacity: 0.22, weight: 3 });
+        line.setStyle({ opacity: 0.18, weight: 3 });
       }
     });
+
+    /* show feeder city lines only on the recommended alberni route */
+    if (feederLayer) {
+      if (id === 'alberni') feederLayer.addTo(driveMap);
+      else if (driveMap.hasLayer(feederLayer)) driveMap.removeLayer(feederLayer);
+    }
+
     updateDrivePanels(id);
+  }
+
+  function buildFeederLayer() {
+    var layers = [];
+    FEEDER_CITIES.forEach(function (city) {
+      var m = L.marker(city.pos, {
+        icon: L.divIcon({
+          html: '<div style="width:8px;height:8px;background:#999;border:1.5px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div>',
+          iconSize: [8, 8], iconAnchor: [4, 4], className: ''
+        }),
+        zIndexOffset: 50
+      }).bindPopup('<strong>' + city.label.split(' — ')[0] + '</strong><br><span style="font-size:.85em">' + (city.label.split(' — ')[1] || '') + '</span>');
+      layers.push(m);
+
+      /* straight dashed line city → Port Alberni */
+      var line = L.polyline([city.pos, PORT_ALBERNI_PT], {
+        color: '#999', weight: 1.5, opacity: 0.45,
+        dashArray: '5 7', lineCap: 'round'
+      });
+      layers.push(line);
+    });
+    return L.layerGroup(layers);
   }
 
   function initDriveMap() {
@@ -225,6 +315,18 @@
     addTiles(driveMap);
     parkMarker(driveMap);
     driveMap.setView([49.0, -124.3], 8);
+
+    /* feeder city lines (shown on alberni route) */
+    feederLayer = buildFeederLayer();
+
+    /* gas bar markers — always visible */
+    GAS_BARS.forEach(function (g) { gasMarker(driveMap, g.pos, g.label); });
+
+    /* logging road danger marker at Youbou */
+    warningMarker(driveMap, [48.850, -124.143],
+      '<strong>Logging road begins at Youbou</strong><br>' +
+      'Active industrial road — very rough, not maintained on a schedule.<br>' +
+      'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
 
     /* loading chip */
     var chip = document.createElement('div');
@@ -246,9 +348,7 @@
         if (chip.parentNode) chip.parentNode.removeChild(chip);
         var ids = Object.keys(driveLayers);
         if (ids.length) {
-          /* fit to all routes first, then animate into alberni */
           var group = L.featureGroup(ids.map(function (k) {
-            /* temporarily set full pts for bounds calc */
             driveLayers[k].setLatLngs(drivePoints[k]);
             return driveLayers[k];
           }));
@@ -290,7 +390,6 @@
       dotMarker(ferryMap, s.pos, s.label, k === 'east' ? '#2e5d33' : '#1a5580');
     });
 
-    /* try JSON first, fall back to inline */
     function drawFerryLine(pts) {
       if (!ferryMap) return;
       var dense = densify(pts, 8);
@@ -361,20 +460,21 @@
     }, 80);
   });
 
-  /* ── Init drive map on page load (it's the default tab) ── */
+  /* ── Init drive map when section scrolls into view ──────── */
   (function () {
     var el = document.getElementById('drive-map-leaflet');
     if (!el) return;
     var done = false;
     function tryInit() { if (done) return; done = true; initDriveMap(); }
-    if (el.offsetHeight > 0) { tryInit(); return; }
+    /* use IntersectionObserver so animation fires as user scrolls to the section */
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) { if (e.isIntersecting) { tryInit(); io.disconnect(); } });
-      }, { threshold: 0.01 });
+      }, { threshold: 0.1 });
       io.observe(el);
     }
-    window.addEventListener('load', function () { setTimeout(tryInit, 200); }, { once: true });
+    /* fallback: window load */
+    window.addEventListener('load', function () { setTimeout(tryInit, 400); }, { once: true });
   })();
 
 })();
