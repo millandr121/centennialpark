@@ -120,7 +120,7 @@
    * Cowichan Lake through Youbou, west on the logging road to the Carmanah Mainline /
    * Bamfield Rd junction, then SW into Bamfield. (Route is "not recommended" anyway.)
    */
-  var LOGGING_START = [48.876, -124.240];   /* pavement ends ~11457 N Shore Rd, W of Youbou */
+  var LOGGING_START = [48.8895, -124.292];  /* pavement ends ~11457 N Shore Rd, NW up the north shore from Youbou */
   var CARMANAH_JCT  = [48.9722287, -124.748308];
   var DUNCAN_TRACE = [
     [48.8284988, -124.0482022],  /* Lake Cowichan Co-op */
@@ -128,9 +128,10 @@
     [48.842, -124.130],
     [48.853, -124.165],
     [48.867, -124.200],          /* Youbou — Daly's Auto Centre */
+    [48.877, -124.245],          /* north shore road, pavement thinning */
     LOGGING_START,               /* logging road begins */
-    [48.888, -124.290],
-    [48.902, -124.345],
+    [48.905, -124.350],
+    [48.918, -124.410],
     [48.918, -124.410],
     [48.935, -124.490],
     [48.952, -124.575],

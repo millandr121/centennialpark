@@ -59,24 +59,27 @@
 }
 .hero-cta { display: flex; flex-wrap: wrap; gap: .9rem; }
 
-/* scroll hint — little mouse */
+/* scroll hint — labelled "Scroll to explore" + bouncing chevron */
 .scroll-hint {
-  position: absolute; left: 50%; bottom: clamp(70px, 10vh, 110px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: clamp(64px, 9vh, 104px); transform: translateX(-50%);
   z-index: 2; text-decoration: none;
+  display: flex; flex-direction: column; align-items: center; gap: .55rem;
+  color: rgba(255,255,255,.82);
+  transition: color .25s, transform .25s var(--ease-out);
 }
-.scroll-mouse {
-  display: block; width: 24px; height: 38px; border: 2px solid rgba(255,255,255,.5);
-  border-radius: 14px; position: relative;
+.scroll-hint:hover { color: #fff; transform: translateX(-50%) translateY(3px); }
+.scroll-hint-text {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
 }
-.scroll-mouse span {
-  position: absolute; left: 50%; top: 7px; width: 3px; height: 7px; margin-left: -1.5px;
-  border-radius: 2px; background: rgba(255,255,255,.8);
-  animation: mouseWheel 1.8s ease-in-out infinite;
+.scroll-hint-chev {
+  width: 16px; height: 16px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  animation: chevBounce 1.6s ease-in-out infinite;
 }
-@keyframes mouseWheel {
-  0%   { transform: translateY(0); opacity: 1; }
-  70%  { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 0; }
+@keyframes chevBounce {
+  0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: .7; }
+  50%      { transform: rotate(45deg) translate(4px, 4px); opacity: 1; }
 }
 
 /* ── Quirk marquee ────────────────────────────────────────── */
@@ -199,8 +202,18 @@
 }
 .rate-card:hover { border-color: rgba(240,184,74,.4); transform: translateY(-4px); }
 .rate-card-btn {
-  width: 100%; padding: 1.8rem 1.5rem; text-align: left;
+  width: 100%; padding: 1.8rem 1.5rem; text-align: left; position: relative;
   display: flex; flex-direction: column; gap: .3rem;
+}
+/* chevron shows which card is open (rotates up when expanded) */
+.rate-card-btn::after {
+  content: ''; position: absolute; top: 2rem; right: 1.6rem;
+  width: 10px; height: 10px;
+  border-right: 2px solid rgba(255,255,255,.45); border-bottom: 2px solid rgba(255,255,255,.45);
+  transform: rotate(45deg); transition: transform .3s var(--ease-out), border-color .3s;
+}
+.rate-card-btn[aria-expanded="true"]::after {
+  transform: rotate(225deg); border-color: var(--clr-accent-light);
 }
 .rate-name { font-size: .75rem; text-transform: uppercase; letter-spacing: .14em; color: rgba(255,255,255,.5); }
 .rate-price {
@@ -372,11 +385,16 @@
 .contact-email:hover { color: #fff; }
 .contact-address { font-size: .9rem; color: rgba(255,255,255,.4); }
 
-.contact-inquire { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; }
+.contact-inquire { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; }
 .inquire-inline-form {
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-  border-radius: var(--radius-lg); padding: 1.6rem; max-width: 480px; width: 100%;
+  border-radius: var(--radius-lg); padding: clamp(1.4rem, 3vw, 2.2rem); width: 100%; max-width: 760px;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.1rem;
 }
+.inquire-inline-form .form-field { margin-bottom: 1rem; }
+.inquire-inline-form .form-field--full { grid-column: 1 / -1; }
+.inquire-inline-form .btn { grid-column: 1 / -1; justify-self: start; }
+@media (max-width: 520px) { .inquire-inline-form { grid-template-columns: 1fr; } }
 .inquire-inline-form .form-field input,
 .inquire-inline-form .form-field textarea {
   background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #fff;

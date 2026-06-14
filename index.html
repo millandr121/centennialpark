@@ -49,8 +49,9 @@
           <a href="#visit" class="btn btn-ghost">How to get here</a>
         </div>
       </div>
-      <a href="#stay" class="scroll-hint" aria-label="Scroll down">
-        <span class="scroll-mouse"><span></span></span>
+      <a href="#stay" class="scroll-hint" aria-label="Scroll to the next section">
+        <span class="scroll-hint-text">Scroll to explore</span>
+        <span class="scroll-hint-chev" aria-hidden="true"></span>
       </a>
       <svg class="wave-divider" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0,40 C240,90 480,0 720,40 C960,80 1200,10 1440,50 L1440,90 L0,90 Z" fill="var(--clr-bg)"/>
@@ -483,15 +484,15 @@
                 <input type="email" id="inq-email" name="email" required autocomplete="email" placeholder=" ">
                 <label for="inq-email">Email</label>
               </div>
-              <div class="form-field">
+              <div class="form-field form-field--full">
                 <input type="text" id="inq-subject" name="subject" autocomplete="off" placeholder=" ">
                 <label for="inq-subject">Subject</label>
               </div>
-              <div class="form-field">
+              <div class="form-field form-field--full">
                 <textarea id="inq-message" name="message" required rows="4" placeholder=" "></textarea>
                 <label for="inq-message">Message</label>
               </div>
-              <div class="form-status inquire-form-status" role="status" aria-live="polite"></div>
+              <div class="form-status inquire-form-status form-field--full" role="status" aria-live="polite"></div>
             </form>
           </div>
           <button type="button" class="link-pill link-pill-light" id="contact-action-btn" aria-expanded="false" aria-controls="inquire-panel">Send a message</button>
@@ -517,7 +518,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
   <script src="/js/route-map.js"></script>
   <script src="/js/translate.js" defer></script>
-  <script src="/js/home.js" defer></script>
+  <script src="/js/home.js?v=2" defer></script>
   <script src="/js/booking-wizard.js" defer></script>
   <script src="/js/booking-form.js" defer></script>
   <script src="/js/forms.js" defer></script>
