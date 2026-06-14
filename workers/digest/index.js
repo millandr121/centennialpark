@@ -1,77 +1,120 @@
-/* Daily digest Worker — safety net on top of the per-submission emails.
- * Runs on a cron trigger, reads the last 24h of D1 rows, and emails a recap
- * to the park's Gmail. Even if a live notification email ever fails, the
- * data is in D1 and shows up here.
- *
- * Deploy from this folder:  wrangler deploy
- * Test now (manual):        open the Worker's URL in a browser (GET).
- */
-
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendDigest(env));
+    ctx.waitUntil(runDigest(env));
   },
   async fetch(request, env) {
-    const ok = await sendDigest(env);
-    return new Response(ok ? 'Digest sent.' : 'Nothing to send (or not configured).');
+    return await runDigest(env);
   }
 };
 
-async function sendDigest(env) {
-  if (!env.DB) return false;
+async function runDigest(env) {
+  const since = new Date(Date.now() - 86400000).toISOString();
 
-  const contacts = await safeAll(env, 'contact_submissions');
-  const bookings = await safeAll(env, 'booking_submissions');
-  if (contacts.length === 0 && bookings.length === 0) return false;
+  const [bookings, contacts] = await Promise.all([
+    env.DB.prepare(
+      'SELECT * FROM booking_submissions WHERE created_at >= ? ORDER BY created_at DESC'
+    ).bind(since).all(),
+    env.DB.prepare(
+      'SELECT * FROM contact_submissions WHERE created_at >= ? ORDER BY created_at DESC'
+    ).bind(since).all()
+  ]);
 
-  const html =
-    '<h2 style="font-family:sans-serif">Centennial Park — last 24 hours</h2>' +
-    section('Booking requests (' + bookings.length + ')', bookings.map(function (b) {
-      return '<li>' +
-        esc((b.first_name || '') + ' ' + (b.last_name || '')) + ' &lt;' + esc(b.email) + '&gt;' +
-        ' — ' + esc([b.need_campsite === 'yes' ? 'campsite' : '', b.need_moorage === 'yes' ? 'moorage' : ''].filter(Boolean).join(' + ') || 'unspecified') +
-        (b.check_in ? ', ' + esc(b.check_in) + ' → ' + esc(b.check_out || '?') : '') +
-        ' <small>(' + esc(b.created_at) + ')</small></li>';
-    })) +
-    section('Contact messages (' + contacts.length + ')', contacts.map(function (c) {
-      return '<li>' + esc(c.name) + ' &lt;' + esc(c.email) + '&gt; — ' +
-        esc(c.subject || '(no subject)') + ' <small>(' + esc(c.created_at) + ')</small></li>';
-    }));
+  const bRows = bookings.results || [];
+  const cRows = contacts.results || [];
 
-  return sendEmail(env, { subject: 'Daily form digest — ' + new Date().toISOString().slice(0, 10), html });
-}
+  if (bRows.length === 0 && cRows.length === 0) {
+    return new Response('No submissions in the last 24h — nothing to send.');
+  }
 
-async function safeAll(env, table) {
-  try {
-    const res = await env.DB.prepare(
-      'SELECT * FROM ' + table + " WHERE created_at >= datetime('now','-1 day') ORDER BY created_at DESC"
-    ).all();
-    return (res && res.results) || [];
-  } catch (_e) { return []; }
-}
+  const style = 'font-family:sans-serif;border-collapse:collapse;width:100%;margin-bottom:2rem';
+  const th    = 'background:#2e5d33;color:#fff;padding:8px 12px;text-align:left;font-size:13px';
+  const td    = 'padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;vertical-align:top';
+  const tdAlt = td + ';background:#f9fafb';
 
-function section(title, items) {
-  return '<h3 style="font-family:sans-serif">' + title + '</h3>' +
-    (items.length ? '<ul>' + items.join('') + '</ul>' : '<p>None.</p>');
+  let html = '<h2 style="font-family:sans-serif;color:#2e5d33">Daily digest — Centennial Park</h2>' +
+             '<p style="font-family:sans-serif;color:#6b7280;font-size:13px">Last 24 hours · ' +
+             new Date().toUTCString() + '</p>';
+
+  if (bRows.length > 0) {
+    html += '<h3 style="font-family:sans-serif">Booking requests (' + bRows.length + ')</h3>';
+    html += '<table style="' + style + '"><thead><tr>' +
+      '<th style="' + th + '">Name</th>' +
+      '<th style="' + th + '">Email</th>' +
+      '<th style="' + th + '">Booking</th>' +
+      '<th style="' + th + '">Details</th>' +
+      '<th style="' + th + '">Dates</th>' +
+      '<th style="' + th + '">Notes</th>' +
+      '<th style="' + th + '">Emailed?</th>' +
+      '</tr></thead><tbody>';
+    bRows.forEach(function (r, i) {
+      var cell = i % 2 === 0 ? td : tdAlt;
+      var wants = [
+        r.need_campsite === 'yes' ? 'Campsite' : '',
+        r.need_moorage  === 'yes' ? 'Moorage'  : ''
+      ].filter(Boolean).join(' + ') || '—';
+      var details = [];
+      if (r.need_campsite === 'yes') {
+        details.push((r.site_count || '?') + ' site(s), ' + (r.group_size || '?') + ' people');
+      }
+      if (r.need_moorage === 'yes') {
+        details.push('Boat: ' + (r.boat_length || '?') + ' ft');
+      }
+      html += '<tr>' +
+        '<td style="' + cell + '">' + esc(r.first_name) + ' ' + esc(r.last_name) + '</td>' +
+        '<td style="' + cell + '"><a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a></td>' +
+        '<td style="' + cell + '">' + esc(wants) + '</td>' +
+        '<td style="' + cell + '">' + esc(details.join('<br>')) + '</td>' +
+        '<td style="' + cell + '">' + esc(r.check_in || '—') + (r.check_out ? ' → ' + esc(r.check_out) : '') + '</td>' +
+        '<td style="' + cell + '">' + esc(r.additional_requests || '—') + '</td>' +
+        '<td style="' + cell + '">' + (r.emailed ? '✓' : '⚠️') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if (cRows.length > 0) {
+    html += '<h3 style="font-family:sans-serif">Contact messages (' + cRows.length + ')</h3>';
+    html += '<table style="' + style + '"><thead><tr>' +
+      '<th style="' + th + '">Name</th>' +
+      '<th style="' + th + '">Email</th>' +
+      '<th style="' + th + '">Subject</th>' +
+      '<th style="' + th + '">Message</th>' +
+      '<th style="' + th + '">Emailed?</th>' +
+      '</tr></thead><tbody>';
+    cRows.forEach(function (r, i) {
+      var cell = i % 2 === 0 ? td : tdAlt;
+      html += '<tr>' +
+        '<td style="' + cell + '">' + esc(r.name) + '</td>' +
+        '<td style="' + cell + '"><a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a></td>' +
+        '<td style="' + cell + '">' + esc(r.subject || '—') + '</td>' +
+        '<td style="' + cell + '">' + esc(r.message || '—').replace(/\n/g, '<br>') + '</td>' +
+        '<td style="' + cell + '">' + (r.emailed ? '✓' : '⚠️') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  const to   = env.NOTIFY_TO   || 'bamfieldcentennialpark@gmail.com';
+  const from = env.RESEND_FROM || 'Centennial Park <onboarding@resend.dev>';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from, to,
+      subject: 'Daily digest — ' + bRows.length + ' booking(s), ' + cRows.length + ' message(s)',
+      html
+    })
+  });
+
+  const ok = res.ok ? 'sent' : 'failed (' + res.status + ')';
+  return new Response('Digest email ' + ok + '. Bookings: ' + bRows.length + ', contacts: ' + cRows.length);
 }
 
 function esc(v) {
   return String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-async function sendEmail(env, { subject, html }) {
-  const key = env.RESEND_API_KEY;
-  if (!key) return false;
-  const to   = env.NOTIFY_TO   || 'bamfieldcentennialpark@gmail.com';
-  const from = env.RESEND_FROM || 'Centennial Park <onboarding@resend.dev>';
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html })
-    });
-    return res.ok;
-  } catch (_e) { return false; }
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
