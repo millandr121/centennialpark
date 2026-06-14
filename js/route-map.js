@@ -121,25 +121,42 @@
     renfrew: { color: '#7b5ea7', weight: 4, opacity: 0.9 }
   };
 
-  /* gas bars on the routes */
+  /* gas bars on the routes — `geo` is geocoded live in-browser; `pos` is the fallback */
   var GAS_BARS = [
     {
       pos:   PORT_ALBERNI_PT,
+      geo:   'Co-op Gas Bar, 3820 10th Avenue, Port Alberni, BC',
       label: "<strong>Co-op Gas Bar, Port Alberni</strong> (3820 10th Ave) — fill up here. This is truly the last gas stop before Bamfield."
     },
     {
       pos:   [48.834, -125.135],
+      geo:   "Ostrom's, Bamfield, BC",
       label: "<strong>Ostrom's Gas Bar, Bamfield</strong> (448 Seaboard Rd)<br>Open 8 am–8 pm daily in summer. Hours and days reduce significantly in fall, winter, and spring."
     },
     {
       pos:   [48.8284988, -124.0482022],
+      geo:   'Co-op Gas Bar, Lake Cowichan, BC',
       label: '<strong>Co-op Gas Bar, Lake Cowichan</strong> — fuel available on the main road through town.'
     },
     {
       pos:   [48.8669, -124.2001],
+      geo:   "Daly's Auto Centre, 10514 Youbou Road, Youbou, BC",
       label: "<strong>Daly's Auto Center (Gas Bar), Youbou</strong> (10514 Youbou Rd) — limited hours; check with the business. Do not rely on it."
     }
   ];
+
+  /* live forward-geocode (browser can reach Nominatim; sandbox cannot) */
+  function geocode(query, cb) {
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ca&q=' +
+      encodeURIComponent(query);
+    fetch(url, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d[0] && d[0].lat) cb([parseFloat(d[0].lat), parseFloat(d[0].lon)]);
+        else cb(null);
+      })
+      .catch(function () { cb(null); });
+  }
 
   /* ── Tile layer with OSM → CARTO fallback ─────────────── */
   function addTiles(map) {
@@ -341,19 +358,33 @@
     parkMarker(driveMap);
     driveMap.setView([49.0, -124.3], 8);
 
+    /* place a gas marker at its fallback, then snap it to its real geocoded address */
+    function placeGas(i) {
+      var g = GAS_BARS[i], m = gasMarker(driveMap, g.pos, g.label);
+      geocode(g.geo, function (ll) { if (ll && driveMap) m.setLatLng(ll); });
+      return m;
+    }
+
     /* always-visible: Port Alberni gas (standalone, far from others) */
-    gasMarker(driveMap, GAS_BARS[0].pos, GAS_BARS[0].label);
+    placeGas(0);
 
     /* markers in Cowichan Lake area — will cluster at low zoom */
-    var lakeGasMark   = gasMarker(driveMap, GAS_BARS[2].pos, GAS_BARS[2].label);
-    var youbouGasMark = gasMarker(driveMap, GAS_BARS[3].pos, GAS_BARS[3].label);
+    var lakeGasMark   = placeGas(2);
+    var youbouGasMark = placeGas(3);
     var warnMark = warningMarker(driveMap, [48.875, -124.235],
       '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
       'Just west of Youbou the pavement ends and North Shore Rd becomes an active gravel logging road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
+    /* geocode the true logging-road start; snap onto the duncan route once both are ready */
+    var warnTarget = [48.875, -124.235];
+    geocode('11457 North Shore Road, Youbou, BC', function (ll) {
+      if (!ll || !driveMap) return;
+      warnTarget = ll;
+      warnMark.setLatLng(drivePoints.duncan ? nearestOnRoute(drivePoints.duncan, ll) : ll);
+    });
 
     /* Bamfield area gas — only 1 marker, show directly (no cluster) */
-    gasMarker(driveMap, GAS_BARS[1].pos, GAS_BARS[1].label);
+    placeGas(1);
 
     /* chip-seal intersection: Carmanah Mainline / Bamfield Rd junction (~32 km from Bamfield) */
     chipSealMark = chipSealMarker(driveMap, [48.9722287, -124.748308]);
@@ -403,7 +434,7 @@
         driveLayers[id].on('click', function () { selectRoute(id); });
         /* snap the logging-road markers onto the real road so they can't drift into the lake */
         if (id === 'duncan' && latlngs.length > 2) {
-          warnMark.setLatLng(nearestOnRoute(latlngs, [48.875, -124.235]));
+          warnMark.setLatLng(nearestOnRoute(latlngs, warnTarget));
           chipSealMark.setLatLng(nearestOnRoute(latlngs, [48.9722287, -124.748308]));
         }
       }
