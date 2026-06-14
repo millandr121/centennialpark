@@ -408,6 +408,7 @@
 .inquire-inline-form .form-field textarea:not(:placeholder-shown) ~ label,
 .inquire-inline-form .form-field textarea:focus ~ label { color: var(--clr-accent-light); }
 .inquire-form-status { color: var(--clr-accent-light); }
+.cf-turnstile { margin: .25rem 0 .5rem; }
 
 .rates-fine-note { font-size: .8rem; color: rgba(255,255,255,.4); margin-top: .75rem; }
 

@@ -1,7 +1,7 @@
 /* POST /api/booking — store a booking request in D1, then email it.
    Delivered if EITHER the D1 insert OR the email succeeds. */
 
-import { json, esc, clean, looksLikeEmail, sendEmail } from './_lib.js';
+import { json, esc, clean, looksLikeEmail, sendEmail, verifyTurnstile } from './_lib.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -11,6 +11,11 @@ export async function onRequestPost(context) {
   catch (_e) { return json({ error: 'Bad request' }, 400); }
 
   if (data.website) return json({ ok: true });   // honeypot
+
+  /* bot check (skipped automatically if Turnstile isn't configured) */
+  const ipAddr = request.headers.get('CF-Connecting-IP') || '';
+  const human = await verifyTurnstile(env, data['cf-turnstile-response'], ipAddr);
+  if (!human) return json({ error: 'Could not verify you are human. Please try again.' }, 403);
 
   const firstName  = clean(data.firstName, 120);
   const lastName   = clean(data.lastName, 120);
@@ -28,7 +33,7 @@ export async function onRequestPost(context) {
     return json({ error: 'Please provide your name and a valid email.' }, 422);
   }
 
-  const ip = request.headers.get('CF-Connecting-IP') || '';
+  const ip = ipAddr;
   const ua = request.headers.get('User-Agent') || '';
 
   let stored = false, id = null;

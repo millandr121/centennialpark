@@ -28,6 +28,31 @@ export function looksLikeEmail(v) {
 }
 
 /*
+ * Verify a Cloudflare Turnstile token (bot check).
+ * Returns true if the token is valid OR if Turnstile isn't configured yet
+ * (so the forms keep working before the secret is set). Returns false only
+ * when a secret IS set but the token is missing or rejected.
+ */
+export async function verifyTurnstile(env, token, ip) {
+  if (!env.TURNSTILE_SECRET) return true;        // not configured — skip
+  if (!token) return false;
+  try {
+    const form = new URLSearchParams();
+    form.append('secret', env.TURNSTILE_SECRET);
+    form.append('response', token);
+    if (ip) form.append('remoteip', ip);
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form
+    });
+    const data = await res.json();
+    return data.success === true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+/*
  * Send a notification email via Resend (https://resend.com).
  * Returns true on success, false if not configured or the API rejects it.
  * Never throws — callers treat email as best-effort on top of the D1 record.

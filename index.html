@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
   <link rel="icon" href="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="one-page">
   <div class="scroll-progress" aria-hidden="true"><span id="scroll-progress-bar"></span></div>
@@ -327,6 +328,7 @@
                 <textarea id="additionalRequests" name="additionalRequests" rows="2" placeholder=" "></textarea>
                 <label for="additionalRequests">Notes (optional)</label>
               </div>
+              <div class="cf-turnstile" data-sitekey="0x4AAAAAADkrvFsmB0Re_CbD" data-theme="light"></div>
             </fieldset>
           </div>
 
@@ -492,6 +494,7 @@
                 <textarea id="inq-message" name="message" required rows="4" placeholder=" "></textarea>
                 <label for="inq-message">Message</label>
               </div>
+              <div class="cf-turnstile form-field--full" data-sitekey="0x4AAAAAADkrvFsmB0Re_CbD" data-theme="dark"></div>
               <div class="form-status inquire-form-status form-field--full" role="status" aria-live="polite"></div>
             </form>
           </div>

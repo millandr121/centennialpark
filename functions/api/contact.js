@@ -2,7 +2,7 @@
    The submission is considered delivered if EITHER the D1 insert OR the
    email succeeds, so a lead is never silently lost. */
 
-import { json, esc, clean, looksLikeEmail, sendEmail } from './_lib.js';
+import { json, esc, clean, looksLikeEmail, sendEmail, verifyTurnstile } from './_lib.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -14,6 +14,11 @@ export async function onRequestPost(context) {
   /* honeypot — pretend success so bots don't retry */
   if (data.website) return json({ ok: true });
 
+  /* bot check (skipped automatically if Turnstile isn't configured) */
+  const ipAddr = request.headers.get('CF-Connecting-IP') || '';
+  const human = await verifyTurnstile(env, data['cf-turnstile-response'], ipAddr);
+  if (!human) return json({ error: 'Could not verify you are human. Please try again.' }, 403);
+
   const name    = clean(data.name, 200);
   const email   = clean(data.email, 200);
   const subject = clean(data.subject, 300);
@@ -23,7 +28,7 @@ export async function onRequestPost(context) {
     return json({ error: 'Please provide your name, a valid email, and a message.' }, 422);
   }
 
-  const ip = request.headers.get('CF-Connecting-IP') || '';
+  const ip = ipAddr;
   const ua = request.headers.get('User-Agent') || '';
 
   /* 1. durable backup in D1 (if bound) */
