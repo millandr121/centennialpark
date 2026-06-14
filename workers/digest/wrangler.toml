@@ -17,5 +17,5 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 # Non-secret defaults (the Gmail destination + verified sender).
 # RESEND_API_KEY must be set as a secret:  wrangler secret put RESEND_API_KEY
 [vars]
-NOTIFY_TO = "bamfieldcentennialpark@gmail.com"
+NOTIFY_TO = "andrewglennmiller@gmail.com"
 RESEND_FROM = "Centennial Park <onboarding@resend.dev>"
