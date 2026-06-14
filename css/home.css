@@ -52,7 +52,8 @@
   color: var(--clr-accent-light); margin-bottom: 1.4rem;
 }
 .hero-title {
-  font-family: var(--font-display); font-weight: 800; letter-spacing: -.02em;
+  font-family: 'Bricolage Grotesque', var(--font-display);
+  font-weight: 800; letter-spacing: -.025em; line-height: 1.02;
   margin-bottom: 1.6rem; text-shadow: 0 2px 24px rgba(0,0,0,.4);
 }
 .hero-title span { display: block; }
@@ -130,20 +131,43 @@
 
 /* subtle radial highlight */
 .offer-visual::before {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; z-index: 0;
   background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,.09), transparent 65%);
 }
+
+/* ── Cross-dissolve photo slideshow ── */
+.offer-slide {
+  position: absolute; inset: 0; z-index: 1;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 1.6s var(--ease-out);
+}
+.offer-slide.is-active { opacity: 1; }
+/* slow Ken Burns drift on the visible slide */
+@media (prefers-reduced-motion: no-preference) {
+  .offer-slide.is-active { animation: kenBurns 9s ease-out both; }
+}
+@keyframes kenBurns {
+  from { transform: scale(1.001); }
+  to   { transform: scale(1.085); }
+}
+/* legibility scrim over the photos, under the number/label */
+.offer-scrim {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(155deg, rgba(13,22,15,.12) 0%, rgba(13,22,15,.20) 45%, rgba(13,22,15,.5) 100%);
+}
 .offer-big-num {
+  position: relative; z-index: 3;
   font-family: var(--font-serif); font-weight: 600; font-style: italic;
   font-size: clamp(7rem, 14vw, 10rem); line-height: 1;
-  color: rgba(255,255,255,.18); user-select: none;
+  color: rgba(255,255,255,.28); user-select: none;
+  text-shadow: 0 2px 18px rgba(0,0,0,.35);
   opacity: 0; transform: scale(.7);
   transition: opacity .9s var(--ease-out) .15s, transform .9s var(--ease-out) .15s;
 }
 .offer-card.is-visible .offer-big-num { opacity: 1; transform: scale(1); }
 
 .offer-photo-btn {
-  position: absolute; bottom: 1rem; right: 1rem;
+  position: absolute; bottom: 1rem; right: 1rem; z-index: 3;
   padding: .45em 1.1em; border-radius: 99px;
   background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

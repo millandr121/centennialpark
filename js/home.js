@@ -146,6 +146,23 @@
     });
   }
 
+  /* ── Offer card slideshows (cross-dissolve) ───────────── */
+  if (!prefersReduced) {
+    document.querySelectorAll('[data-slideshow]').forEach(function (show, ci) {
+      var slides = show.querySelectorAll('.offer-slide');
+      if (slides.length < 2) return;
+      var idx = 0;
+      /* stagger each card so they don't all flip in unison */
+      setTimeout(function () {
+        setInterval(function () {
+          slides[idx].classList.remove('is-active');
+          idx = (idx + 1) % slides.length;
+          slides[idx].classList.add('is-active');
+        }, 5200);
+      }, ci * 1500);
+    });
+  }
+
   /* ── Photo lightbox ───────────────────────────────────── */
   var modal    = document.getElementById('photo-modal');
   var modalImg = document.getElementById('photo-modal-img');
