@@ -109,11 +109,39 @@
   var DRIVE_OSRM = {
     /* Port Alberni Co-op (10th Ave) → Bamfield — leaves town via 10th Ave / Anderson */
     alberni: [[-124.798, 49.246], [-125.1308, 48.8276]],
-    /* Lake Cowichan Co-op → Youbou (north shore road) → Bamfield */
-    duncan:  [[-124.0482022, 48.8284988], [-124.198, 48.866], [-125.1308, 48.8276]],
     /* Port Renfrew → Lake Cowichan Co-op → Port Alberni Co-op → Bamfield */
     renfrew: [[-124.421, 48.554], [-124.0482022, 48.8284988], [-124.798, 49.246], [-125.1308, 48.8276]]
   };
+
+  /*
+   * Lake Cowichan logging route — hand-traced [lat,lng].
+   * OSRM has no data for the Youbou→Bamfield logging road, so routing it produces
+   * a wrong detour. This indicative trace follows the real corridor: north shore of
+   * Cowichan Lake through Youbou, west on the logging road to the Carmanah Mainline /
+   * Bamfield Rd junction, then SW into Bamfield. (Route is "not recommended" anyway.)
+   */
+  var LOGGING_START = [48.876, -124.240];   /* pavement ends ~11457 N Shore Rd, W of Youbou */
+  var CARMANAH_JCT  = [48.9722287, -124.748308];
+  var DUNCAN_TRACE = [
+    [48.8284988, -124.0482022],  /* Lake Cowichan Co-op */
+    [48.834, -124.090],
+    [48.842, -124.130],
+    [48.853, -124.165],
+    [48.867, -124.200],          /* Youbou — Daly's Auto Centre */
+    LOGGING_START,               /* logging road begins */
+    [48.888, -124.290],
+    [48.902, -124.345],
+    [48.918, -124.410],
+    [48.935, -124.490],
+    [48.952, -124.575],
+    [48.964, -124.660],
+    CARMANAH_JCT,                /* chip-seal resumes — 32 km from Bamfield */
+    [48.945, -124.830],
+    [48.905, -124.915],
+    [48.868, -125.000],
+    [48.845, -125.075],
+    [48.8276, -125.1308]         /* Bamfield */
+  ];
 
   var ROUTE_STYLE = {
     alberni: { color: '#2e5d33', weight: 5, opacity: 0.95 },
@@ -371,23 +399,16 @@
     /* markers in Cowichan Lake area — will cluster at low zoom */
     var lakeGasMark   = placeGas(2);
     var youbouGasMark = placeGas(3);
-    var warnMark = warningMarker(driveMap, [48.875, -124.235],
+    var warnMark = warningMarker(driveMap, LOGGING_START,
       '<strong>Logging road begins — 11457 N Shore Rd</strong><br>' +
       'Just west of Youbou the pavement ends and North Shore Rd becomes an active gravel logging road — very rough, no maintenance schedule.<br>' +
       'Speeds as low as 10–20 km/h. <strong>Not recommended</strong> for RVs, campers, trailers, or first-timers.');
-    /* geocode the true logging-road start; snap onto the duncan route once both are ready */
-    var warnTarget = [48.875, -124.235];
-    geocode('11457 North Shore Road, Youbou, BC', function (ll) {
-      if (!ll || !driveMap) return;
-      warnTarget = ll;
-      warnMark.setLatLng(drivePoints.duncan ? nearestOnRoute(drivePoints.duncan, ll) : ll);
-    });
 
     /* Bamfield area gas — only 1 marker, show directly (no cluster) */
     placeGas(1);
 
     /* chip-seal intersection: Carmanah Mainline / Bamfield Rd junction (~32 km from Bamfield) */
-    chipSealMark = chipSealMarker(driveMap, [48.9722287, -124.748308]);
+    chipSealMark = chipSealMarker(driveMap, CARMANAH_JCT);
     driveMap.removeLayer(chipSealMark);
 
     /* cluster bubble for Cowichan Lake area (3 markers) */
@@ -425,18 +446,14 @@
     chip.textContent = 'Loading routes…';
     el.appendChild(chip);
 
-    var pending = Object.keys(DRIVE_OSRM).length;
+    /* alberni + renfrew come from OSRM; duncan is the hand-traced logging route */
+    var pending = Object.keys(DRIVE_OSRM).length + 1;
     function onRouteLoad(id, latlngs) {
       pending--;
       if (latlngs && latlngs.length > 1 && driveMap) {
         drivePoints[id] = latlngs;
         driveLayers[id] = L.polyline([latlngs[0]], ROUTE_STYLE[id]).addTo(driveMap);
         driveLayers[id].on('click', function () { selectRoute(id); });
-        /* snap the logging-road markers onto the real road so they can't drift into the lake */
-        if (id === 'duncan' && latlngs.length > 2) {
-          warnMark.setLatLng(nearestOnRoute(latlngs, warnTarget));
-          chipSealMark.setLatLng(nearestOnRoute(latlngs, [48.9722287, -124.748308]));
-        }
       }
       if (pending === 0) {
         if (chip.parentNode) chip.parentNode.removeChild(chip);
@@ -456,6 +473,8 @@
     Object.keys(DRIVE_OSRM).forEach(function (id) {
       fetchOsrmRoute(DRIVE_OSRM[id], function (ll) { onRouteLoad(id, ll); });
     });
+    /* duncan: render the hand trace directly (no OSRM detour) */
+    onRouteLoad('duncan', DUNCAN_TRACE.slice());
 
     /* route button clicks */
     document.querySelectorAll('[data-route-id]').forEach(function (btn) {
