@@ -109,16 +109,24 @@
     });
   });
 
-  /* ── Rate card expand ─────────────────────────────────── */
+  /* ── Rate card expand (exclusive — only one open at a time) ── */
   document.querySelectorAll('[data-rate-cards]').forEach(function (list) {
     list.addEventListener('click', function (e) {
       var btn = e.target.closest('.rate-card-btn');
       if (!btn) return;
       var expanded = btn.getAttribute('aria-expanded') === 'true';
-      var detail   = document.getElementById(btn.getAttribute('aria-controls'));
-      if (!detail) return;
-      btn.setAttribute('aria-expanded', String(!expanded));
-      detail.hidden = expanded;
+      /* close all cards first */
+      list.querySelectorAll('.rate-card-btn').forEach(function (b) {
+        b.setAttribute('aria-expanded', 'false');
+        var d = document.getElementById(b.getAttribute('aria-controls'));
+        if (d) d.hidden = true;
+      });
+      /* then open the clicked one (unless it was already open) */
+      if (!expanded) {
+        var detail = document.getElementById(btn.getAttribute('aria-controls'));
+        btn.setAttribute('aria-expanded', 'true');
+        if (detail) detail.hidden = false;
+      }
     });
   });
 

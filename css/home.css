@@ -37,11 +37,11 @@
   color: var(--clr-accent-light); margin-bottom: 1.4rem;
 }
 .hero-title {
-  font-family: var(--font-serif); font-weight: 400; letter-spacing: .01em;
+  font-family: var(--font-display); font-weight: 800; letter-spacing: -.02em;
   margin-bottom: 1.6rem; text-shadow: 0 2px 24px rgba(0,0,0,.4);
 }
 .hero-title span { display: block; }
-.hero-title-accent { color: var(--clr-accent-light); font-style: italic; }
+.hero-title-accent { color: var(--clr-accent-light); font-style: normal; font-weight: 700; }
 .lead {
   font-size: clamp(1.05rem, 2.2vw, 1.3rem); color: rgba(255,255,255,.82);
   max-width: 46ch; margin-bottom: 2.4rem; font-weight: 400;

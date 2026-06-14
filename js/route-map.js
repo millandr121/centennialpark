@@ -136,8 +136,8 @@
       label: '<strong>Co-op Gas Bar, Lake Cowichan</strong> — fuel available on the main road through town.'
     },
     {
-      pos:   [48.867, -124.197],
-      label: "<strong>Daly's Gas Bar, Youbou</strong> (10514 Youbou Rd) — limited hours; check with the business. Do not rely on it."
+      pos:   [48.8669, -124.2001],
+      label: "<strong>Daly's Auto Center (Gas Bar), Youbou</strong> (10514 Youbou Rd) — limited hours; check with the business. Do not rely on it."
     }
   ];
 
@@ -363,7 +363,7 @@
     var cowichanCluster = makeClusterMarker(
       [48.85, -124.13],
       'Cowichan Lake Area',
-      ['Co-op Gas Bar, Lake Cowichan', 'Youbou Gas Bar — limited hours', 'Logging road starts west of Youbou (11457 N Shore Rd)']
+      ['Co-op Gas Bar, Lake Cowichan', "Daly's Auto Center (Gas Bar), Youbou — limited hours", 'Logging road starts west of Youbou (11457 N Shore Rd)']
     );
 
     var cowichanGroup = [lakeGasMark, youbouGasMark, warnMark];

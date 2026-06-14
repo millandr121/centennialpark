@@ -278,8 +278,13 @@ th { font-family: var(--font-display); font-weight: 600; }
   display: flex; flex-wrap: wrap; gap: 1.5rem 3rem;
   align-items: flex-start; justify-content: space-between;
 }
-.site-footer-copy { font-size: .8rem; color: rgba(255,255,255,.35); margin-top: 1.8rem; text-align: center; }
-.site-footer-hand { font-family: var(--font-hand); font-size: 1.25rem; color: var(--clr-accent-light); }
+.site-footer-brand { display: flex; align-items: center; gap: 1rem; }
+.site-footer-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; opacity: .85; flex-shrink: 0; }
+.site-footer-copy {
+  max-width: var(--inner-max); margin: 1.8rem auto 0;
+  font-size: .8rem; color: rgba(255,255,255,.35); text-align: center;
+}
+.site-footer-hand { font-family: var(--font-hand); font-size: 1.25rem; color: var(--clr-accent-light); display: block; }
 
 /* === Route advisories === */
 .route-advisory {
