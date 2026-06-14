@@ -32,14 +32,9 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.06'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .hero-logo {
-  position: absolute; top: clamp(1.4rem, 5vh, 2.8rem); left: 50%; transform: translateX(-50%);
-  width: clamp(70px, 9vw, 104px); height: auto; z-index: 3;
-  filter: drop-shadow(0 2px 12px rgba(0,0,0,.55));
-  animation: heroLogoIn 1s var(--ease-out) both;
-}
-@keyframes heroLogoIn {
-  from { opacity: 0; transform: translate(-50%, -10px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  display: block;
+  width: clamp(56px, 7vw, 80px); height: auto;
+  margin-bottom: 1.2rem;
 }
 .hero-inner { position: relative; z-index: 2; }
 .hero-logo {
@@ -135,6 +130,8 @@
   background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,.09), transparent 65%);
 }
 
+/* ── Offer-big-num: removed (overlaid numbers not used) ── */
+
 /* ── Cross-dissolve photo slideshow ── */
 .offer-slide {
   position: absolute; inset: 0; z-index: 1;
@@ -155,16 +152,6 @@
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background: linear-gradient(155deg, rgba(13,22,15,.12) 0%, rgba(13,22,15,.20) 45%, rgba(13,22,15,.5) 100%);
 }
-.offer-big-num {
-  position: relative; z-index: 3;
-  font-family: var(--font-serif); font-weight: 600; font-style: italic;
-  font-size: clamp(7rem, 14vw, 10rem); line-height: 1;
-  color: rgba(255,255,255,.28); user-select: none;
-  text-shadow: 0 2px 18px rgba(0,0,0,.35);
-  opacity: 0; transform: scale(.7);
-  transition: opacity .9s var(--ease-out) .15s, transform .9s var(--ease-out) .15s;
-}
-.offer-card.is-visible .offer-big-num { opacity: 1; transform: scale(1); }
 
 .offer-photo-btn {
   position: absolute; bottom: 1rem; right: 1rem; z-index: 3;
