@@ -18,7 +18,7 @@ export async function onRequestGet(context) {
   const status = url.searchParams.get('status') || 'confirmed';
   const site   = url.searchParams.get('site')   || '';
 
-  let q = `SELECT r.*,s.name as site_name,s.type as site_type
+  let q = `SELECT r.*,COALESCE(s.name,s.label) as site_name,s.type as site_type
             FROM reservations r JOIN sites s ON r.site_id=s.id WHERE 1=1`;
   const params = [];
 

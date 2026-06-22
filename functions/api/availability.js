@@ -11,13 +11,26 @@ export async function onRequestGet(context) {
   if (checkIn >= checkOut)   return err('checkout must be after checkin', 400);
   if (!env.DB)               return err('Booking system unavailable', 503);
 
-  const typeFilter = type === 'all'
-    ? 'SELECT id,name,type,description,max_people,max_length,notes FROM sites WHERE active=1'
-    : 'SELECT id,name,type,description,max_people,max_length,notes FROM sites WHERE active=1 AND type=?';
-
-  const sitesRes = await env.DB.prepare(typeFilter)
-    .bind(...(type === 'all' ? [] : [type])).all();
-  const sites = sitesRes.results || [];
+  /* Support both schema variants: name/active and label/status */
+  let sites = [];
+  try {
+    const q = type === 'all'
+      ? 'SELECT id, name, type FROM sites WHERE active=1'
+      : 'SELECT id, name, type FROM sites WHERE active=1 AND type=?';
+    const r = await env.DB.prepare(q).bind(...(type === 'all' ? [] : [type])).all();
+    sites = r.results || [];
+  } catch (_) {
+    /* Fallback: schema uses label/status columns */
+    try {
+      const q = type === 'all'
+        ? "SELECT id, label as name, type FROM sites WHERE status='active'"
+        : "SELECT id, label as name, type FROM sites WHERE status='active' AND type=?";
+      const r = await env.DB.prepare(q).bind(...(type === 'all' ? [] : [type])).all();
+      sites = r.results || [];
+    } catch (e2) {
+      return err('Could not load sites: ' + e2.message, 500);
+    }
+  }
 
   /* Conflict: existing check_in < requested checkout AND existing check_out+1day > requested checkin */
   const bookedRes = await env.DB.prepare(
@@ -44,3 +57,4 @@ function json(obj, s) {
   });
 }
 function err(msg, s) { return json({ error: msg }, s); }
+

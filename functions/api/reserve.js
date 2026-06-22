@@ -30,9 +30,15 @@ export async function onRequestPost(context) {
   if (!env.DB)
     return json({ error: 'Booking system unavailable — please use the request form.' }, 503);
 
-  const site = await env.DB.prepare(
-    'SELECT id,name,type FROM sites WHERE id=? AND active=1'
-  ).bind(siteId).first();
+  /* Support both schema variants */
+  let site = null;
+  try {
+    site = await env.DB.prepare('SELECT id,name,type FROM sites WHERE id=? AND active=1').bind(siteId).first();
+  } catch (_) {
+    try {
+      site = await env.DB.prepare("SELECT id,label as name,type FROM sites WHERE id=? AND status='active'").bind(siteId).first();
+    } catch (_2) {}
+  }
   if (!site) return json({ error: 'That site is not available.' }, 404);
 
   /* Race-condition guard — re-check availability */

@@ -257,7 +257,7 @@ function bookingForm() {
         ? '<div class="lb-field"><label for="lb-fboat">Boat length (ft) *</label><input type="number" id="lb-fboat" min="8" max="100" required placeholder="e.g. 24"></div>'
         : '') +
       '<div class="lb-field"><label for="lb-fnotes">Notes (optional)</label><textarea id="lb-fnotes" rows="2" placeholder="Anything we should know…"></textarea></div>' +
-      '<div class="cf-turnstile" data-sitekey="0x4AAAAAADkrvFsmB0Re_CbD" data-theme="auto"></div>' +
+      '<div id="lb-turnstile-wrap"></div>' +
       '<div class="lb-status" id="lb-fstatus" role="status" aria-live="polite"></div>' +
       '<button type="submit" class="lb-submit-btn" id="lb-fsubmit"><span>Confirm booking</span></button>' +
     '</form>' +
@@ -322,6 +322,19 @@ function bind() {
   /* Booking form submit */
   var form = document.getElementById('lb-guest-form');
   if (form) form.addEventListener('submit', submitBooking);
+
+  /* Explicitly render Turnstile — auto-render won't fire for dynamically injected elements */
+  var tsWrap = document.getElementById('lb-turnstile-wrap');
+  if (tsWrap) {
+    if (window.turnstile) {
+      turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+    } else {
+      /* Turnstile script still loading — wait for it */
+      window.onloadTurnstileCallback = function() {
+        turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+      };
+    }
+  }
 }
 
 async function checkAvailability() {
@@ -393,16 +406,21 @@ async function submitBooking(e) {
       state.available = state.available.filter(function(id){ return id !== state.selected; });
       state.selected  = null;
     } else {
-      st.textContent  = res.error || 'Something went wrong. Please try again.';
-      st.className    = 'lb-status lb-status-error';
-      btn.disabled    = false;
-      btn.innerHTML   = '<span>Confirm booking</span>';
+      st.textContent = res.error || 'Something went wrong. Please try again.';
+      st.className   = 'lb-status lb-status-error';
+      btn.disabled   = false;
+      btn.innerHTML  = '<span>Confirm booking</span>';
+      /* Reset Turnstile so user can retry */
+      var tsWrap = document.getElementById('lb-turnstile-wrap');
+      if (tsWrap && window.turnstile) turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
     }
   } catch(ex) {
     st.textContent = 'Network error. Please try again.';
     st.className   = 'lb-status lb-status-error';
     btn.disabled   = false;
     btn.innerHTML  = '<span>Confirm booking</span>';
+    var tsWrap2 = document.getElementById('lb-turnstile-wrap');
+    if (tsWrap2 && window.turnstile) turnstile.render(tsWrap2, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
   }
 }
 
