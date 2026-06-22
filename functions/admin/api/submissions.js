@@ -118,5 +118,40 @@ export async function onRequestPost(context) {
     await env.DB.prepare(`UPDATE booking_submissions SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run().catch(() => {});
   }
 
+  /* Send acceptance email to guest */
+  const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+  const siteName = siteId;
+  const amtNote = d.amountDue ? `$${parseFloat(d.amountDue).toFixed(2)} deposit` : 'deposit';
+  await env.RESEND_API_KEY && fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: env.RESEND_FROM || 'Centennial Park <onboarding@resend.dev>',
+      to: sub.email,
+      reply_to: env.NOTIFY_TO || 'bamfieldcentennialpark@gmail.com',
+      subject: `Booking confirmed — ${siteName}, Eileen Scott Centennial Park`,
+      html: `<div style="font-family:sans-serif;max-width:540px;margin:0 auto">
+        <div style="background:#2e5d33;color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:1.2rem">
+          <div style="font-size:18px;font-weight:700">Your Booking is Confirmed — ${siteName}</div>
+          <div style="font-size:13px;opacity:.8">Eileen Scott Centennial Park · Bamfield, BC</div>
+        </div>
+        <p>Hi <strong>${name}</strong>, we've confirmed your reservation!</p>
+        <table style="border-collapse:collapse;width:100%;margin:1rem 0">
+          <tr><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Site</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-in</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-out</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Nights</th></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${siteName}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${checkIn}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${checkOut}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${nights}</td></tr>
+        </table>
+        <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
+          <strong style="color:#d4830a">💳 Payment — Interac e-Transfer</strong><br><br>
+          Please send your ${amtNote} to:<br>
+          <strong>bamfieldcentennialpark@gmail.com</strong><br>
+          Reference: <strong>#${id} ${name}</strong><br><br>
+          <span style="color:#6b7280;font-size:13px">Balance is due on arrival. Cash and card also accepted at the park.</span>
+        </div>
+        <p style="color:#374151">Questions? Reply to this email or call <a href="tel:+12507283006">250-728-3006</a>.</p>
+        <p style="color:#9ca3af;font-size:12px;margin-top:2rem">Reservation #${id}</p>
+      </div>`
+    })
+  }).catch(() => {});
+
   return json({ ok: true, reservationId: id });
 }

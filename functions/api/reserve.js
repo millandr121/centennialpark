@@ -77,15 +77,21 @@ export async function onRequestPost(context) {
     html: `
       <div style="font-family:sans-serif;max-width:540px;margin:0 auto">
         <div style="background:#2e5d33;color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:1.2rem">
-          <div style="font-size:18px;font-weight:700">Booking Confirmed</div>
+          <div style="font-size:18px;font-weight:700">Booking Confirmed — ${esc(site.name)}</div>
           <div style="font-size:13px;opacity:.8">Eileen Scott Centennial Park · Bamfield, BC</div>
         </div>
-        <p>Hi <strong>${esc(name)}</strong>, your reservation is confirmed!</p>
+        <p>Hi <strong>${esc(name)}</strong>, your site is reserved!</p>
         <table style="border-collapse:collapse;width:100%;margin:1rem 0">
-          <tr><th style="${head}">Site</th><th style="${head}">Check-in</th><th style="${head}">Check-out</th><th style="${head}">Nights</th></tr>
-          <tr><td style="${row}">${esc(site.name)}</td><td style="${row}">${esc(checkIn)}</td><td style="${row}">${esc(checkOut)}</td><td style="${row}">${nights}</td></tr>
+          <tr><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Site</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-in</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-out</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Nights</th></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(site.name)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(checkIn)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(checkOut)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${nights}</td></tr>
         </table>
-        <p style="color:#374151">Payment is collected on arrival. Please bring this email as confirmation.</p>
+        <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
+          <strong style="color:#d4830a">💳 Payment — Interac e-Transfer</strong><br><br>
+          Please send a deposit (or full payment) to:<br>
+          <strong>bamfieldcentennialpark@gmail.com</strong><br>
+          Reference: <strong>#${rid} ${esc(name)}</strong><br><br>
+          <span style="color:#6b7280;font-size:13px">Balance is due on arrival. Cash and card also accepted at the park.</span>
+        </div>
         <p style="color:#374151">Questions? Reply to this email or call <a href="tel:+12507283006">250-728-3006</a>.</p>
         <p style="color:#9ca3af;font-size:12px;margin-top:2rem">Confirmation #${rid}</p>
       </div>`
