@@ -141,7 +141,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     })
-    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (r) { return r.json().then(function(j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
     .then(function () {
       if (status) {
         status.textContent = '✓ Request sent! We\'ll confirm by email within one business day.';
@@ -150,12 +150,20 @@
       form.reset();
       goTo(0);
     })
-    .catch(function () {
+    .catch(function (err) {
+      var msg = (err && err.message) || '';
       if (status) {
-        status.textContent = 'Something went wrong — please call us at 250-728-3006 or email us directly.';
-        status.className   = 'form-status is-error';
+        status.textContent = msg.toLowerCase().indexOf('human') !== -1
+          ? 'Please complete the human verification and try again.'
+          : 'Something went wrong — please call us at 250-728-3006 or email us directly.';
+        status.className = 'form-status is-error';
       }
-      primaryBtn.disabled    = false;
+      /* reset Turnstile so user can retry */
+      if (window.turnstile) {
+        var ts = form.querySelector('.cf-turnstile');
+        if (ts) turnstile.reset(ts);
+      }
+      primaryBtn.disabled  = false;
       primaryBtn.innerHTML = '<span>Send request</span>';
     });
   }

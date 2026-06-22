@@ -1,5 +1,13 @@
 /* Live booking UI styles */
 
+/* Dark wrapper so white text is always readable regardless of parent section */
+#live-booking-root {
+  background: var(--clr-dark, #1a2e1c);
+  border-radius: 16px;
+  padding: 1.75rem;
+  color: #fff;
+}
+
 .lb-wrap {
   width: 100%;
 }
