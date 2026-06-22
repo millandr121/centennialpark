@@ -91,12 +91,23 @@ export async function onRequestPut(context) {
 
   if (!id) return json({ error: 'Missing id' }, 422);
 
-  if (status) {
-    await env.DB.prepare('UPDATE reservations SET status=? WHERE id=?').bind(status,id).run();
-  }
-  if (d.notes !== undefined) {
-    await env.DB.prepare('UPDATE reservations SET notes=? WHERE id=?')
-      .bind(clean(d.notes,2000),id).run();
+  const sets = [];
+  const vals = [];
+
+  if (status)              { sets.push('status=?');      vals.push(status); }
+  if (d.notes !== undefined){ sets.push('notes=?');      vals.push(clean(d.notes,2000)); }
+  if (d.checkIn)           { sets.push('check_in=?');   vals.push(clean(d.checkIn,12)); }
+  if (d.checkOut)          { sets.push('check_out=?');  vals.push(clean(d.checkOut,12)); }
+  if (d.guestName)         { sets.push('guest_name=?'); vals.push(clean(d.guestName,200)); }
+  if (d.guestEmail !== undefined){ sets.push('guest_email=?'); vals.push(clean(d.guestEmail,200)); }
+  if (d.guestPhone !== undefined){ sets.push('guest_phone=?'); vals.push(clean(d.guestPhone,50)); }
+  if (d.partySize !== undefined) { sets.push('party_size=?');  vals.push(parseInt(d.partySize)||null); }
+  if (d.boatLength !== undefined){ sets.push('boat_length=?'); vals.push(parseInt(d.boatLength)||null); }
+  if (d.siteId)            { sets.push('site_id=?');    vals.push(clean(d.siteId,10)); }
+
+  if (sets.length) {
+    vals.push(id);
+    await env.DB.prepare(`UPDATE reservations SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
   }
 
   return json({ ok: true });
