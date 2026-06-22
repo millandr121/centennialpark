@@ -286,6 +286,8 @@ th { font-family: var(--font-display); font-weight: 600; }
 .site-footer-tag { display: flex; flex-direction: column; gap: .5rem; text-align: right; }
 .site-footer-hand { font-family: var(--font-hand); font-size: 1.5rem; color: var(--clr-accent-light); line-height: 1; }
 .site-footer-copy { font-size: .78rem; color: rgba(255,255,255,.35); }
+.site-footer-admin { font-size: .5rem; color: rgba(255,255,255,.08); text-decoration: none; margin-left: .75rem; }
+.site-footer-admin:hover { color: rgba(255,255,255,.3); }
 @media (max-width: 560px) {
   .site-footer-inner { align-items: flex-start; }
   .site-footer-tag { text-align: left; }
