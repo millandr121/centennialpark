@@ -327,11 +327,10 @@ function bind() {
   var tsWrap = document.getElementById('lb-turnstile-wrap');
   if (tsWrap) {
     if (window.turnstile) {
-      turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+      window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
     } else {
-      /* Turnstile script still loading — wait for it */
       window.onloadTurnstileCallback = function() {
-        turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+        window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
       };
     }
   }
@@ -411,16 +410,14 @@ async function submitBooking(e) {
       btn.disabled   = false;
       btn.innerHTML  = '<span>Confirm booking</span>';
       /* Reset Turnstile so user can retry */
-      var tsWrap = document.getElementById('lb-turnstile-wrap');
-      if (tsWrap && window.turnstile) turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+      if (window.turnstile && window._lbTsWidget != null) turnstile.reset(window._lbTsWidget);
     }
   } catch(ex) {
     st.textContent = 'Network error. Please try again.';
     st.className   = 'lb-status lb-status-error';
     btn.disabled   = false;
     btn.innerHTML  = '<span>Confirm booking</span>';
-    var tsWrap2 = document.getElementById('lb-turnstile-wrap');
-    if (tsWrap2 && window.turnstile) turnstile.render(tsWrap2, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
+    if (window.turnstile && window._lbTsWidget != null) turnstile.reset(window._lbTsWidget);
   }
 }
 

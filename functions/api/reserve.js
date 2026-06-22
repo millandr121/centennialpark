@@ -48,11 +48,21 @@ export async function onRequestPost(context) {
   ).bind(siteId, checkOut, checkIn).first();
   if (conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
 
-  const res = await env.DB.prepare(
-    `INSERT INTO reservations
-     (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source)
-     VALUES (?,?,?,?,?,?,?,?,?,'online')`
-  ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
+  /* Try full INSERT first; fall back to minimal if schema lacks optional columns */
+  let res;
+  try {
+    res = await env.DB.prepare(
+      `INSERT INTO reservations
+       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source)
+       VALUES (?,?,?,?,?,?,?,?,?,'online')`
+    ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
+  } catch (_) {
+    res = await env.DB.prepare(
+      `INSERT INTO reservations
+       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes)
+       VALUES (?,?,?,?,?,?,?)`
+    ).bind(siteId,checkIn,checkOut,name,email,phone||null,notes||null).run();
+  }
 
   const rid    = (res.meta && res.meta.last_row_id) || '';
   const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
