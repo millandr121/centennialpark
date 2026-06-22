@@ -27,6 +27,16 @@ export function looksLikeEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || ''));
 }
 
+/* Return a Set of column names for a table (cached per-request via the env). */
+export async function tableCols(env, table) {
+  try {
+    const r = await env.DB.prepare(`PRAGMA table_info(${table})`).all();
+    return new Set((r.results || []).map(c => c.name));
+  } catch (_e) {
+    return new Set();
+  }
+}
+
 /*
  * Verify a Cloudflare Turnstile token (bot check).
  * Returns true if the token is valid OR if Turnstile isn't configured yet

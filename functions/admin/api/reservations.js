@@ -1,52 +1,46 @@
-/* Admin API: CRUD for reservations (all routes require auth via _middleware.js) */
+/* Admin API: CRUD for reservations — the unified booking backend.
+   All routes require auth via _middleware.js. */
 
-import { clean } from '../../api/_lib.js';
+import { clean, tableCols } from '../../api/_lib.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
-    status: s||200, headers: {'Content-Type':'application/json'}
+    status: s || 200, headers: { 'Content-Type': 'application/json' }
   });
 }
 
-/* Build site name expression — try name first, fall back to label */
-async function siteNameExpr(env) {
-  try {
-    await env.DB.prepare('SELECT name FROM sites LIMIT 1').first();
-    return 's.name';
-  } catch (_) {
-    return 's.label';
-  }
+/* Build a "party size" SELECT expression that works on either schema. */
+function partyExpr(cols) {
+  if (cols.has('party_size') && cols.has('people')) return 'COALESCE(r.party_size, r.people)';
+  if (cols.has('party_size')) return 'r.party_size';
+  if (cols.has('people'))     return 'r.people';
+  return 'NULL';
 }
 
-/* GET /admin/api/reservations[?month=YYYY-MM&status=confirmed|cancelled|all&site=C1] */
+/* GET /admin/api/reservations[?month=YYYY-MM&status=...&site=C1&payment=unpaid] */
 export async function onRequestGet(context) {
   const { env, request } = context;
   if (!env.DB) return json({ error: 'DB not bound' }, 503);
 
-  const url    = new URL(request.url);
-  const month  = url.searchParams.get('month')  || '';
-  const status = url.searchParams.get('status') || 'confirmed';
-  const site   = url.searchParams.get('site')   || '';
+  const url     = new URL(request.url);
+  const month   = url.searchParams.get('month')   || '';
+  const status  = url.searchParams.get('status')  || 'all';
+  const site    = url.searchParams.get('site')    || '';
+  const payment = url.searchParams.get('payment') || '';
 
-  const nameCol = await siteNameExpr(env);
+  const rCols = await tableCols(env, 'reservations');
+  const sCols = await tableCols(env, 'sites');
+  const nameCol = sCols.has('name') ? 's.name' : sCols.has('label') ? 's.label' : 's.id';
+  const party   = partyExpr(rCols);
 
-  let q = `SELECT r.*, COALESCE(r.party_size, r.people) as party_size,
-            ${nameCol} as site_name, s.type as site_type
-            FROM reservations r JOIN sites s ON r.site_id=s.id WHERE 1=1`;
+  let q = `SELECT r.*, ${party} as party_size, ${nameCol} as site_name, s.type as site_type
+           FROM reservations r JOIN sites s ON r.site_id = s.id WHERE 1=1`;
   const params = [];
 
-  if (month) {
-    q += ' AND r.check_in LIKE ?';
-    params.push(month + '%');
-  }
-  if (status !== 'all') {
-    q += ' AND r.status=?';
-    params.push(status);
-  }
-  if (site) {
-    q += ' AND r.site_id=?';
-    params.push(site);
-  }
+  if (month)   { q += ' AND r.check_in LIKE ?'; params.push(month + '%'); }
+  if (status !== 'all') { q += ' AND r.status = ?'; params.push(status); }
+  if (site)    { q += ' AND r.site_id = ?'; params.push(site); }
+  if (payment && rCols.has('payment_status')) { q += ' AND r.payment_status = ?'; params.push(payment); }
   q += ' ORDER BY r.check_in ASC, r.created_at ASC';
 
   try {
@@ -74,37 +68,28 @@ export async function onRequestPost(context) {
   const partySize = parseInt(d.partySize)  || null;
   const boatLen   = parseInt(d.boatLength) || null;
   const notes     = clean(d.notes, 2000);
-  const source    = ['phone','walkin','admin'].includes(d.source) ? d.source : 'admin';
+  const source    = ['phone', 'walkin', 'admin'].includes(d.source) ? d.source : 'admin';
+  const amountDue = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : null;
 
-  if (!siteId||!checkIn||!checkOut||!name) return json({ error: 'Missing required fields' }, 422);
+  if (!siteId || !checkIn || !checkOut || !name) return json({ error: 'Missing required fields' }, 422);
 
-  const site = await env.DB.prepare('SELECT id FROM sites WHERE id=?').bind(siteId).first();
+  const site = await env.DB.prepare('SELECT id FROM sites WHERE id = ?').bind(siteId).first();
   if (!site) return json({ error: 'Unknown site' }, 404);
 
   const conflict = await env.DB.prepare(
-    `SELECT id FROM reservations WHERE site_id=? AND status='confirmed'
-     AND check_in<? AND date(check_out,'+1 day')>?`
-  ).bind(siteId,checkOut,checkIn).first();
-  if (conflict) return json({ error: 'Date conflict with existing reservation #'+conflict.id }, 409);
+    `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
+     AND check_in < ? AND date(check_out, '+1 day') > ?`
+  ).bind(siteId, checkOut, checkIn).first();
+  if (conflict) return json({ error: 'Date conflict with reservation #' + conflict.id }, 409);
 
-  /* Try full INSERT; fall back to minimal if optional columns don't exist yet */
-  let res;
-  try {
-    res = await env.DB.prepare(
-      `INSERT INTO reservations (site_id,check_in,check_out,guest_name,guest_email,guest_phone,
-       party_size,boat_length,notes,source) VALUES (?,?,?,?,?,?,?,?,?,?)`
-    ).bind(siteId,checkIn,checkOut,name,email||'',phone||null,partySize,boatLen,notes||null,source).run();
-  } catch (_) {
-    res = await env.DB.prepare(
-      `INSERT INTO reservations (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes)
-       VALUES (?,?,?,?,?,?,?)`
-    ).bind(siteId,checkIn,checkOut,name,email||'',phone||null,notes||null).run();
-  }
-
-  return json({ ok: true, id: res.meta && res.meta.last_row_id });
+  const id = await insertReservation(env, {
+    siteId, checkIn, checkOut, name, email, phone, partySize, boatLen, notes,
+    source, status: 'confirmed', amountDue, submissionId: parseInt(d.submissionId) || null
+  });
+  return json({ ok: true, id });
 }
 
-/* PUT /admin/api/reservations — update status or edit fields */
+/* PUT /admin/api/reservations — update any field incl. status + payment */
 export async function onRequestPut(context) {
   const { env, request } = context;
   if (!env.DB) return json({ error: 'DB not bound' }, 503);
@@ -112,37 +97,58 @@ export async function onRequestPut(context) {
   let d;
   try { d = await request.json(); } catch { return json({ error: 'Bad JSON' }, 400); }
 
-  const id     = parseInt(d.id);
-  const status = ['confirmed','cancelled','pending'].includes(d.status) ? d.status : null;
+  const id = parseInt(d.id);
   if (!id) return json({ error: 'Missing id' }, 422);
 
-  const sets = [];
-  const vals = [];
+  const rCols  = await tableCols(env, 'reservations');
+  const status = ['confirmed', 'cancelled', 'pending'].includes(d.status) ? d.status : null;
+  const pay    = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : null;
 
-  if (status)                    { sets.push('status=?');      vals.push(status); }
-  if (d.notes !== undefined)     { sets.push('notes=?');       vals.push(clean(d.notes,2000)); }
-  if (d.checkIn)                 { sets.push('check_in=?');    vals.push(clean(d.checkIn,12)); }
-  if (d.checkOut)                { sets.push('check_out=?');   vals.push(clean(d.checkOut,12)); }
-  if (d.guestName)               { sets.push('guest_name=?');  vals.push(clean(d.guestName,200)); }
-  if (d.guestEmail !== undefined){ sets.push('guest_email=?'); vals.push(clean(d.guestEmail,200)); }
-  if (d.guestPhone !== undefined){ sets.push('guest_phone=?'); vals.push(clean(d.guestPhone,50)); }
-  if (d.siteId)                  { sets.push('site_id=?');     vals.push(clean(d.siteId,10)); }
-  /* party_size — column might be named people in older schema */
-  if (d.partySize !== undefined) {
-    const v = parseInt(d.partySize)||null;
-    try {
-      await env.DB.prepare('SELECT party_size FROM reservations LIMIT 1').first();
-      sets.push('party_size=?'); vals.push(v);
-    } catch (_) {
-      sets.push('people=?'); vals.push(v);
-    }
+  const sets = [], vals = [];
+  if (status)                     { sets.push('status = ?');      vals.push(status); }
+  if (d.notes      !== undefined) { sets.push('notes = ?');       vals.push(clean(d.notes, 2000)); }
+  if (d.checkIn)                  { sets.push('check_in = ?');    vals.push(clean(d.checkIn, 12)); }
+  if (d.checkOut)                 { sets.push('check_out = ?');   vals.push(clean(d.checkOut, 12)); }
+  if (d.guestName)                { sets.push('guest_name = ?');  vals.push(clean(d.guestName, 200)); }
+  if (d.guestEmail !== undefined) { sets.push('guest_email = ?'); vals.push(clean(d.guestEmail, 200)); }
+  if (d.guestPhone !== undefined) { sets.push('guest_phone = ?'); vals.push(clean(d.guestPhone, 50)); }
+  if (d.siteId)                   { sets.push('site_id = ?');     vals.push(clean(d.siteId, 10)); }
+  if (d.boatLength !== undefined) { sets.push('boat_length = ?'); vals.push(parseInt(d.boatLength) || null); }
+  if (d.partySize  !== undefined) {
+    const col = rCols.has('party_size') ? 'party_size' : 'people';
+    sets.push(`${col} = ?`); vals.push(parseInt(d.partySize) || null);
   }
-  if (d.boatLength !== undefined){ sets.push('boat_length=?'); vals.push(parseInt(d.boatLength)||null); }
+  if (pay && rCols.has('payment_status'))      { sets.push('payment_status = ?'); vals.push(pay); }
+  if (d.amountDue  !== undefined && rCols.has('amount_due'))  { sets.push('amount_due = ?');  vals.push(d.amountDue === '' ? null : parseFloat(d.amountDue)); }
+  if (d.amountPaid !== undefined && rCols.has('amount_paid')) { sets.push('amount_paid = ?'); vals.push(d.amountPaid === '' ? null : parseFloat(d.amountPaid)); }
 
   if (sets.length) {
     vals.push(id);
-    await env.DB.prepare(`UPDATE reservations SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+    try {
+      await env.DB.prepare(`UPDATE reservations SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+    } catch (e) { return json({ error: e.message }, 500); }
   }
-
   return json({ ok: true });
+}
+
+/* Shared insert that only writes columns the table actually has. */
+export async function insertReservation(env, r) {
+  const cols = await tableCols(env, 'reservations');
+  const fields = ['site_id', 'check_in', 'check_out', 'guest_name', 'guest_email', 'guest_phone', 'notes'];
+  const values = [r.siteId, r.checkIn, r.checkOut, r.name, r.email || '', r.phone || null, r.notes || null];
+
+  const opt = (col, val) => { if (cols.has(col)) { fields.push(col); values.push(val); } };
+  opt(cols.has('party_size') ? 'party_size' : 'people', r.partySize ?? null);
+  opt('boat_length',   r.boatLen ?? null);
+  opt('source',        r.source || 'admin');
+  opt('status',        r.status || 'confirmed');
+  opt('payment_status', r.paymentStatus || 'unpaid');
+  opt('amount_due',    r.amountDue ?? null);
+  opt('submission_id', r.submissionId ?? null);
+
+  const placeholders = fields.map(() => '?').join(',');
+  const res = await env.DB.prepare(
+    `INSERT INTO reservations (${fields.join(',')}) VALUES (${placeholders})`
+  ).bind(...values).run();
+  return res.meta && res.meta.last_row_id;
 }

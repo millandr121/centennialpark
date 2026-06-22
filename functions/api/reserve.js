@@ -48,19 +48,20 @@ export async function onRequestPost(context) {
   ).bind(siteId, checkOut, checkIn).first();
   if (conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
 
-  /* Try full INSERT first; fall back to minimal if schema lacks optional columns */
+  /* Try full INSERT first; fall back to minimal if schema lacks optional columns.
+     Always confirmed so the site is immediately blocked and shows in admin. */
   let res;
   try {
     res = await env.DB.prepare(
       `INSERT INTO reservations
-       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source)
-       VALUES (?,?,?,?,?,?,?,?,?,'online')`
+       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source,status)
+       VALUES (?,?,?,?,?,?,?,?,?,'online','confirmed')`
     ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
   } catch (_) {
     res = await env.DB.prepare(
       `INSERT INTO reservations
-       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes)
-       VALUES (?,?,?,?,?,?,?)`
+       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes,status)
+       VALUES (?,?,?,?,?,?,?,'confirmed')`
     ).bind(siteId,checkIn,checkOut,name,email,phone||null,notes||null).run();
   }
 

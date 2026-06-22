@@ -14,114 +14,86 @@
     }
     body { background: #f9fafb; color: #111827; min-height: 100vh; }
 
-    /* ── Header ── */
-    .top-bar {
-      background: var(--green); color: #fff;
-      padding: 0 1.5rem; height: 56px;
-      display: flex; align-items: center; gap: 1rem;
-      position: sticky; top: 0; z-index: 100;
-    }
+    .top-bar { background: var(--green); color: #fff; padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
     .top-bar h1 { font-size: 1rem; font-weight: 600; flex: 1; }
-    .top-bar .mode-badge {
-      font-size: .75rem; padding: .25em .8em; border-radius: 99px;
-      background: rgba(255,255,255,.15); letter-spacing: .04em;
-    }
+    .top-bar .mode-badge { font-size: .75rem; padding: .25em .8em; border-radius: 99px;
+      background: rgba(255,255,255,.15); letter-spacing: .04em; }
     .top-bar .mode-badge.live { background: #16a34a; }
     .top-bar a { color: rgba(255,255,255,.7); font-size: .8rem; text-decoration: none; }
     .top-bar a:hover { color: #fff; }
 
-    /* ── Tabs ── */
-    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); background: #fff; padding: 0 1.5rem; }
-    .tab-btn {
-      padding: .8rem 1.2rem; font-size: .875rem; font-weight: 500; cursor: pointer;
+    .tabs { display: flex; border-bottom: 2px solid var(--border); background: #fff; padding: 0 1.5rem; }
+    .tab-btn { padding: .8rem 1.2rem; font-size: .875rem; font-weight: 500; cursor: pointer;
       border: none; background: none; color: var(--grey); border-bottom: 2px solid transparent;
-      margin-bottom: -2px; transition: color .2s, border-color .2s;
-    }
+      margin-bottom: -2px; transition: color .2s, border-color .2s; }
     .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
     .tab-btn:hover { color: var(--green); }
+    .tab-btn .pill { background: var(--accent); color: #fff; border-radius: 99px; font-size: .68rem;
+      padding: .05em .5em; margin-left: .35em; vertical-align: middle; }
 
-    /* ── Sub-tabs ── */
     .sub-tabs { display: flex; gap: .5rem; margin-bottom: 1rem; }
-    .sub-tab {
-      padding: .4em 1.1em; border-radius: 99px; font-size: .825rem; font-weight: 600;
-      cursor: pointer; border: 1.5px solid var(--border); background: none; color: var(--grey);
-      transition: all .2s;
-    }
+    .sub-tab { padding: .4em 1.1em; border-radius: 99px; font-size: .825rem; font-weight: 600;
+      cursor: pointer; border: 1.5px solid var(--border); background: none; color: var(--grey); transition: all .2s; }
     .sub-tab.active { border-color: var(--green); background: var(--green-bg); color: var(--green); }
 
-    /* ── Layout ── */
-    .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    .main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
     .panel { display: none; }
     .panel.active { display: block; }
 
-    /* ── Cards ── */
     .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
     .card-title { font-size: .875rem; font-weight: 600; color: var(--grey); margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .05em; }
 
-    /* ── Stats ── */
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .stat { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; }
-    .stat-num { font-size: 2rem; font-weight: 700; color: var(--green); }
-    .stat-label { font-size: .8rem; color: var(--grey); margin-top: .2rem; }
+    .stat-num { font-size: 1.9rem; font-weight: 700; color: var(--green); }
+    .stat-num.warn { color: var(--accent); }
+    .stat-label { font-size: .78rem; color: var(--grey); margin-top: .2rem; }
 
-    /* ── Table ── */
     .tbl-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-    th { background: var(--green); color: #fff; padding: 9px 12px; text-align: left; font-size: .75rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
-    td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th { background: var(--green); color: #fff; padding: 9px 11px; text-align: left; font-size: .72rem; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
+    td { padding: 9px 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
     tr:nth-child(even) td { background: #f9fafb; }
     tr:hover td { background: var(--green-bg); }
 
-    /* ── Badges ── */
-    .badge { display: inline-block; padding: .2em .65em; border-radius: 99px; font-size: .75rem; font-weight: 600; }
+    .badge { display: inline-block; padding: .2em .65em; border-radius: 99px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
     .badge-green  { background: #dcfce7; color: #166534; }
     .badge-red    { background: #fee2e2; color: #991b1b; }
     .badge-yellow { background: #fef9c3; color: #854d0e; }
     .badge-grey   { background: #f3f4f6; color: #374151; }
     .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-orange { background: #ffedd5; color: #9a3412; }
 
-    /* ── Buttons ── */
+    .pay-toggle { cursor: pointer; border: none; font: inherit; }
+    .pay-toggle:hover { filter: brightness(.96); }
+
     .btn { display: inline-flex; align-items: center; gap: .4em; padding: .5em 1.1em; border-radius: 6px;
-      font-size: .875rem; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
-    .btn-green  { background: var(--green); color: #fff; }
-    .btn-green:hover { background: var(--green-light); }
-    .btn-outline { background: none; border: 1px solid var(--border); color: #374151; }
-    .btn-outline:hover { background: #f3f4f6; }
-    .btn-red    { background: var(--red); color: #fff; }
-    .btn-red:hover { filter: brightness(1.1); }
-    .btn-accent { background: var(--accent); color: #fff; }
-    .btn-accent:hover { filter: brightness(1.1); }
-    .btn-sm { padding: .3em .75em; font-size: .8rem; }
+      font-size: .85rem; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
+    .btn-green  { background: var(--green); color: #fff; } .btn-green:hover { background: var(--green-light); }
+    .btn-outline { background: none; border: 1px solid var(--border); color: #374151; } .btn-outline:hover { background: #f3f4f6; }
+    .btn-red    { background: var(--red); color: #fff; } .btn-red:hover { filter: brightness(1.1); }
+    .btn-accent { background: var(--accent); color: #fff; } .btn-accent:hover { filter: brightness(1.1); }
+    .btn-sm { padding: .3em .7em; font-size: .78rem; }
 
-    /* ── Form ── */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
     .form-grid .full { grid-column: 1 / -1; }
     label { display: block; font-size: .8rem; font-weight: 500; color: #374151; margin-bottom: .3rem; }
-    input, select, textarea {
-      width: 100%; padding: .5em .75em; border: 1px solid var(--border); border-radius: 6px;
-      font-size: .875rem; background: #fff; color: #111827;
-    }
+    input, select, textarea { width: 100%; padding: .5em .75em; border: 1px solid var(--border); border-radius: 6px;
+      font-size: .85rem; background: #fff; color: #111827; }
     input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: -1px; }
     textarea { resize: vertical; min-height: 60px; }
 
-    /* ── Mode toggle ── */
-    .mode-toggle {
-      display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem;
-      background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-      margin-bottom: 1rem; flex-wrap: wrap;
-    }
+    .mode-toggle { display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; background: #fff;
+      border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; flex-wrap: wrap; }
     .mode-toggle p { flex: 1; min-width: 200px; font-size: .9rem; }
     .mode-toggle strong { display: block; margin-bottom: .2rem; }
     .switch-row { display: flex; gap: .5rem; }
-    .mode-opt {
-      padding: .6em 1.4em; border-radius: 99px; font-size: .875rem; font-weight: 600;
-      cursor: pointer; border: 2px solid var(--border); background: none; color: var(--grey);
-      transition: all .2s;
-    }
+    .mode-opt { padding: .6em 1.4em; border-radius: 99px; font-size: .875rem; font-weight: 600;
+      cursor: pointer; border: 2px solid var(--border); background: none; color: var(--grey); transition: all .2s; }
     .mode-opt.active-form { border-color: var(--accent); background: #fff8ee; color: var(--accent); }
     .mode-opt.active-live { border-color: var(--green); background: var(--green-bg); color: var(--green); }
 
-    /* ── Modal ── */
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
     .modal-bg.open { display: flex; }
     .modal { background: #fff; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto; }
@@ -129,8 +101,8 @@
     .modal-head h2 { font-size: 1.1rem; font-weight: 600; }
     .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--grey); line-height: 1; }
     .modal-close:hover { color: #111; }
+    .sub-summary { background: var(--green-bg); border-radius: 6px; padding: .75rem 1rem; font-size: .85rem; margin-bottom: 1rem; line-height: 1.6; }
 
-    /* ── Upcoming ── */
     .upcoming-row { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
     .upcoming-row:last-child { border-bottom: none; }
     .upcoming-dates { min-width: 130px; color: var(--grey); font-size: .8rem; }
@@ -140,7 +112,7 @@
     .empty { color: var(--grey); font-size: .875rem; padding: 1.5rem 0; text-align: center; }
     .toolbar { display: flex; gap: .75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
     .toolbar input, .toolbar select { width: auto; }
-    .action-cell { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .action-cell { display: flex; gap: .35rem; flex-wrap: wrap; }
 
     @media (max-width: 600px) {
       .form-grid { grid-template-columns: 1fr; }
@@ -160,6 +132,7 @@
 <nav class="tabs">
   <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
   <button class="tab-btn" data-tab="reservations">Reservations</button>
+  <button class="tab-btn" data-tab="requests">Requests <span class="pill" id="req-pill" hidden>0</span></button>
   <button class="tab-btn" data-tab="add">Add Booking</button>
   <button class="tab-btn" data-tab="settings">Settings</button>
 </nav>
@@ -170,10 +143,10 @@
   <div class="panel active" id="tab-dashboard">
     <div class="stats">
       <div class="stat"><div class="stat-num" id="stat-today">—</div><div class="stat-label">Arriving today</div></div>
-      <div class="stat"><div class="stat-num" id="stat-week">—</div><div class="stat-label">This week</div></div>
-      <div class="stat"><div class="stat-num" id="stat-month">—</div><div class="stat-label">This month</div></div>
-      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Live bookings total</div></div>
-      <div class="stat"><div class="stat-num" id="stat-forms">—</div><div class="stat-label">Form requests total</div></div>
+      <div class="stat"><div class="stat-num" id="stat-week">—</div><div class="stat-label">Next 14 days</div></div>
+      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Confirmed bookings</div></div>
+      <div class="stat"><div class="stat-num warn" id="stat-unpaid">—</div><div class="stat-label">Unpaid / deposit</div></div>
+      <div class="stat"><div class="stat-num warn" id="stat-new">—</div><div class="stat-label">New requests</div></div>
     </div>
     <div class="card">
       <div class="card-title">Upcoming arrivals — next 14 days</div>
@@ -183,104 +156,73 @@
 
   <!-- ── RESERVATIONS ── -->
   <div class="panel" id="tab-reservations">
+    <div class="toolbar">
+      <input type="month" id="filter-month" value="">
+      <select id="filter-status">
+        <option value="all" selected>All statuses</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="pending">Pending</option>
+      </select>
+      <select id="filter-payment">
+        <option value="">All payments</option>
+        <option value="unpaid">Unpaid</option>
+        <option value="deposit">Deposit</option>
+        <option value="paid">Paid</option>
+      </select>
+      <button class="btn btn-outline" onclick="loadReservations()">Refresh</button>
+    </div>
+    <div class="card tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Site</th><th>Guest</th><th>Contact</th>
+          <th>Check-in</th><th>Check-out</th><th>Nts</th><th>Party</th>
+          <th>Source</th><th>Status</th><th>Payment</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="res-tbody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── REQUESTS (form inbox) ── -->
+  <div class="panel" id="tab-requests">
     <div class="sub-tabs">
-      <button class="sub-tab active" id="sub-live" onclick="switchSub('live')">🗺 Live Bookings</button>
-      <button class="sub-tab" id="sub-form" onclick="switchSub('form')">📋 Form Requests</button>
+      <button class="sub-tab active" data-rstatus="new"     onclick="setReqFilter('new')">New</button>
+      <button class="sub-tab" data-rstatus="accepted" onclick="setReqFilter('accepted')">Accepted</button>
+      <button class="sub-tab" data-rstatus="declined" onclick="setReqFilter('declined')">Declined</button>
+      <button class="sub-tab" data-rstatus="all"      onclick="setReqFilter('all')">All</button>
     </div>
-
-    <!-- Live bookings -->
-    <div id="res-live">
-      <div class="toolbar">
-        <input type="month" id="filter-month" value="">
-        <select id="filter-status">
-          <option value="all">All statuses</option>
-          <option value="confirmed" selected>Confirmed</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="pending">Pending</option>
-        </select>
-        <button class="btn btn-outline" onclick="loadReservations()">Refresh</button>
-      </div>
-      <div class="card tbl-wrap">
-        <table id="res-table">
-          <thead><tr>
-            <th>#</th><th>Site</th><th>Guest</th><th>Email / Phone</th>
-            <th>Check-in</th><th>Check-out</th><th>Nts</th>
-            <th>Party</th><th>Source</th><th>Status</th><th>Actions</th>
-          </tr></thead>
-          <tbody id="res-tbody"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Form submissions -->
-    <div id="res-forms" style="display:none">
-      <div class="toolbar">
-        <input type="month" id="filter-form-month" value="">
-        <button class="btn btn-outline" onclick="loadSubmissions()">Refresh</button>
-      </div>
-      <div class="card tbl-wrap">
-        <table>
-          <thead><tr>
-            <th>#</th><th>Submitted</th><th>Name</th><th>Email</th>
-            <th>Type</th><th>Check-in</th><th>Check-out</th>
-            <th>Party</th><th>Boat ft</th><th>Notes</th>
-          </tr></thead>
-          <tbody id="form-tbody"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody>
-        </table>
-      </div>
+    <div class="card tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Received</th><th>Name</th><th>Email</th><th>Wants</th>
+          <th>Check-in</th><th>Check-out</th><th>Party</th><th>Boat</th>
+          <th>Notes</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="req-tbody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
+      </table>
     </div>
   </div>
 
   <!-- ── ADD BOOKING ── -->
   <div class="panel" id="tab-add">
-    <div class="card" style="max-width:640px">
+    <div class="card" style="max-width:660px">
       <div class="card-title">Add manual reservation</div>
       <form id="add-form">
         <div class="form-grid">
-          <div>
-            <label>Site *</label>
-            <select id="add-site" required></select>
-          </div>
-          <div>
-            <label>Source</label>
-            <select id="add-source">
-              <option value="phone">Phone call</option>
-              <option value="walkin">Walk-in</option>
-              <option value="admin">Admin entry</option>
-            </select>
-          </div>
-          <div>
-            <label>Check-in *</label>
-            <input type="date" id="add-checkin" required>
-          </div>
-          <div>
-            <label>Check-out *</label>
-            <input type="date" id="add-checkout" required>
-          </div>
-          <div>
-            <label>Guest name *</label>
-            <input type="text" id="add-name" required placeholder="Full name">
-          </div>
-          <div>
-            <label>Email</label>
-            <input type="email" id="add-email" placeholder="guest@email.com">
-          </div>
-          <div>
-            <label>Phone</label>
-            <input type="tel" id="add-phone" placeholder="250-555-0000">
-          </div>
-          <div>
-            <label>Party size</label>
-            <input type="number" id="add-party" min="1" max="20" placeholder="2">
-          </div>
-          <div>
-            <label>Boat length (ft)</label>
-            <input type="number" id="add-boat" min="8" max="100" placeholder="—">
-          </div>
-          <div class="full">
-            <label>Notes</label>
-            <textarea id="add-notes" placeholder="Any notes…"></textarea>
-          </div>
+          <div><label>Site *</label><select id="add-site" required></select></div>
+          <div><label>Source</label><select id="add-source">
+            <option value="phone">Phone call</option><option value="walkin">Walk-in</option><option value="admin">Admin entry</option>
+          </select></div>
+          <div><label>Check-in *</label><input type="date" id="add-checkin" required></div>
+          <div><label>Check-out *</label><input type="date" id="add-checkout" required></div>
+          <div><label>Guest name *</label><input type="text" id="add-name" required placeholder="Full name"></div>
+          <div><label>Email</label><input type="email" id="add-email" placeholder="guest@email.com"></div>
+          <div><label>Phone</label><input type="tel" id="add-phone" placeholder="250-555-0000"></div>
+          <div><label>Party size</label><input type="number" id="add-party" min="1" max="20" placeholder="2"></div>
+          <div><label>Boat length (ft)</label><input type="number" id="add-boat" min="8" max="100" placeholder="—"></div>
+          <div><label>Amount due ($)</label><input type="number" id="add-amount" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="full"><label>Notes</label><textarea id="add-notes" placeholder="Any notes…"></textarea></div>
         </div>
         <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
           <button type="submit" class="btn btn-green">Save reservation</button>
@@ -293,93 +235,119 @@
   <!-- ── SETTINGS ── -->
   <div class="panel" id="tab-settings">
     <div class="mode-toggle">
-      <div>
-        <p>
-          <strong>Visitor booking mode</strong>
-          Controls which booking UI visitors see on the website. Switch anytime — takes effect immediately.
-        </p>
-      </div>
+      <div><p><strong>Visitor booking mode</strong>
+        Controls which booking UI visitors see. Switch anytime — takes effect immediately. Either way, every booking lands in the same Reservations list.</p></div>
       <div class="switch-row">
         <button class="mode-opt" id="mode-form" onclick="setMode('form')">📋 Request form</button>
         <button class="mode-opt" id="mode-live" onclick="setMode('live')">🗺 Live booking</button>
       </div>
     </div>
-    <div class="card" style="max-width:560px">
-      <div class="card-title">About each mode</div>
+    <div class="card" style="max-width:600px">
+      <div class="card-title">How the two modes work together</div>
       <p style="font-size:.875rem;line-height:1.7;color:#374151">
-        <strong>📋 Request form</strong> — visitors fill out a request and wait for you to confirm by email. Good while you're getting started.<br><br>
-        <strong>🗺 Live booking</strong> — visitors see an interactive map of all sites, check real-time availability, and book instantly. You get an email notification and it appears in Reservations immediately.
+        <strong>📋 Request form</strong> — visitors send a request (it lands in <em>Requests</em>). You review, then <em>Accept &amp; assign</em> a site, which creates a confirmed reservation.<br><br>
+        <strong>🗺 Live booking</strong> — visitors pick their own site and dates; a confirmed reservation is created instantly.<br><br>
+        Both paths feed the same <em>Reservations</em> backend with the same payment tracking — so you can flip to live booking whenever you're ready with zero data migration.
       </p>
     </div>
-    <div class="card" style="max-width:560px">
+    <div class="card" style="max-width:600px">
       <div class="card-title">Admin password</div>
       <p style="font-size:.875rem;color:#374151;line-height:1.6">
-        Set via <code>ADMIN_PASSWORD</code> environment variable in Cloudflare dashboard → Workers &amp; Pages → centennialpark → Settings → Variables &amp; Secrets.
+        Set via <code>ADMIN_PASSWORD</code> in Cloudflare → Workers &amp; Pages → centennialpark → Settings → Variables.
       </p>
     </div>
   </div>
 
 </div>
 
-<!-- ── EDIT MODAL ── -->
+<!-- ── EDIT RESERVATION MODAL ── -->
 <div class="modal-bg" id="edit-modal">
   <div class="modal">
     <div class="modal-head">
       <h2>Edit Reservation <span id="edit-id-label" style="color:var(--grey);font-size:.9rem"></span></h2>
-      <button class="modal-close" onclick="closeEdit()">✕</button>
+      <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
     </div>
     <form id="edit-form">
       <input type="hidden" id="edit-id">
       <div class="form-grid">
-        <div>
-          <label>Site</label>
-          <select id="edit-site"></select>
-        </div>
-        <div>
-          <label>Status</label>
-          <select id="edit-status">
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-        <div>
-          <label>Check-in</label>
-          <input type="date" id="edit-checkin">
-        </div>
-        <div>
-          <label>Check-out</label>
-          <input type="date" id="edit-checkout">
-        </div>
-        <div>
-          <label>Guest name</label>
-          <input type="text" id="edit-name">
-        </div>
-        <div>
-          <label>Email</label>
-          <input type="email" id="edit-email">
-        </div>
-        <div>
-          <label>Phone</label>
-          <input type="tel" id="edit-phone">
-        </div>
-        <div>
-          <label>Party size</label>
-          <input type="number" id="edit-party" min="1" max="20">
-        </div>
-        <div>
-          <label>Boat length (ft)</label>
-          <input type="number" id="edit-boat" min="8" max="100">
-        </div>
-        <div class="full">
-          <label>Notes</label>
-          <textarea id="edit-notes"></textarea>
-        </div>
+        <div><label>Site</label><select id="edit-site"></select></div>
+        <div><label>Status</label><select id="edit-status">
+          <option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option>
+        </select></div>
+        <div><label>Check-in</label><input type="date" id="edit-checkin"></div>
+        <div><label>Check-out</label><input type="date" id="edit-checkout"></div>
+        <div><label>Guest name</label><input type="text" id="edit-name"></div>
+        <div><label>Email</label><input type="email" id="edit-email"></div>
+        <div><label>Phone</label><input type="tel" id="edit-phone"></div>
+        <div><label>Party size</label><input type="number" id="edit-party" min="1" max="20"></div>
+        <div><label>Boat length (ft)</label><input type="number" id="edit-boat" min="8" max="100"></div>
+        <div><label>Payment status</label><select id="edit-payment">
+          <option value="unpaid">Unpaid</option><option value="deposit">Deposit paid</option><option value="paid">Paid in full</option>
+        </select></div>
+        <div><label>Amount due ($)</label><input type="number" id="edit-amount-due" min="0" step="0.01"></div>
+        <div><label>Amount paid ($)</label><input type="number" id="edit-amount-paid" min="0" step="0.01"></div>
+        <div class="full"><label>Notes</label><textarea id="edit-notes"></textarea></div>
       </div>
       <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
         <button type="submit" class="btn btn-green">Save changes</button>
-        <button type="button" class="btn btn-outline" onclick="closeEdit()">Cancel</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
         <span id="edit-status-msg" style="font-size:.875rem;color:var(--grey)"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── ACCEPT REQUEST MODAL ── -->
+<div class="modal-bg" id="accept-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Accept Request &amp; Assign Site</h2>
+      <button class="modal-close" onclick="closeModal('accept-modal')">✕</button>
+    </div>
+    <div class="sub-summary" id="accept-summary"></div>
+    <form id="accept-form">
+      <input type="hidden" id="accept-subid">
+      <div class="form-grid">
+        <div><label>Assign site *</label><select id="accept-site" required></select></div>
+        <div><label>Amount due ($)</label><input type="number" id="accept-amount" min="0" step="0.01" placeholder="0.00"></div>
+        <div><label>Check-in *</label><input type="date" id="accept-checkin" required></div>
+        <div><label>Check-out *</label><input type="date" id="accept-checkout" required></div>
+        <div><label>Party size</label><input type="number" id="accept-party" min="1" max="20"></div>
+        <div><label>Boat length (ft)</label><input type="number" id="accept-boat" min="8" max="100"></div>
+        <div class="full"><label>Notes</label><textarea id="accept-notes"></textarea></div>
+      </div>
+      <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+        <button type="submit" class="btn btn-green">Accept &amp; create booking</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('accept-modal')">Cancel</button>
+        <span id="accept-msg" style="font-size:.875rem;color:var(--grey)"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── EDIT REQUEST MODAL ── -->
+<div class="modal-bg" id="sub-edit-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Edit Request <span id="sub-edit-id-label" style="color:var(--grey);font-size:.9rem"></span></h2>
+      <button class="modal-close" onclick="closeModal('sub-edit-modal')">✕</button>
+    </div>
+    <form id="sub-edit-form">
+      <input type="hidden" id="sub-edit-id">
+      <div class="form-grid">
+        <div><label>First name</label><input type="text" id="sub-edit-fname"></div>
+        <div><label>Last name</label><input type="text" id="sub-edit-lname"></div>
+        <div class="full"><label>Email</label><input type="email" id="sub-edit-email"></div>
+        <div><label>Check-in</label><input type="date" id="sub-edit-checkin"></div>
+        <div><label>Check-out</label><input type="date" id="sub-edit-checkout"></div>
+        <div><label>Party size</label><input type="number" id="sub-edit-party" min="1" max="20"></div>
+        <div><label>Boat length (ft)</label><input type="number" id="sub-edit-boat" min="8" max="100"></div>
+        <div class="full"><label>Notes / requests</label><textarea id="sub-edit-notes"></textarea></div>
+      </div>
+      <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+        <button type="submit" class="btn btn-green">Save changes</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('sub-edit-modal')">Cancel</button>
+        <span id="sub-edit-msg" style="font-size:.875rem;color:var(--grey)"></span>
       </div>
     </form>
   </div>
@@ -388,6 +356,7 @@
 <script>
 const today = new Date().toISOString().slice(0,10);
 let allSites = [];
+let reqFilter = 'new';
 
 /* ── Tabs ── */
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -396,27 +365,17 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'requests') loadRequests();
   });
 });
 
-/* ── Sub-tabs ── */
-function switchSub(type) {
-  document.getElementById('sub-live').classList.toggle('active', type === 'live');
-  document.getElementById('sub-form').classList.toggle('active', type === 'form');
-  document.getElementById('res-live').style.display  = type === 'live' ? '' : 'none';
-  document.getElementById('res-forms').style.display = type === 'form' ? '' : 'none';
-  if (type === 'form') loadSubmissions();
-}
-
-/* ── Settings ── */
+/* ── Settings / mode ── */
 async function loadSettings() {
   try {
-    const r = await fetch('/admin/api/settings');
-    const s = await r.json();
+    const s = await (await fetch('/admin/api/settings')).json();
     applyMode(s.booking_mode || 'form');
   } catch(e) { console.error(e); }
 }
-
 function applyMode(mode) {
   const badge = document.getElementById('header-mode-badge');
   badge.textContent = mode === 'live' ? '🗺 Live booking ON' : '📋 Form mode';
@@ -424,14 +383,9 @@ function applyMode(mode) {
   document.getElementById('mode-form').className = 'mode-opt' + (mode==='form' ? ' active-form' : '');
   document.getElementById('mode-live').className = 'mode-opt' + (mode==='live' ? ' active-live' : '');
 }
-
 async function setMode(mode) {
   try {
-    await fetch('/admin/api/settings', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ booking_mode: mode })
-    });
+    await fetch('/admin/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ booking_mode: mode }) });
     applyMode(mode);
   } catch(e) { alert('Error saving setting: ' + e.message); }
 }
@@ -441,263 +395,276 @@ async function loadDashboard() {
   try {
     const [resR, subR] = await Promise.all([
       fetch('/admin/api/reservations?status=confirmed'),
-      fetch('/admin/api/submissions')
+      fetch('/admin/api/submissions?status=new')
     ]);
-    const { reservations: all } = await resR.json();
-    const { submissions }       = await subR.json();
+    const { reservations: all = [] } = await resR.json();
+    const { submissions: newSubs = [] } = await subR.json();
 
     const in14 = new Date(Date.now() + 14*86400000).toISOString().slice(0,10);
+    document.getElementById('stat-today').textContent  = all.filter(r => r.check_in === today).length;
+    document.getElementById('stat-week').textContent   = all.filter(r => r.check_in >= today && r.check_in <= in14).length;
+    document.getElementById('stat-total').textContent  = all.length;
+    document.getElementById('stat-unpaid').textContent = all.filter(r => (r.payment_status||'unpaid') !== 'paid').length;
+    document.getElementById('stat-new').textContent    = newSubs.length;
 
-    document.getElementById('stat-today').textContent = all.filter(r => r.check_in === today).length;
-    document.getElementById('stat-week').textContent  = all.filter(r => r.check_in >= today && r.check_in <= in14).length;
-    document.getElementById('stat-month').textContent = all.filter(r => r.check_in.startsWith(today.slice(0,7))).length;
-    document.getElementById('stat-total').textContent = all.length;
-    document.getElementById('stat-forms').textContent = (submissions||[]).length;
+    const pill = document.getElementById('req-pill');
+    if (newSubs.length) { pill.hidden = false; pill.textContent = newSubs.length; } else { pill.hidden = true; }
 
-    const upcoming = all
-      .filter(r => r.check_in >= today && r.check_in <= in14)
+    const upcoming = all.filter(r => r.check_in >= today && r.check_in <= in14)
       .sort((a,b) => a.check_in.localeCompare(b.check_in));
-
     const ul = document.getElementById('upcoming-list');
-    if (!upcoming.length) { ul.innerHTML = '<div class="empty">No arrivals in the next 14 days</div>'; return; }
-    ul.innerHTML = upcoming.map(r => `
+    ul.innerHTML = upcoming.length ? upcoming.map(r => `
       <div class="upcoming-row">
         <div class="upcoming-dates">${r.check_in} → ${r.check_out}</div>
-        <div class="upcoming-name">${esc(r.guest_name)}${r.guest_email ? ' &mdash; <a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>' : ''}</div>
+        <div class="upcoming-name">${esc(r.guest_name)}${r.guest_email ? ' &mdash; <a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>' : ''} ${payBadge(r.payment_status)}</div>
         <div class="upcoming-site">${esc(r.site_name||r.site_id)}</div>
-      </div>`).join('');
+      </div>`).join('') : '<div class="empty">No arrivals in the next 14 days</div>';
   } catch(e) { console.error(e); }
 }
 
-/* ── Live reservations table ── */
+/* ── Payment badge + cycle ── */
+function payBadge(p) {
+  p = p || 'unpaid';
+  const map = { paid:['badge-green','Paid'], deposit:['badge-orange','Deposit'], unpaid:['badge-red','Unpaid'] };
+  const [cls,label] = map[p] || map.unpaid;
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+async function cyclePayment(id, current) {
+  const order = ['unpaid','deposit','paid'];
+  const next = order[(order.indexOf(current||'unpaid') + 1) % order.length];
+  await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, paymentStatus: next }) });
+  loadReservations(); loadDashboard();
+}
+
+/* ── Reservations ── */
 async function loadReservations() {
-  const month  = document.getElementById('filter-month').value;
-  const status = document.getElementById('filter-status').value;
-  const params = new URLSearchParams({ status });
+  const month   = document.getElementById('filter-month').value;
+  const status  = document.getElementById('filter-status').value;
+  const payment = document.getElementById('filter-payment').value;
+  const params  = new URLSearchParams({ status });
   if (month) params.set('month', month);
+  if (payment) params.set('payment', payment);
 
   try {
-    const r = await fetch('/admin/api/reservations?' + params);
-    const { reservations } = await r.json();
+    const { reservations = [], error } = await (await fetch('/admin/api/reservations?' + params)).json();
     const tbody = document.getElementById('res-tbody');
-
-    if (!reservations || !reservations.length) {
-      tbody.innerHTML = '<tr><td colspan="11" class="empty">No reservations found</td></tr>';
-      return;
-    }
+    if (error) { tbody.innerHTML = `<tr><td colspan="12" class="empty">Error: ${esc(error)}</td></tr>`; return; }
+    if (!reservations.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No reservations found</td></tr>'; return; }
 
     tbody.innerHTML = reservations.map(r => {
       const nights = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000);
-      const badge  = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
+      const sBadge = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
+      const pay    = r.payment_status || 'unpaid';
       return `<tr>
         <td>${r.id}</td>
-        <td><strong>${esc(r.site_name||r.site_id)}</strong><br><small style="color:var(--grey)">${r.site_type||''}</small></td>
+        <td><strong>${esc(r.site_name||r.site_id)}</strong><br><small style="color:var(--grey)">${esc(r.site_type||'')}</small></td>
         <td>${esc(r.guest_name)}</td>
-        <td><a href="mailto:${esc(r.guest_email)}">${esc(r.guest_email)}</a>${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
-        <td>${r.check_in}</td>
-        <td>${r.check_out}</td>
-        <td>${nights}</td>
+        <td>${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':''}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
+        <td>${r.check_in}</td><td>${r.check_out}</td><td>${nights}</td>
         <td>${r.party_size||'—'}</td>
         <td><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
-        <td><span class="badge ${badge}">${r.status}</span></td>
+        <td><span class="badge ${sBadge}">${r.status}</span></td>
+        <td><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
         <td class="action-cell">
           <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
           ${r.status==='confirmed'
-            ? `<button class="btn btn-sm btn-red" onclick="cancelRes(${r.id})">Cancel</button>`
-            : `<button class="btn btn-sm btn-outline" onclick="restoreRes(${r.id})">Restore</button>`}
+            ? `<button class="btn btn-sm btn-red" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
+            : `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'confirmed')">Restore</button>`}
         </td>
       </tr>`;
     }).join('');
   } catch(e) { console.error(e); }
 }
-
-async function cancelRes(id) {
-  if (!confirm('Cancel reservation #' + id + '?')) return;
-  await fetch('/admin/api/reservations',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'cancelled'})});
-  loadReservations();
-}
-async function restoreRes(id) {
-  await fetch('/admin/api/reservations',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed'})});
-  loadReservations();
+async function setResStatus(id, status) {
+  if (status==='cancelled' && !confirm('Cancel reservation #'+id+'?')) return;
+  await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status }) });
+  loadReservations(); loadDashboard();
 }
 
-/* ── Form submissions table ── */
-async function loadSubmissions() {
-  const month  = document.getElementById('filter-form-month').value;
-  const params = new URLSearchParams();
-  if (month) params.set('month', month);
-
+/* ── Edit reservation modal ── */
+async function openEdit(id) {
   try {
-    const r = await fetch('/admin/api/submissions?' + params);
-    const { submissions } = await r.json();
-    const tbody = document.getElementById('form-tbody');
+    const { reservations = [] } = await (await fetch('/admin/api/reservations?status=all')).json();
+    const r = reservations.find(x => x.id === id);
+    if (!r) return alert('Could not load reservation');
+    setVal('edit-id', r.id);
+    document.getElementById('edit-id-label').textContent = '#' + r.id;
+    setVal('edit-name', r.guest_name); setVal('edit-email', r.guest_email); setVal('edit-phone', r.guest_phone);
+    setVal('edit-checkin', r.check_in); setVal('edit-checkout', r.check_out);
+    setVal('edit-status', r.status || 'confirmed'); setVal('edit-party', r.party_size);
+    setVal('edit-boat', r.boat_length); setVal('edit-notes', r.notes);
+    setVal('edit-payment', r.payment_status || 'unpaid');
+    setVal('edit-amount-due', r.amount_due); setVal('edit-amount-paid', r.amount_paid);
+    document.getElementById('edit-site').innerHTML = siteOptions(r.site_id);
+    document.getElementById('edit-status-msg').textContent = '';
+    openModal('edit-modal');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+document.getElementById('edit-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('edit-status-msg'); msg.textContent='Saving…'; msg.style.color='var(--grey)';
+  const payload = {
+    id: parseInt(val('edit-id')), siteId: val('edit-site'), status: val('edit-status'),
+    checkIn: val('edit-checkin'), checkOut: val('edit-checkout'),
+    guestName: val('edit-name'), guestEmail: val('edit-email'), guestPhone: val('edit-phone'),
+    partySize: val('edit-party'), boatLength: val('edit-boat'), notes: val('edit-notes'),
+    paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid')
+  };
+  try {
+    const res = await (await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok) { msg.textContent='✓ Saved'; msg.style.color='#16a34a'; setTimeout(()=>{ closeModal('edit-modal'); loadReservations(); loadDashboard(); }, 500); }
+    else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
+  } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
+});
 
-    if (!submissions || !submissions.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty">No form requests found</td></tr>';
-      return;
-    }
+/* ── Requests (form inbox) ── */
+function setReqFilter(s) {
+  reqFilter = s;
+  document.querySelectorAll('[data-rstatus]').forEach(b => b.classList.toggle('active', b.dataset.rstatus === s));
+  loadRequests();
+}
+async function loadRequests() {
+  try {
+    const { submissions = [], error } = await (await fetch('/admin/api/submissions?status=' + reqFilter)).json();
+    const tbody = document.getElementById('req-tbody');
+    if (error) { tbody.innerHTML = `<tr><td colspan="12" class="empty">Error: ${esc(error)}</td></tr>`; return; }
+    if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No requests</td></tr>'; return; }
 
     tbody.innerHTML = submissions.map(s => {
-      const types = [s.need_campsite && 'Campsite', s.need_moorage && 'Moorage'].filter(Boolean).join(', ') || '—';
+      const wants = [s.need_campsite==='yes'&&'Campsite', s.need_moorage==='yes'&&'Moorage'].filter(Boolean).join(', ') || '—';
+      const st = s.status || 'new';
+      const stBadge = st==='accepted' ? 'badge-green' : st==='declined' ? 'badge-grey' : 'badge-blue';
       const name = esc([s.first_name, s.last_name].filter(Boolean).join(' '));
       return `<tr>
         <td>${s.id}</td>
-        <td style="white-space:nowrap;font-size:.8rem">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
+        <td style="white-space:nowrap;font-size:.78rem">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
         <td>${name}</td>
         <td><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></td>
-        <td><span class="badge badge-blue">${esc(types)}</span></td>
-        <td>${esc(s.check_in||'—')}</td>
-        <td>${esc(s.check_out||'—')}</td>
-        <td>${esc(s.group_size||'—')}</td>
-        <td>${esc(s.boat_length||'—')}</td>
-        <td style="max-width:200px;font-size:.8rem">${esc(s.additional_requests||'')}</td>
+        <td><span class="badge badge-blue">${esc(wants)}</span></td>
+        <td>${esc(s.check_in||'—')}</td><td>${esc(s.check_out||'—')}</td>
+        <td>${esc(s.group_size||'—')}</td><td>${esc(s.boat_length||'—')}</td>
+        <td style="max-width:160px;font-size:.78rem">${esc(s.additional_requests||'')}</td>
+        <td><span class="badge ${stBadge}">${st}</span></td>
+        <td class="action-cell">
+          ${st!=='accepted' ? `<button class="btn btn-sm btn-green" onclick='openAccept(${s.id})'>Accept</button>` : ''}
+          <button class="btn btn-sm btn-accent" onclick='openSubEdit(${s.id})'>Edit</button>
+          ${st!=='declined' && st!=='accepted' ? `<button class="btn btn-sm btn-outline" onclick="declineSub(${s.id})">Decline</button>` : ''}
+        </td>
       </tr>`;
     }).join('');
+    window._subs = submissions;
   } catch(e) { console.error(e); }
 }
-
-/* ── Edit modal ── */
-let editData = {};
-
-async function openEdit(id) {
-  try {
-    const r = await fetch('/admin/api/reservations?status=all');
-    const { reservations } = await r.json();
-    const res = reservations.find(x => x.id === id);
-    if (!res) { alert('Could not load reservation'); return; }
-
-    editData = res;
-    document.getElementById('edit-id').value         = res.id;
-    document.getElementById('edit-id-label').textContent = '#' + res.id;
-    document.getElementById('edit-name').value        = res.guest_name || '';
-    document.getElementById('edit-email').value       = res.guest_email || '';
-    document.getElementById('edit-phone').value       = res.guest_phone || '';
-    document.getElementById('edit-checkin').value     = res.check_in || '';
-    document.getElementById('edit-checkout').value    = res.check_out || '';
-    document.getElementById('edit-status').value      = res.status || 'confirmed';
-    document.getElementById('edit-party').value       = res.party_size || '';
-    document.getElementById('edit-boat').value        = res.boat_length || '';
-    document.getElementById('edit-notes').value       = res.notes || '';
-
-    const sel = document.getElementById('edit-site');
-    sel.innerHTML = allSites.map(s => `<option value="${esc(s.id)}" ${s.id===res.site_id?'selected':''}>${esc(s.label)} (${s.type})</option>`).join('');
-
-    document.getElementById('edit-status-msg').textContent = '';
-    document.getElementById('edit-modal').classList.add('open');
-  } catch(e) { alert('Error loading reservation: ' + e.message); }
+async function declineSub(id) {
+  if (!confirm('Decline request #'+id+'?')) return;
+  await fetch('/admin/api/submissions', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status:'declined' }) });
+  loadRequests(); loadDashboard();
 }
 
-function closeEdit() {
-  document.getElementById('edit-modal').classList.remove('open');
+/* ── Accept request modal ── */
+function openAccept(id) {
+  const s = (window._subs||[]).find(x => x.id === id);
+  if (!s) return;
+  const name = [s.first_name, s.last_name].filter(Boolean).join(' ');
+  const wants = [s.need_campsite==='yes'&&'campsite', s.need_moorage==='yes'&&'moorage'].filter(Boolean).join(' + ') || '—';
+  document.getElementById('accept-summary').innerHTML =
+    `<strong>${esc(name)}</strong> · <a href="mailto:${esc(s.email)}">${esc(s.email)}</a><br>Wants: ${esc(wants)} · ${esc(s.additional_requests||'no notes')}`;
+  setVal('accept-subid', s.id);
+  setVal('accept-checkin', s.check_in); setVal('accept-checkout', s.check_out);
+  setVal('accept-party', s.group_size); setVal('accept-boat', s.boat_length);
+  setVal('accept-notes', s.additional_requests);
+  /* prefer matching site type */
+  const wantMoor = s.need_moorage === 'yes' && s.need_campsite !== 'yes';
+  document.getElementById('accept-site').innerHTML = siteOptions(null, wantMoor ? 'moorage' : null);
+  document.getElementById('accept-msg').textContent = '';
+  openModal('accept-modal');
 }
-
-document.getElementById('edit-form').addEventListener('submit', async function(e) {
+document.getElementById('accept-form').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const btn = this.querySelector('[type=submit]');
-  const msg = document.getElementById('edit-status-msg');
-  btn.disabled = true; msg.textContent = 'Saving…'; msg.style.color = 'var(--grey)';
-
+  const msg = document.getElementById('accept-msg'); msg.textContent='Creating…'; msg.style.color='var(--grey)';
   const payload = {
-    id:         parseInt(document.getElementById('edit-id').value),
-    siteId:     document.getElementById('edit-site').value,
-    status:     document.getElementById('edit-status').value,
-    checkIn:    document.getElementById('edit-checkin').value,
-    checkOut:   document.getElementById('edit-checkout').value,
-    guestName:  document.getElementById('edit-name').value,
-    guestEmail: document.getElementById('edit-email').value,
-    guestPhone: document.getElementById('edit-phone').value,
-    partySize:  document.getElementById('edit-party').value,
-    boatLength: document.getElementById('edit-boat').value,
-    notes:      document.getElementById('edit-notes').value,
+    submissionId: parseInt(val('accept-subid')), siteId: val('accept-site'),
+    checkIn: val('accept-checkin'), checkOut: val('accept-checkout'),
+    partySize: val('accept-party'), boatLength: val('accept-boat'),
+    amountDue: val('accept-amount'), notes: val('accept-notes')
   };
-
   try {
-    const r   = await fetch('/admin/api/reservations', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-    const res = await r.json();
-    if (res.ok) {
-      msg.textContent = '✓ Saved'; msg.style.color = '#16a34a';
-      setTimeout(() => { closeEdit(); loadReservations(); }, 600);
-    } else {
-      msg.textContent = res.error || 'Error'; msg.style.color = '#dc2626';
-    }
-  } catch(ex) {
-    msg.textContent = ex.message; msg.style.color = '#dc2626';
-  }
-  btn.disabled = false;
+    const res = await (await fetch('/admin/api/submissions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok) { msg.textContent='✓ Booking #'+res.reservationId+' created'; msg.style.color='#16a34a'; setTimeout(()=>{ closeModal('accept-modal'); loadRequests(); loadReservations(); loadDashboard(); }, 800); }
+    else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
+  } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
 
-/* Close modal on backdrop click */
-document.getElementById('edit-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeEdit();
+/* ── Edit request modal ── */
+function openSubEdit(id) {
+  const s = (window._subs||[]).find(x => x.id === id);
+  if (!s) return;
+  setVal('sub-edit-id', s.id);
+  document.getElementById('sub-edit-id-label').textContent = '#' + s.id;
+  setVal('sub-edit-fname', s.first_name); setVal('sub-edit-lname', s.last_name); setVal('sub-edit-email', s.email);
+  setVal('sub-edit-checkin', s.check_in); setVal('sub-edit-checkout', s.check_out);
+  setVal('sub-edit-party', s.group_size); setVal('sub-edit-boat', s.boat_length);
+  setVal('sub-edit-notes', s.additional_requests);
+  document.getElementById('sub-edit-msg').textContent = '';
+  openModal('sub-edit-modal');
+}
+document.getElementById('sub-edit-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('sub-edit-msg'); msg.textContent='Saving…'; msg.style.color='var(--grey)';
+  const payload = {
+    id: parseInt(val('sub-edit-id')), firstName: val('sub-edit-fname'), lastName: val('sub-edit-lname'),
+    email: val('sub-edit-email'), checkIn: val('sub-edit-checkin'), checkOut: val('sub-edit-checkout'),
+    groupSize: val('sub-edit-party'), boatLength: val('sub-edit-boat'), additionalRequests: val('sub-edit-notes')
+  };
+  try {
+    const res = await (await fetch('/admin/api/submissions', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok) { msg.textContent='✓ Saved'; msg.style.color='#16a34a'; setTimeout(()=>{ closeModal('sub-edit-modal'); loadRequests(); }, 500); }
+    else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
+  } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
 
-/* ── Add form ── */
+/* ── Add booking ── */
 async function loadSites() {
   try {
-    const r = await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all');
-    const { available, booked } = await r.json();
-    allSites = [...(available||[]), ...(booked||[])].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
-
-    const sel  = document.getElementById('add-site');
-    sel.innerHTML = allSites.map(s => `<option value="${esc(s.id)}">${esc(s.label||s.name)} (${s.type})</option>`).join('');
+    const { available = [], booked = [] } = await (await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all')).json();
+    allSites = [...available, ...booked].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
+    document.getElementById('add-site').innerHTML = siteOptions();
   } catch(e) { console.error(e); }
 }
-
+function siteOptions(selectedId, onlyType) {
+  return allSites
+    .filter(s => !onlyType || s.type === onlyType)
+    .map(s => `<option value="${esc(s.id)}" ${s.id===selectedId?'selected':''}>${esc(s.name||s.id)} (${esc(s.type)})</option>`).join('');
+}
 document.getElementById('add-form').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const btn = this.querySelector('[type=submit]');
-  const st  = document.getElementById('add-status');
-  btn.disabled = true; st.textContent = 'Saving…';
-
+  const st = document.getElementById('add-status'); st.textContent='Saving…'; st.style.color='var(--grey)';
   const payload = {
-    siteId:     document.getElementById('add-site').value,
-    source:     document.getElementById('add-source').value,
-    checkIn:    document.getElementById('add-checkin').value,
-    checkOut:   document.getElementById('add-checkout').value,
-    guestName:  document.getElementById('add-name').value,
-    guestEmail: document.getElementById('add-email').value,
-    guestPhone: document.getElementById('add-phone').value,
-    partySize:  document.getElementById('add-party').value,
-    boatLength: document.getElementById('add-boat').value,
-    notes:      document.getElementById('add-notes').value,
+    siteId: val('add-site'), source: val('add-source'), checkIn: val('add-checkin'), checkOut: val('add-checkout'),
+    guestName: val('add-name'), guestEmail: val('add-email'), guestPhone: val('add-phone'),
+    partySize: val('add-party'), boatLength: val('add-boat'), amountDue: val('add-amount'), notes: val('add-notes')
   };
-
   try {
-    const r   = await fetch('/admin/api/reservations', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-    const res = await r.json();
-    if (res.ok) {
-      st.textContent = '✓ Saved as #' + res.id;
-      st.style.color = '#16a34a';
-      this.reset();
-      loadReservations();
-    } else {
-      st.textContent = res.error || 'Error';
-      st.style.color = '#dc2626';
-    }
-  } catch(ex) {
-    st.textContent = ex.message;
-    st.style.color = '#dc2626';
-  }
-  btn.disabled = false;
+    const res = await (await fetch('/admin/api/reservations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok) { st.textContent='✓ Saved as #'+res.id; st.style.color='#16a34a'; this.reset(); loadReservations(); loadDashboard(); }
+    else { st.textContent = res.error || 'Error'; st.style.color='#dc2626'; }
+  } catch(ex) { st.textContent = ex.message; st.style.color='#dc2626'; }
 });
 
 /* ── Helpers ── */
-function esc(v) {
-  return String(v == null ? '' : v)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function esc(v) { return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function val(id) { return document.getElementById(id).value; }
+function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v==null?'':v); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
 /* ── Init ── */
-document.getElementById('filter-month').value      = today.slice(0,7);
-document.getElementById('filter-form-month').value = today.slice(0,7);
-loadSettings();
-loadDashboard();
-loadReservations();
-loadSites();
-
+document.getElementById('filter-month').value = today.slice(0,7);
+loadSettings(); loadDashboard(); loadReservations(); loadSites();
 document.getElementById('filter-month').addEventListener('change', loadReservations);
 document.getElementById('filter-status').addEventListener('change', loadReservations);
-document.getElementById('filter-form-month').addEventListener('change', loadSubmissions);
+document.getElementById('filter-payment').addEventListener('change', loadReservations);
 </script>
 </body>
 </html>
