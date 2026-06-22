@@ -1,33 +1,20 @@
-/* layout.js — inject shared header and footer */
+/* layout.js — inject shared footer only */
 
 (function () {
-  var header = document.getElementById('site-header');
-  if (header) {
-    header.innerHTML =
-      '<div class="site-header-bar">' +
-        '<a href="#home" class="site-header-brand">' +
-          '<img src="https://bamfieldparks.com/wp-content/uploads/2017/03/bear_logo4-150x150.png" alt="Park bear logo" width="32" height="32">' +
-          '<span>Centennial Park</span>' +
-        '</a>' +
-        '<a href="#book" class="btn btn-primary site-header-cta">Book now</a>' +
-      '</div>';
-  }
-
   var footer = document.getElementById('site-footer');
   if (footer) {
     footer.innerHTML =
       '<div class="site-footer-inner">' +
-        '<div>' +
-          '<strong style="font-family:var(--font-display);color:#fff">Eileen Scott Centennial Park</strong>' +
-          '<p style="margin-top:.4rem;font-size:.85rem">Bamfield, BC · PO Box 931</p>' +
+        '<div class="site-footer-biz">' +
+          '<strong>Eileen Scott Centennial Park</strong>' +
+          '<p>Bamfield, BC &middot; PO Box 931</p>' +
+          '<a href="tel:+12507283006">250-728-3006</a>' +
+          '<a href="mailto:bamfieldcentennialpark@gmail.com">bamfieldcentennialpark@gmail.com</a>' +
         '</div>' +
-        '<div>' +
-          '<a href="tel:+12507283006" style="color:rgba(255,255,255,.8);display:block;margin-bottom:.3rem">250-728-3006</a>' +
-          '<a href="mailto:bamfieldcentennialpark@gmail.com" style="color:rgba(255,255,255,.6);font-size:.85rem">bamfieldcentennialpark@gmail.com</a>' +
+        '<div class="site-footer-tag">' +
+          '<span class="site-footer-hand">see you at the end of the road</span>' +
+          '<span class="site-footer-copy">&copy; ' + new Date().getFullYear() + ' Eileen Scott Centennial Park</span>' +
         '</div>' +
-      '</div>' +
-      '<p class="site-footer-copy" style="max-width:var(--inner-max);margin:1.5rem auto 0">' +
-        '&copy; ' + new Date().getFullYear() + ' Eileen Scott Centennial Park. All rights reserved.' +
-      '</p>';
+      '</div>';
   }
 })();

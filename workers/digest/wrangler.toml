@@ -1,0 +1,21 @@
+# Daily digest Worker — deploy from this folder with `wrangler deploy`.
+name = "centennialpark-digest"
+main = "index.js"
+compatibility_date = "2024-09-01"
+
+# 15:00 UTC ≈ 8:00 AM Pacific (summer). Adjust to taste.
+[triggers]
+crons = ["0 15 * * *"]
+
+# Bind the SAME D1 database the Pages site writes to.
+# Fill in database_id from `wrangler d1 create centennialpark`.
+[[d1_databases]]
+binding = "DB"
+database_name = "centennialpark"
+database_id = "f4f569e4-ae10-4704-a683-713b45fd71da"
+
+# Non-secret defaults (the Gmail destination + verified sender).
+# RESEND_API_KEY must be set as a secret:  wrangler secret put RESEND_API_KEY
+[vars]
+NOTIFY_TO = "andrewglennmiller@gmail.com"
+RESEND_FROM = "Eileen Scott Centennial Park <onboarding@resend.dev>"

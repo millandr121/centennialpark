@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Park Admin — Eileen Scott Centennial Park</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2e5d33; --green-light: #4a8a52; --green-bg: #f0f7f1;
+      --accent: #d4830a; --red: #dc2626; --grey: #6b7280;
+      --border: #e5e7eb; --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body { background: #f9fafb; color: #111827; min-height: 100vh; }
+
+    /* ── Header ── */
+    .top-bar {
+      background: var(--green); color: #fff;
+      padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; gap: 1rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .top-bar h1 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .top-bar .mode-badge {
+      font-size: .75rem; padding: .25em .8em; border-radius: 99px;
+      background: rgba(255,255,255,.15); letter-spacing: .04em;
+    }
+    .top-bar .mode-badge.live { background: #16a34a; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); background: #fff;
+      padding: 0 1.5rem; }
+    .tab-btn {
+      padding: .8rem 1.2rem; font-size: .875rem; font-weight: 500; cursor: pointer;
+      border: none; background: none; color: var(--grey); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color .2s, border-color .2s;
+    }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab-btn:hover { color: var(--green); }
+
+    /* ── Layout ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.25rem; margin-bottom: 1rem;
+    }
+    .card-title { font-size: .875rem; font-weight: 600; color: var(--grey); margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── Stats row ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; }
+    .stat-num { font-size: 2rem; font-weight: 700; color: var(--green); }
+    .stat-label { font-size: .8rem; color: var(--grey); margin-top: .2rem; }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th { background: var(--green); color: #fff; padding: 9px 12px; text-align: left; font-size: .75rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    tr:hover td { background: var(--green-bg); }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: .2em .65em; border-radius: 99px; font-size: .75rem; font-weight: 600; }
+    .badge-green  { background: #dcfce7; color: #166534; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-grey   { background: #f3f4f6; color: #374151; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: .4em; padding: .5em 1.1em; border-radius: 6px;
+      font-size: .875rem; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
+    .btn-green  { background: var(--green); color: #fff; }
+    .btn-green:hover { background: var(--green-light); }
+    .btn-outline { background: none; border: 1px solid var(--border); color: #374151; }
+    .btn-outline:hover { background: #f3f4f6; }
+    .btn-red    { background: var(--red); color: #fff; }
+    .btn-red:hover { filter: brightness(1.1); }
+    .btn-sm { padding: .3em .75em; font-size: .8rem; }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .form-grid .full { grid-column: 1 / -1; }
+    label { display: block; font-size: .8rem; font-weight: 500; color: #374151; margin-bottom: .3rem; }
+    input, select, textarea {
+      width: 100%; padding: .5em .75em; border: 1px solid var(--border); border-radius: 6px;
+      font-size: .875rem; background: #fff; color: #111827;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: -1px; }
+    textarea { resize: vertical; min-height: 60px; }
+
+    /* ── Toggle ── */
+    .mode-toggle {
+      display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem;
+      background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+    .mode-toggle p { flex: 1; font-size: .9rem; }
+    .mode-toggle strong { display: block; margin-bottom: .2rem; }
+    .switch-row { display: flex; gap: .5rem; }
+    .mode-opt {
+      padding: .6em 1.4em; border-radius: 99px; font-size: .875rem; font-weight: 600;
+      cursor: pointer; border: 2px solid var(--border); background: none; color: var(--grey);
+      transition: all .2s;
+    }
+    .mode-opt.active-form { border-color: var(--accent); background: #fff8ee; color: var(--accent); }
+    .mode-opt.active-live { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+
+    /* ── Modal ── */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal { background: #fff; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-head h2 { font-size: 1.1rem; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--grey); }
+
+    /* ── Upcoming list ── */
+    .upcoming-row { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+    .upcoming-row:last-child { border-bottom: none; }
+    .upcoming-dates { min-width: 130px; color: var(--grey); font-size: .8rem; }
+    .upcoming-name  { font-weight: 500; flex: 1; }
+    .upcoming-site  { color: var(--green); font-weight: 600; font-size: .8rem; }
+
+    .empty { color: var(--grey); font-size: .875rem; padding: 1.5rem 0; text-align: center; }
+    .toolbar { display: flex; gap: .75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .toolbar input, .toolbar select { width: auto; }
+    .filter-row { display: flex; gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-row input, .filter-row select { max-width: 180px; }
+    .action-cell { display: flex; gap: .4rem; }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Eileen Scott Centennial Park</h1>
+  <span class="mode-badge" id="header-mode-badge">Loading…</span>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+  <button class="tab-btn" data-tab="reservations">Reservations</button>
+  <button class="tab-btn" data-tab="add">Add Booking</button>
+  <button class="tab-btn" data-tab="settings">Settings</button>
+</nav>
+
+<div class="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="panel active" id="tab-dashboard">
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-today">—</div><div class="stat-label">Arriving today</div></div>
+      <div class="stat"><div class="stat-num" id="stat-week">—</div><div class="stat-label">This week</div></div>
+      <div class="stat"><div class="stat-num" id="stat-month">—</div><div class="stat-label">This month</div></div>
+      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">All time</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Upcoming arrivals (next 14 days)</div>
+      <div id="upcoming-list"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ── RESERVATIONS ── -->
+  <div class="panel" id="tab-reservations">
+    <div class="toolbar">
+      <input type="month" id="filter-month" value="">
+      <select id="filter-status">
+        <option value="all">All statuses</option>
+        <option value="confirmed" selected>Confirmed</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="pending">Pending</option>
+      </select>
+      <button class="btn btn-outline" onclick="loadReservations()">Refresh</button>
+    </div>
+    <div class="card tbl-wrap">
+      <table id="res-table">
+        <thead><tr>
+          <th>#</th><th>Site</th><th>Guest</th><th>Email</th>
+          <th>Check-in</th><th>Check-out</th><th>Nts</th>
+          <th>Party</th><th>Source</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="res-tbody"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ADD BOOKING ── -->
+  <div class="panel" id="tab-add">
+    <div class="card" style="max-width:640px">
+      <div class="card-title">Add manual reservation</div>
+      <form id="add-form">
+        <div class="form-grid">
+          <div>
+            <label>Site *</label>
+            <select id="add-site" required></select>
+          </div>
+          <div>
+            <label>Source</label>
+            <select id="add-source">
+              <option value="phone">Phone call</option>
+              <option value="walkin">Walk-in</option>
+              <option value="admin">Admin entry</option>
+            </select>
+          </div>
+          <div>
+            <label>Check-in *</label>
+            <input type="date" id="add-checkin" required>
+          </div>
+          <div>
+            <label>Check-out *</label>
+            <input type="date" id="add-checkout" required>
+          </div>
+          <div>
+            <label>Guest name *</label>
+            <input type="text" id="add-name" required placeholder="Full name">
+          </div>
+          <div>
+            <label>Email</label>
+            <input type="email" id="add-email" placeholder="guest@email.com">
+          </div>
+          <div>
+            <label>Phone</label>
+            <input type="tel" id="add-phone" placeholder="250-555-0000">
+          </div>
+          <div>
+            <label>Party size</label>
+            <input type="number" id="add-party" min="1" max="20" placeholder="2">
+          </div>
+          <div>
+            <label>Boat length (ft)</label>
+            <input type="number" id="add-boat" min="8" max="100" placeholder="—">
+          </div>
+          <div class="full">
+            <label>Notes</label>
+            <textarea id="add-notes" placeholder="Any notes…"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
+          <button type="submit" class="btn btn-green">Save reservation</button>
+          <span id="add-status" style="font-size:.875rem;color:var(--grey)"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div class="panel" id="tab-settings">
+    <div class="mode-toggle">
+      <div>
+        <p>
+          <strong>Visitor booking mode</strong>
+          Controls which booking UI visitors see on the website.
+        </p>
+      </div>
+      <div class="switch-row">
+        <button class="mode-opt" id="mode-form" onclick="setMode('form')">📋 Request form</button>
+        <button class="mode-opt" id="mode-live" onclick="setMode('live')">🗺 Live booking</button>
+      </div>
+    </div>
+    <div class="card" style="max-width:560px">
+      <div class="card-title">About each mode</div>
+      <p style="font-size:.875rem;line-height:1.6;color:#374151">
+        <strong>Request form</strong> — visitors fill out a request form and wait for you to confirm availability by email. The current system.<br><br>
+        <strong>Live booking</strong> — visitors see an interactive map of all sites, check date availability in real time, and book instantly. Reservations go straight into D1. You get an email notification immediately.
+      </p>
+    </div>
+    <div class="card" style="max-width:560px">
+      <div class="card-title">Admin login password</div>
+      <p style="font-size:.875rem;color:#374151">
+        Set via <code>ADMIN_PASSWORD</code> environment variable in the Cloudflare dashboard → Workers &amp; Pages → centennialpark → Settings → Variables.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const today = new Date().toISOString().slice(0,10);
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── Load settings ── */
+async function loadSettings() {
+  try {
+    const r = await fetch('/admin/api/settings');
+    const s = await r.json();
+    applyMode(s.booking_mode || 'form');
+  } catch(e) { console.error(e); }
+}
+
+function applyMode(mode) {
+  const badge = document.getElementById('header-mode-badge');
+  badge.textContent = mode === 'live' ? '🗺 Live booking ON' : '📋 Form mode';
+  badge.className = 'mode-badge' + (mode === 'live' ? ' live' : '');
+  document.getElementById('mode-form').className = 'mode-opt' + (mode==='form'?' active-form':'');
+  document.getElementById('mode-live').className = 'mode-opt' + (mode==='live'?' active-live':'');
+}
+
+async function setMode(mode) {
+  try {
+    await fetch('/admin/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ booking_mode: mode })
+    });
+    applyMode(mode);
+  } catch(e) { alert('Error saving setting: ' + e.message); }
+}
+
+/* ── Dashboard ── */
+async function loadDashboard() {
+  try {
+    const r = await fetch('/admin/api/reservations?status=confirmed');
+    const { reservations: all } = await r.json();
+
+    const thisMonth = today.slice(0,7);
+    const in14days  = new Date(Date.now() + 14*86400000).toISOString().slice(0,10);
+
+    document.getElementById('stat-today').textContent  = all.filter(r => r.check_in === today).length;
+    document.getElementById('stat-week').textContent   = all.filter(r => r.check_in >= today && r.check_in <= in14days).length;
+    document.getElementById('stat-month').textContent  = all.filter(r => r.check_in.startsWith(thisMonth)).length;
+    document.getElementById('stat-total').textContent  = all.length;
+
+    const upcoming = all
+      .filter(r => r.check_in >= today && r.check_in <= in14days)
+      .sort((a,b) => a.check_in.localeCompare(b.check_in));
+
+    const ul = document.getElementById('upcoming-list');
+    if (!upcoming.length) { ul.innerHTML = '<div class="empty">No arrivals in the next 14 days</div>'; return; }
+    ul.innerHTML = upcoming.map(r => `
+      <div class="upcoming-row">
+        <div class="upcoming-dates">${r.check_in} → ${r.check_out}</div>
+        <div class="upcoming-name">${esc(r.guest_name)} ${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':''}</div>
+        <div class="upcoming-site">${esc(r.site_name||r.site_id)}</div>
+      </div>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+/* ── Reservations table ── */
+async function loadReservations() {
+  const month  = document.getElementById('filter-month').value;
+  const status = document.getElementById('filter-status').value;
+  const params = new URLSearchParams({ status });
+  if (month) params.set('month', month);
+
+  try {
+    const r = await fetch('/admin/api/reservations?' + params);
+    const { reservations } = await r.json();
+    const tbody = document.getElementById('res-tbody');
+
+    if (!reservations.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="empty">No reservations found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = reservations.map(r => {
+      const nights = Math.round((new Date(r.check_out)-new Date(r.check_in))/86400000);
+      const badge  = r.status==='confirmed'?'badge-green':r.status==='cancelled'?'badge-red':'badge-yellow';
+      return `<tr>
+        <td>${r.id}</td>
+        <td><strong>${esc(r.site_name||r.site_id)}</strong></td>
+        <td>${esc(r.guest_name)}</td>
+        <td><a href="mailto:${esc(r.guest_email)}">${esc(r.guest_email)}</a></td>
+        <td>${r.check_in}</td>
+        <td>${r.check_out}</td>
+        <td>${nights}</td>
+        <td>${r.party_size||'—'}</td>
+        <td><span class="badge badge-grey">${r.source}</span></td>
+        <td><span class="badge ${badge}">${r.status}</span></td>
+        <td class="action-cell">
+          ${r.status==='confirmed'
+            ? `<button class="btn btn-sm btn-red" onclick="cancelRes(${r.id})">Cancel</button>`
+            : `<button class="btn btn-sm btn-outline" onclick="confirmRes(${r.id})">Restore</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function cancelRes(id) {
+  if (!confirm('Cancel reservation #' + id + '?')) return;
+  await fetch('/admin/api/reservations',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'cancelled'})});
+  loadReservations();
+}
+async function confirmRes(id) {
+  await fetch('/admin/api/reservations',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'confirmed'})});
+  loadReservations();
+}
+
+/* ── Add form ── */
+async function loadSites() {
+  try {
+    const r   = await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all');
+    const { available, booked } = await r.json();
+    const all  = [...(available||[]), ...(booked||[])];
+    const sel  = document.getElementById('add-site');
+    sel.innerHTML = all.sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}))
+      .map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${s.type})</option>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('add-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('[type=submit]');
+  const st  = document.getElementById('add-status');
+  btn.disabled = true; st.textContent = 'Saving…';
+
+  const payload = {
+    siteId:     document.getElementById('add-site').value,
+    source:     document.getElementById('add-source').value,
+    checkIn:    document.getElementById('add-checkin').value,
+    checkOut:   document.getElementById('add-checkout').value,
+    guestName:  document.getElementById('add-name').value,
+    guestEmail: document.getElementById('add-email').value,
+    guestPhone: document.getElementById('add-phone').value,
+    partySize:  document.getElementById('add-party').value,
+    boatLength: document.getElementById('add-boat').value,
+    notes:      document.getElementById('add-notes').value,
+  };
+
+  try {
+    const r   = await fetch('/admin/api/reservations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await r.json();
+    if (res.ok) {
+      st.textContent = '✓ Saved as #' + res.id;
+      st.style.color = '#16a34a';
+      this.reset();
+    } else {
+      st.textContent = res.error || 'Error';
+      st.style.color = '#dc2626';
+    }
+  } catch(ex) {
+    st.textContent = ex.message;
+    st.style.color = '#dc2626';
+  }
+  btn.disabled = false;
+});
+
+/* ── Helpers ── */
+function esc(v) {
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Init ── */
+document.getElementById('filter-month').value = today.slice(0,7);
+loadSettings();
+loadDashboard();
+loadReservations();
+loadSites();
+
+/* Reload reservations when filter changes */
+document.getElementById('filter-month').addEventListener('change', loadReservations);
+document.getElementById('filter-status').addEventListener('change', loadReservations);
+</script>
+</body>
+</html>
