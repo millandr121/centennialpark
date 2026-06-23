@@ -33,7 +33,7 @@
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.5);
+  color: rgba(255,255,255,.75);
   margin-bottom: .4rem;
 }
 .lb-field input,
@@ -113,7 +113,7 @@
 /* ── Legend ── */
 .lb-legend {
   font-size: .8rem;
-  color: rgba(255,255,255,.55);
+  color: rgba(255,255,255,.75);
   display: flex;
   align-items: center;
   gap: .5rem;
@@ -147,7 +147,7 @@
 .lb-form-site  { font-size: 1.1rem; font-weight: 700; color: var(--clr-accent-light, #f0b84a); }
 .lb-form-dates { font-size: .85rem; color: rgba(255,255,255,.6); margin-top: .2rem; }
 .lb-form-close {
-  background: none; border: none; color: rgba(255,255,255,.45);
+  background: none; border: none; color: rgba(255,255,255,.7);
   font-size: 1.2rem; cursor: pointer; padding: .25rem; line-height: 1;
 }
 .lb-form-close:hover { color: #fff; }

@@ -211,13 +211,13 @@
 .rate-card-btn[aria-expanded="true"]::after {
   transform: rotate(225deg); border-color: var(--clr-accent-light);
 }
-.rate-name { font-size: .75rem; text-transform: uppercase; letter-spacing: .14em; color: rgba(255,255,255,.5); }
+.rate-name { font-size: .75rem; text-transform: uppercase; letter-spacing: .14em; color: rgba(255,255,255,.72); }
 .rate-price {
   font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3rem);
   font-weight: 800; color: var(--clr-accent-light); line-height: 1;
 }
-.rate-unit { font-size: .85rem; color: rgba(255,255,255,.55); }
-.rate-alt  { display: block; font-size: .8rem; color: rgba(255,255,255,.35); margin-top: .35rem; margin-bottom: .4rem; }
+.rate-unit { font-size: .85rem; color: rgba(255,255,255,.72); }
+.rate-alt  { display: block; font-size: .8rem; color: rgba(255,255,255,.6); margin-top: .35rem; margin-bottom: .4rem; }
 .rate-card-detail {
   padding: 0 1.5rem 1.5rem; font-size: .88rem; color: rgba(255,255,255,.7);
 }
@@ -379,7 +379,7 @@
 .contact-big:hover { background-size: 100% 3px; }
 .contact-email { color: rgba(255,255,255,.75); text-decoration: underline; font-size: 1rem; width: fit-content; }
 .contact-email:hover { color: #fff; }
-.contact-address { font-size: .9rem; color: rgba(255,255,255,.4); }
+.contact-address { font-size: .9rem; color: rgba(255,255,255,.65); }
 
 .contact-inquire { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; }
 .contact-inquire .inquire-panel { width: 100%; max-width: 760px; }
@@ -396,7 +396,7 @@
 .inquire-inline-form .form-field textarea {
   background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #fff;
 }
-.inquire-inline-form .form-field label { color: rgba(255,255,255,.5); }
+.inquire-inline-form .form-field label { color: rgba(255,255,255,.72); }
 .inquire-inline-form .form-field input:focus,
 .inquire-inline-form .form-field textarea:focus { border-color: var(--clr-accent-light); box-shadow: 0 0 0 3px rgba(240,184,74,.15); }
 .inquire-inline-form .form-field input:not(:placeholder-shown) ~ label,
@@ -406,7 +406,7 @@
 .inquire-form-status { color: var(--clr-accent-light); }
 .cf-turnstile { margin: .25rem 0 .5rem; }
 
-.rates-fine-note { font-size: .8rem; color: rgba(255,255,255,.4); margin-top: .75rem; }
+.rates-fine-note { font-size: .8rem; color: rgba(255,255,255,.65); margin-top: .75rem; }
 
 /* ── Contact — phone uses body font ── */
 .contact-big { font-family: var(--font-body); font-weight: 700; }
