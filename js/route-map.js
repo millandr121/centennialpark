@@ -123,6 +123,7 @@
   var LOGGING_START = [48.876, -124.240];   /* route waypoint — pavement ends W of Youbou (keeps the line on the road) */
   var LOGGING_MARKER = [48.8895, -124.292]; /* warning-marker position only — NW up the north shore */
   var CARMANAH_JCT  = [48.9722287, -124.748308];
+  var BAMFIELD_MAIN_JCT = [48.918, -124.965]; /* logging road meets Bamfield Main Rd — chip-seal resumes (~km 34) */
   var DUNCAN_TRACE = [
     [48.8284988, -124.0482022],  /* Lake Cowichan Co-op */
     [48.834, -124.090],
@@ -136,11 +137,14 @@
     [48.935, -124.490],
     [48.952, -124.575],
     [48.964, -124.660],
-    CARMANAH_JCT,                /* chip-seal resumes — 32 km from Bamfield */
-    [48.945, -124.830],
-    [48.905, -124.915],
-    [48.868, -125.000],
-    [48.845, -125.075],
+    CARMANAH_JCT,                /* top of the climb */
+    [48.955, -124.820],
+    [48.938, -124.895],
+    BAMFIELD_MAIN_JCT,           /* joins Bamfield Main Rd — chip-seal into Bamfield */
+    [48.900, -125.025],          /* Sarita River area, following Bamfield Main SW */
+    [48.878, -125.070],
+    [48.858, -125.100],
+    [48.842, -125.120],
     [48.8276, -125.1308]         /* Bamfield */
   ];
 

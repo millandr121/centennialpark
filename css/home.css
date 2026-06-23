@@ -189,6 +189,7 @@
 .rate-cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.1rem; margin-bottom: 2rem;
+  align-items: start;
 }
 .rate-card {
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
