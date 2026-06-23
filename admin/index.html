@@ -114,6 +114,15 @@
     .toolbar input, .toolbar select { width: auto; }
     .action-cell { display: flex; gap: .35rem; flex-wrap: wrap; }
 
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: var(--green-light); }
+    th.sort-asc::after  { content: ' ↑'; opacity: .85; }
+    th.sort-desc::after { content: ' ↓'; opacity: .85; }
+
+    .confirm-modal { max-width: 420px; }
+    .confirm-modal p { font-size: .95rem; line-height: 1.55; color: #374151; margin-bottom: 1.25rem; }
+    .confirm-modal .warn-detail { font-size: .82rem; color: var(--grey); margin-top: .4rem; }
+
     @media (max-width: 600px) {
       .form-grid { grid-template-columns: 1fr; }
       .stats { grid-template-columns: 1fr 1fr; }
@@ -158,6 +167,7 @@
   <div class="panel" id="tab-reservations">
     <div class="toolbar">
       <input type="month" id="filter-month" value="">
+      <select id="filter-site"><option value="">All sites</option></select>
       <select id="filter-status">
         <option value="all" selected>All statuses</option>
         <option value="confirmed">Confirmed</option>
@@ -175,9 +185,18 @@
     <div class="card tbl-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>Site</th><th>Guest</th><th>Contact</th>
-          <th>Check-in</th><th>Check-out</th><th>Nts</th><th>Party</th>
-          <th>Source</th><th>Status</th><th>Payment</th><th>Actions</th>
+          <th class="sortable" data-col="id"          onclick="sortBy('id')"         >#</th>
+          <th class="sortable" data-col="site_name"   onclick="sortBy('site_name')"  >Site</th>
+          <th class="sortable" data-col="guest_name"  onclick="sortBy('guest_name')" >Guest</th>
+          <th>Contact</th>
+          <th class="sortable" data-col="check_in"    onclick="sortBy('check_in')"   >Check-in</th>
+          <th class="sortable" data-col="check_out"   onclick="sortBy('check_out')"  >Check-out</th>
+          <th>Nts</th>
+          <th class="sortable" data-col="party_size"  onclick="sortBy('party_size')" >Party</th>
+          <th class="sortable" data-col="source"      onclick="sortBy('source')"     >Source</th>
+          <th class="sortable" data-col="status"      onclick="sortBy('status')"     >Status</th>
+          <th class="sortable" data-col="payment_status" onclick="sortBy('payment_status')">Payment</th>
+          <th>Actions</th>
         </tr></thead>
         <tbody id="res-tbody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
       </table>
@@ -256,6 +275,27 @@
         Set via <code>ADMIN_PASSWORD</code> in Cloudflare → Workers &amp; Pages → centennialpark → Settings → Variables.
       </p>
     </div>
+    <div class="card" style="max-width:600px">
+      <div class="card-title">Data cleanup — delete old records</div>
+      <p style="font-size:.875rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
+        Permanently deletes records from the D1 database older than the specified number of days.
+        This cannot be undone. Use at end-of-season or to correct mistakes.
+      </p>
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+        <label style="margin:0;font-weight:600;font-size:.85rem">Delete records older than</label>
+        <input type="number" id="cleanup-days" value="365" min="1" max="3650" style="width:80px">
+        <label style="margin:0;font-size:.85rem">days</label>
+        <select id="cleanup-type" style="width:auto">
+          <option value="reservations">Reservations only</option>
+          <option value="submissions">Requests only</option>
+          <option value="all">Both reservations &amp; requests</option>
+        </select>
+      </div>
+      <div style="margin-top:.9rem">
+        <button class="btn btn-red btn-sm" onclick="runCleanup()">Run cleanup now</button>
+      </div>
+      <p id="cleanup-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
+    </div>
   </div>
 
 </div>
@@ -294,6 +334,23 @@
         <span id="edit-status-msg" style="font-size:.875rem;color:var(--grey)"></span>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ── CONFIRM DELETE MODAL ── -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal confirm-modal">
+    <div class="modal-head">
+      <h2 id="confirm-title">Confirm Delete</h2>
+      <button class="modal-close" onclick="closeModal('confirm-modal')">✕</button>
+    </div>
+    <p id="confirm-body">Are you sure you want to permanently delete this record?<br>
+      <span class="warn-detail">This action cannot be undone.</span>
+    </p>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-red" id="confirm-yes-btn">Yes, delete</button>
+      <button class="btn btn-outline" onclick="closeModal('confirm-modal')">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -357,6 +414,8 @@
 const today = new Date().toISOString().slice(0,10);
 let allSites = [];
 let reqFilter = 'new';
+let allReservations = [];
+let sortCol = 'check_in', sortDir = 1; /* 1=asc, -1=desc */
 
 /* ── Tabs ── */
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -436,6 +495,54 @@ async function cyclePayment(id, current) {
   loadReservations(); loadDashboard();
 }
 
+/* ── Sort ── */
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.col === col) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+  renderReservations();
+}
+
+function renderReservations() {
+  const siteF = document.getElementById('filter-site').value;
+  let rows = allReservations.filter(r => !siteF || r.site_id === siteF);
+
+  rows.sort((a,b) => {
+    let av = a[sortCol] ?? '', bv = b[sortCol] ?? '';
+    if (typeof av === 'number' || !isNaN(+av)) { av = +av; bv = +bv; }
+    if (av < bv) return -sortDir; if (av > bv) return sortDir; return 0;
+  });
+
+  const tbody = document.getElementById('res-tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No reservations found</td></tr>'; return; }
+
+  tbody.innerHTML = rows.map(r => {
+    const nights = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000);
+    const sBadge = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
+    const pay    = r.payment_status || 'unpaid';
+    return `<tr>
+      <td>${r.id}</td>
+      <td><strong>${esc(r.site_name||r.site_id)}</strong><br><small style="color:var(--grey)">${esc(r.site_type||'')}</small></td>
+      <td>${esc(r.guest_name)}</td>
+      <td>${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':''}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
+      <td>${r.check_in}</td><td>${r.check_out}</td><td>${nights}</td>
+      <td>${r.party_size||'—'}</td>
+      <td><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
+      <td><span class="badge ${sBadge}">${r.status}</span></td>
+      <td><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
+      <td class="action-cell">
+        <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
+        ${r.status==='confirmed'
+          ? `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
+          : `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'confirmed')">Restore</button>`}
+        <button class="btn btn-sm btn-red" onclick="confirmDelete('reservation',${r.id},'${esc(r.guest_name)} — ${esc(r.site_name||r.site_id)}, ${r.check_in}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 /* ── Reservations ── */
 async function loadReservations() {
   const month   = document.getElementById('filter-month').value;
@@ -449,30 +556,8 @@ async function loadReservations() {
     const { reservations = [], error } = await (await fetch('/admin/api/reservations?' + params)).json();
     const tbody = document.getElementById('res-tbody');
     if (error) { tbody.innerHTML = `<tr><td colspan="12" class="empty">Error: ${esc(error)}</td></tr>`; return; }
-    if (!reservations.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No reservations found</td></tr>'; return; }
-
-    tbody.innerHTML = reservations.map(r => {
-      const nights = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000);
-      const sBadge = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
-      const pay    = r.payment_status || 'unpaid';
-      return `<tr>
-        <td>${r.id}</td>
-        <td><strong>${esc(r.site_name||r.site_id)}</strong><br><small style="color:var(--grey)">${esc(r.site_type||'')}</small></td>
-        <td>${esc(r.guest_name)}</td>
-        <td>${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':''}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
-        <td>${r.check_in}</td><td>${r.check_out}</td><td>${nights}</td>
-        <td>${r.party_size||'—'}</td>
-        <td><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
-        <td><span class="badge ${sBadge}">${r.status}</span></td>
-        <td><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
-        <td class="action-cell">
-          <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
-          ${r.status==='confirmed'
-            ? `<button class="btn btn-sm btn-red" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
-            : `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'confirmed')">Restore</button>`}
-        </td>
-      </tr>`;
-    }).join('');
+    allReservations = reservations;
+    renderReservations();
   } catch(e) { console.error(e); }
 }
 async function setResStatus(id, status) {
@@ -549,6 +634,7 @@ async function loadRequests() {
           ${st!=='accepted' ? `<button class="btn btn-sm btn-green" onclick='openAccept(${s.id})'>Accept</button>` : ''}
           <button class="btn btn-sm btn-accent" onclick='openSubEdit(${s.id})'>Edit</button>
           ${st!=='declined' && st!=='accepted' ? `<button class="btn btn-sm btn-outline" onclick="declineSub(${s.id})">Decline</button>` : ''}
+          <button class="btn btn-sm btn-red" onclick="confirmDelete('submission',${s.id},'${esc(name)} — received ${(s.created_at||'').slice(0,10)}')">Del</button>
         </td>
       </tr>`;
     }).join('');
@@ -623,12 +709,59 @@ document.getElementById('sub-edit-form').addEventListener('submit', async functi
   } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
 
+/* ── Confirm delete modal ── */
+function confirmDelete(type, id, label) {
+  document.getElementById('confirm-title').textContent = type === 'reservation' ? 'Delete Reservation' : 'Delete Request';
+  document.getElementById('confirm-body').innerHTML =
+    `Are you sure you want to permanently delete <strong>${esc(label)}</strong>?<br>
+     <span class="warn-detail">This cannot be undone. The record will be removed from the D1 database.</span>`;
+  const btn = document.getElementById('confirm-yes-btn');
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Deleting…';
+    const endpoint = type === 'reservation' ? '/admin/api/reservations' : '/admin/api/submissions';
+    try {
+      const r = await (await fetch(`${endpoint}?id=${id}`, { method: 'DELETE' })).json();
+      closeModal('confirm-modal');
+      btn.disabled = false; btn.textContent = 'Yes, delete';
+      if (r.ok) { type === 'reservation' ? (loadReservations(), loadDashboard()) : (loadRequests(), loadDashboard()); }
+      else { alert('Delete failed: ' + (r.error || 'unknown error')); }
+    } catch(e) { btn.disabled = false; btn.textContent = 'Yes, delete'; alert('Error: ' + e.message); }
+  };
+  openModal('confirm-modal');
+}
+
+/* ── Cleanup ── */
+async function runCleanup() {
+  const days = parseInt(document.getElementById('cleanup-days').value);
+  const type = document.getElementById('cleanup-type').value;
+  if (!days || days < 1) { alert('Enter a valid number of days'); return; }
+  const typeLabel = type === 'all' ? 'all records' : type;
+  if (!confirm(`Permanently delete ${typeLabel} older than ${days} days from the database?\n\nThis cannot be undone.`)) return;
+  const msg = document.getElementById('cleanup-msg');
+  msg.textContent = 'Running…'; msg.style.color = 'var(--grey)';
+  try {
+    const r = await (await fetch('/admin/api/cleanup', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ days, type })
+    })).json();
+    if (r.ok) {
+      msg.style.color = '#16a34a';
+      msg.textContent = `✓ Done — reservations deleted: ${r.reservationsDeleted}, requests deleted: ${r.submissionsDeleted}`;
+      loadReservations(); loadRequests(); loadDashboard();
+    } else { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + (r.error || 'unknown'); }
+  } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
+}
+
 /* ── Add booking ── */
 async function loadSites() {
   try {
     const { available = [], booked = [] } = await (await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all')).json();
     allSites = [...available, ...booked].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
     document.getElementById('add-site').innerHTML = siteOptions();
+    /* populate site filter */
+    const sf = document.getElementById('filter-site');
+    sf.innerHTML = '<option value="">All sites</option>' +
+      allSites.map(s => `<option value="${esc(s.id)}">${esc(s.name||s.id)} (${esc(s.type)})</option>`).join('');
   } catch(e) { console.error(e); }
 }
 function siteOptions(selectedId, onlyType) {
@@ -665,6 +798,9 @@ loadSettings(); loadDashboard(); loadReservations(); loadSites();
 document.getElementById('filter-month').addEventListener('change', loadReservations);
 document.getElementById('filter-status').addEventListener('change', loadReservations);
 document.getElementById('filter-payment').addEventListener('change', loadReservations);
+document.getElementById('filter-site').addEventListener('change', renderReservations);
+/* set initial sort indicator */
+document.querySelector(`th[data-col="${sortCol}"]`)?.classList.add('sort-asc');
 </script>
 </body>
 </html>

@@ -155,3 +155,15 @@ export async function onRequestPost(context) {
 
   return json({ ok: true, reservationId: id });
 }
+
+/* DELETE /admin/api/submissions?id=123 — permanently remove a request */
+export async function onRequestDelete(context) {
+  const { env, request } = context;
+  if (!env.DB) return json({ error: 'DB not bound' }, 503);
+  const id = parseInt(new URL(request.url).searchParams.get('id'));
+  if (!id) return json({ error: 'Missing id' }, 422);
+  try {
+    await env.DB.prepare('DELETE FROM booking_submissions WHERE id = ?').bind(id).run();
+    return json({ ok: true });
+  } catch (e) { return json({ error: e.message }, 500); }
+}
