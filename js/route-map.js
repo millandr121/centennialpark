@@ -109,6 +109,8 @@
   var DRIVE_OSRM = {
     /* Port Alberni Co-op (10th Ave) → Bamfield — leaves town via 10th Ave / Anderson */
     alberni: [[-124.798, 49.246], [-125.1308, 48.8276]],
+    /* Lake Cowichan Co-op → Bamfield via logging road (OSM has the route; hand-trace is fallback) */
+    duncan:  [[-124.0482022, 48.8284988], [-125.1308, 48.8276]],
     /* Port Renfrew → Lake Cowichan Co-op → Port Alberni Co-op → Bamfield */
     renfrew: [[-124.421, 48.554], [-124.0482022, 48.8284988], [-124.798, 49.246], [-125.1308, 48.8276]]
   };
@@ -451,8 +453,8 @@
     chip.textContent = 'Loading routes…';
     el.appendChild(chip);
 
-    /* alberni + renfrew come from OSRM; duncan is the hand-traced logging route */
-    var pending = Object.keys(DRIVE_OSRM).length + 1;
+    /* all three routes tried via OSRM; duncan falls back to hand-trace if OSRM returns nothing */
+    var pending = Object.keys(DRIVE_OSRM).length;
     function onRouteLoad(id, latlngs) {
       pending--;
       if (latlngs && latlngs.length > 1 && driveMap) {
@@ -476,10 +478,11 @@
     }
 
     Object.keys(DRIVE_OSRM).forEach(function (id) {
-      fetchOsrmRoute(DRIVE_OSRM[id], function (ll) { onRouteLoad(id, ll); });
+      fetchOsrmRoute(DRIVE_OSRM[id], function (ll) {
+        /* fall back to hand-trace for duncan if OSRM returns nothing */
+        onRouteLoad(id, ll || (id === 'duncan' ? DUNCAN_TRACE.slice() : null));
+      });
     });
-    /* duncan: render the hand trace directly (no OSRM detour) */
-    onRouteLoad('duncan', DUNCAN_TRACE.slice());
 
     /* route button clicks */
     document.querySelectorAll('[data-route-id]').forEach(function (btn) {
