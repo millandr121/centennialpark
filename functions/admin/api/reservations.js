@@ -121,6 +121,11 @@ export async function onRequestPut(context) {
   if (pay && rCols.has('payment_status'))      { sets.push('payment_status = ?'); vals.push(pay); }
   if (d.amountDue  !== undefined && rCols.has('amount_due'))  { sets.push('amount_due = ?');  vals.push(d.amountDue === '' ? null : parseFloat(d.amountDue)); }
   if (d.amountPaid !== undefined && rCols.has('amount_paid')) { sets.push('amount_paid = ?'); vals.push(d.amountPaid === '' ? null : parseFloat(d.amountPaid)); }
+  if (d.paymentMethod   !== undefined && rCols.has('payment_method'))     { sets.push('payment_method = ?');     vals.push(clean(d.paymentMethod, 50) || null); }
+  if (d.estimatedTotal  !== undefined && rCols.has('estimated_total'))     { sets.push('estimated_total = ?');    vals.push(d.estimatedTotal === '' ? null : parseFloat(d.estimatedTotal)); }
+  if (d.gstAmount       !== undefined && rCols.has('gst_amount'))          { sets.push('gst_amount = ?');         vals.push(d.gstAmount === '' ? null : parseFloat(d.gstAmount)); }
+  if (d.parkingType     !== undefined && rCols.has('parking_type'))        { sets.push('parking_type = ?');       vals.push(clean(d.parkingType, 50) || null); }
+  if (d.boatLaunchPeriod !== undefined && rCols.has('boat_launch_period')) { sets.push('boat_launch_period = ?'); vals.push(clean(d.boatLaunchPeriod, 50) || null); }
 
   if (sets.length) {
     vals.push(id);

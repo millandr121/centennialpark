@@ -253,9 +253,10 @@
           <th class="sortable" data-col="source"      onclick="sortBy('source')"     >Source</th>
           <th class="sortable" data-col="status"      onclick="sortBy('status')"     >Status</th>
           <th class="sortable" data-col="payment_status" onclick="sortBy('payment_status')">Payment</th>
+          <th class="sortable" data-col="estimated_total" onclick="sortBy('estimated_total')">Est. Total</th>
           <th>Actions</th>
         </tr></thead>
-        <tbody id="res-tbody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
+        <tbody id="res-tbody"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -273,9 +274,9 @@
         <thead><tr>
           <th>#</th><th>Received</th><th>Name</th><th>Email</th><th>Wants</th>
           <th>Check-in</th><th>Check-out</th><th>Party</th><th>Boat</th>
-          <th>Notes</th><th>Status</th><th>Actions</th>
+          <th>Notes</th><th>Total</th><th>Status</th><th>Actions</th>
         </tr></thead>
-        <tbody id="req-tbody"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody>
+        <tbody id="req-tbody"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -381,8 +382,28 @@
         <div><label>Payment status</label><select id="edit-payment">
           <option value="unpaid">Unpaid</option><option value="deposit">Deposit paid</option><option value="paid">Paid in full</option>
         </select></div>
+        <div><label>Payment method</label><select id="edit-pay-method">
+          <option value="">— Unknown —</option>
+          <option value="honesty_box">Honesty box</option>
+          <option value="etransfer">e-Transfer</option>
+          <option value="on_arrival">On arrival</option>
+        </select></div>
         <div><label>Amount due ($)</label><input type="number" id="edit-amount-due" min="0" step="0.01"></div>
         <div><label>Amount paid ($)</label><input type="number" id="edit-amount-paid" min="0" step="0.01"></div>
+        <div><label>Est. total ($)</label><input type="number" id="edit-est-total" min="0" step="0.01"></div>
+        <div><label>GST ($)</label><input type="number" id="edit-gst-amount" min="0" step="0.01"></div>
+        <div><label>Parking type</label><select id="edit-parking-type">
+          <option value="">None</option>
+          <option value="car">Car only</option>
+          <option value="trailer">Trailer only</option>
+          <option value="both">Car + Trailer</option>
+        </select></div>
+        <div><label>Boat launch period</label><select id="edit-launch-period">
+          <option value="">None</option>
+          <option value="day">Daily</option>
+          <option value="seasonal">Seasonal</option>
+          <option value="annual">Annual</option>
+        </select></div>
         <div class="full"><label>Notes</label><textarea id="edit-notes"></textarea></div>
       </div>
       <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
@@ -573,7 +594,7 @@ function renderReservations() {
   });
 
   const tbody = document.getElementById('res-tbody');
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No reservations found</td></tr>'; return; }
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No reservations found</td></tr>'; return; }
 
   tbody.innerHTML = rows.map(r => {
     const nights = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000);
@@ -590,7 +611,8 @@ function renderReservations() {
       <td data-label="Party">${r.party_size||'—'}</td>
       <td data-label="Source"><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
       <td data-label="Status"><span class="badge ${sBadge}">${r.status}</span></td>
-      <td data-label="Payment"><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
+      <td data-label="Payment"><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}${r.payment_method?'<br><small style="color:var(--grey)">'+esc(payMethodLabel(r.payment_method))+'</small>':''}</td>
+      <td data-label="Est. Total">${r.estimated_total?'<strong>$'+Number(r.estimated_total).toFixed(2)+'</strong>'+(r.gst_amount?'<br><small style="color:var(--grey)">GST $'+Number(r.gst_amount).toFixed(2)+'</small>':''):'—'}</td>
       <td data-label="Actions" class="action-cell">
         <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
         ${r.status==='confirmed'
@@ -639,6 +661,11 @@ async function openEdit(id) {
     setVal('edit-boat', r.boat_length); setVal('edit-notes', r.notes);
     setVal('edit-payment', r.payment_status || 'unpaid');
     setVal('edit-amount-due', r.amount_due); setVal('edit-amount-paid', r.amount_paid);
+    setVal('edit-pay-method', r.payment_method || '');
+    setVal('edit-est-total', r.estimated_total || '');
+    setVal('edit-gst-amount', r.gst_amount || '');
+    setVal('edit-parking-type', r.parking_type || '');
+    setVal('edit-launch-period', r.boat_launch_period || '');
     document.getElementById('edit-site').innerHTML = siteOptions(r.site_id);
     document.getElementById('edit-status-msg').textContent = '';
     openModal('edit-modal');
@@ -652,7 +679,9 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
     checkIn: val('edit-checkin'), checkOut: val('edit-checkout'),
     guestName: val('edit-name'), guestEmail: val('edit-email'), guestPhone: val('edit-phone'),
     partySize: val('edit-party'), boatLength: val('edit-boat'), notes: val('edit-notes'),
-    paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid')
+    paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid'),
+    paymentMethod: val('edit-pay-method'), estimatedTotal: val('edit-est-total'), gstAmount: val('edit-gst-amount'),
+    parkingType: val('edit-parking-type'), boatLaunchPeriod: val('edit-launch-period')
   };
   try {
     const res = await (await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
@@ -675,7 +704,8 @@ async function loadRequests() {
     if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No requests</td></tr>'; return; }
 
     tbody.innerHTML = submissions.map(s => {
-      const wants = [s.need_campsite==='yes'&&'Campsite', s.need_moorage==='yes'&&'Moorage'].filter(Boolean).join(', ') || '—';
+      const wants = [s.need_campsite==='yes'&&'Campsite', s.need_moorage==='yes'&&'Moorage', s.need_parking==='yes'&&'Parking', s.need_boat_launch==='yes'&&'Launch'].filter(Boolean).join(', ') || '—';
+      const wantExtras = [s.parking_type&&esc(s.parking_type), s.boat_launch_period&&esc(s.boat_launch_period), s.boat_wash_qty>0&&(s.boat_wash_qty+'× wash'), s.freezer_days>0&&(s.freezer_days+'d freezer')].filter(Boolean).join(' · ');
       const st = s.status || 'new';
       const stBadge = st==='accepted' ? 'badge-green' : st==='declined' ? 'badge-grey' : 'badge-blue';
       const name = esc([s.first_name, s.last_name].filter(Boolean).join(' '));
@@ -684,12 +714,13 @@ async function loadRequests() {
         <td data-label="Received" style="font-size:.78rem">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
         <td data-label="Name">${name}</td>
         <td data-label="Email"><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></td>
-        <td data-label="Wants"><span class="badge badge-blue">${esc(wants)}</span></td>
+        <td data-label="Wants"><span class="badge badge-blue">${esc(wants)}</span>${wantExtras?'<br><small style="color:var(--grey)">'+wantExtras+'</small>':''}</td>
         <td data-label="Check-in">${esc(s.check_in||'—')}</td>
         <td data-label="Check-out">${esc(s.check_out||'—')}</td>
         <td data-label="Party">${esc(s.group_size||'—')}</td>
         <td data-label="Boat">${esc(s.boat_length||'—')}</td>
         <td data-label="Notes" style="font-size:.78rem">${esc(s.additional_requests||'')}</td>
+        <td data-label="Total">${s.estimated_total?'<strong>$'+Number(s.estimated_total).toFixed(2)+'</strong>'+(s.payment_method?'<br><small style="color:var(--grey)">'+esc(payMethodLabel(s.payment_method))+'</small>':''):'—'}</td>
         <td data-label="Status"><span class="badge ${stBadge}">${st}</span></td>
         <td data-label="Actions" class="action-cell">
           ${st!=='accepted' ? `<button class="btn btn-sm btn-green" onclick='openAccept(${s.id})'>Accept</button>` : ''}
@@ -713,12 +744,14 @@ function openAccept(id) {
   const s = (window._subs||[]).find(x => x.id === id);
   if (!s) return;
   const name = [s.first_name, s.last_name].filter(Boolean).join(' ');
-  const wants = [s.need_campsite==='yes'&&'campsite', s.need_moorage==='yes'&&'moorage'].filter(Boolean).join(' + ') || '—';
+  const wants = [s.need_campsite==='yes'&&'campsite', s.need_moorage==='yes'&&'moorage', s.need_parking==='yes'&&'parking', s.need_boat_launch==='yes'&&'launch'].filter(Boolean).join(' + ') || '—';
+  const estStr = s.estimated_total ? ` · Est. $${Number(s.estimated_total).toFixed(2)}` : '';
   document.getElementById('accept-summary').innerHTML =
-    `<strong>${esc(name)}</strong> · <a href="mailto:${esc(s.email)}">${esc(s.email)}</a><br>Wants: ${esc(wants)} · ${esc(s.additional_requests||'no notes')}`;
+    `<strong>${esc(name)}</strong> · <a href="mailto:${esc(s.email)}">${esc(s.email)}</a><br>Wants: ${esc(wants)}${estStr} · ${esc(s.additional_requests||'no notes')}`;
   setVal('accept-subid', s.id);
   setVal('accept-checkin', s.check_in); setVal('accept-checkout', s.check_out);
   setVal('accept-party', s.group_size); setVal('accept-boat', s.boat_length);
+  setVal('accept-amount', s.estimated_total || '');
   setVal('accept-notes', s.additional_requests);
   /* prefer matching site type */
   const wantMoor = s.need_moorage === 'yes' && s.need_campsite !== 'yes';
@@ -848,6 +881,7 @@ document.getElementById('add-form').addEventListener('submit', async function(e)
 /* ── Helpers ── */
 function esc(v) { return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function val(id) { return document.getElementById(id).value; }
+function payMethodLabel(m) { return {etransfer:'e-Transfer',honesty_box:'Honesty box',on_arrival:'On arrival'}[m] || m; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v==null?'':v); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
