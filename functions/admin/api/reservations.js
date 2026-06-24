@@ -1,12 +1,22 @@
 /* Admin API: CRUD for reservations — the unified booking backend.
    All routes require auth via _middleware.js. */
 
-import { clean, tableCols } from '../../api/_lib.js';
+import { clean, tableCols, sendEmail } from '../../api/_lib.js';
+import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
     status: s || 200, headers: { 'Content-Type': 'application/json' }
   });
+}
+
+/* Numbered slots are single-occupancy; generic service lots are not. */
+function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
+
+/* Site row with schema fallback — this DB uses label/status, older code used name/active. */
+async function lookupSite(env, siteId) {
+  try { return await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first(); }
+  catch { return await env.DB.prepare('SELECT id, label as name, type FROM sites WHERE id = ?').bind(siteId).first(); }
 }
 
 /* Build a "party size" SELECT expression that works on either schema. */
@@ -70,21 +80,29 @@ export async function onRequestPost(context) {
   const notes     = clean(d.notes, 2000);
   const source    = ['phone', 'walkin', 'admin'].includes(d.source) ? d.source : 'admin';
   const amountDue = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : null;
+  const payMethod = clean(d.paymentMethod, 40) || null;
+  const payStatus = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
 
   if (!siteId || !checkIn || !checkOut || !name) return json({ error: 'Missing required fields' }, 422);
 
-  const site = await env.DB.prepare('SELECT id FROM sites WHERE id = ?').bind(siteId).first();
+  const site = await env.DB.prepare('SELECT id, type FROM sites WHERE id = ?').bind(siteId).first();
   if (!site) return json({ error: 'Unknown site' }, 404);
 
-  const conflict = await env.DB.prepare(
-    `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
-     AND check_in < ? AND date(check_out, '+1 day') > ?`
-  ).bind(siteId, checkOut, checkIn).first();
-  if (conflict) return json({ error: 'Date conflict with reservation #' + conflict.id }, 409);
+  /* Only numbered campsite/moorage slots are exclusive. Generic service lots
+     (parking, launch) hold many bookings at once — never conflict-check them. */
+  if (isExclusive(site.type)) {
+    const conflict = await env.DB.prepare(
+      `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
+       AND check_in < ? AND date(check_out, '+1 day') > ?`
+    ).bind(siteId, checkOut, checkIn).first();
+    if (conflict) return json({ error: 'Date conflict with reservation #' + conflict.id }, 409);
+  }
 
   const id = await insertReservation(env, {
     siteId, checkIn, checkOut, name, email, phone, partySize, boatLen, notes,
-    source, status: 'confirmed', amountDue, submissionId: parseInt(d.submissionId) || null
+    source, status: 'confirmed', amountDue,
+    paymentMethod: payMethod, paymentStatus: payStatus,
+    submissionId: parseInt(d.submissionId) || null
   });
   return json({ ok: true, id });
 }
@@ -133,7 +151,44 @@ export async function onRequestPut(context) {
       await env.DB.prepare(`UPDATE reservations SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
     } catch (e) { return json({ error: e.message }, 500); }
   }
-  return json({ ok: true });
+
+  /* Optional: email the guest that payment was received and their booking is
+     complete. Triggered explicitly by the admin (checkbox), not automatic. */
+  let paidEmailSent = false;
+  if (d.notifyPaid) {
+    try {
+      const r = await env.DB.prepare('SELECT * FROM reservations WHERE id = ?').bind(id).first();
+      if (r && r.guest_email) {
+        const site = await lookupSite(env, r.site_id);
+        const { subject, html } = paidEmail({
+          name: r.guest_name, site, parkingType: r.parking_type,
+          checkIn: r.check_in, checkOut: r.check_out, resId: id,
+          estTotal: parseFloat(r.amount_paid) || parseFloat(r.estimated_total) || parseFloat(r.amount_due) || 0
+        });
+        paidEmailSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
+      }
+    } catch (_e) { /* email is best-effort */ }
+  }
+
+  /* Optional: email the guest a payment request with a 48-hour hold. Admin-triggered. */
+  let paymentRequestSent = false;
+  if (d.requestPayment) {
+    try {
+      const r = await env.DB.prepare('SELECT * FROM reservations WHERE id = ?').bind(id).first();
+      if (r && r.guest_email) {
+        const site = await lookupSite(env, r.site_id);
+        const due = parseFloat(r.amount_due) || parseFloat(r.estimated_total) || 0;
+        const { subject, html } = paymentRequestEmail({
+          name: r.guest_name, site, parkingType: r.parking_type,
+          checkIn: r.check_in, checkOut: r.check_out, resId: id,
+          amountDue: due, payMethod: r.payment_method
+        });
+        paymentRequestSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
+      }
+    } catch (_e) { /* best-effort */ }
+  }
+
+  return json({ ok: true, paidEmailSent, paymentRequestSent });
 }
 
 /* DELETE /admin/api/reservations?id=123 — permanently remove a reservation */
@@ -161,6 +216,11 @@ export async function insertReservation(env, r) {
   opt('status',        r.status || 'confirmed');
   opt('payment_status', r.paymentStatus || 'unpaid');
   opt('amount_due',    r.amountDue ?? null);
+  opt('payment_method',     r.paymentMethod ?? null);
+  opt('estimated_total',    r.estimatedTotal ?? null);
+  opt('gst_amount',         r.gstAmount ?? null);
+  opt('parking_type',       r.parkingType ?? null);
+  opt('boat_launch_period', r.boatLaunchPeriod ?? null);
   opt('submission_id', r.submissionId ?? null);
 
   const placeholders = fields.map(() => '?').join(',');

@@ -65,8 +65,18 @@
     .badge-blue   { background: #dbeafe; color: #1e40af; }
     .badge-orange { background: #ffedd5; color: #9a3412; }
 
-    .pay-toggle { cursor: pointer; border: none; font: inherit; }
+    .pay-toggle { cursor: pointer; border: none; font: inherit; background: none; padding: 0; }
     .pay-toggle:hover { filter: brightness(.96); }
+
+    /* Overdue e-Transfer highlight */
+    tr.row-overdue > td { background: #fff5f5; }
+    tr.row-overdue > td:first-child { box-shadow: inset 3px 0 0 var(--red, #dc2626); }
+
+    /* Accept modal — guest email section */
+    .accept-email-box { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .accept-email-toggle { display: flex; align-items: center; gap: .5rem; font-weight: 600; color: #111827; cursor: pointer; }
+    .accept-email-toggle input { width: auto; }
+    .accept-email-hint { font-size: .78rem; color: var(--grey); margin-top: .35rem; }
 
     .btn { display: inline-flex; align-items: center; gap: .4em; padding: .5em 1.1em; border-radius: 6px;
       font-size: .85rem; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
@@ -212,7 +222,12 @@
       <div class="stat"><div class="stat-num" id="stat-week">—</div><div class="stat-label">Next 14 days</div></div>
       <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Confirmed bookings</div></div>
       <div class="stat"><div class="stat-num warn" id="stat-unpaid">—</div><div class="stat-label">Unpaid / deposit</div></div>
+      <div class="stat"><div class="stat-num warn" id="stat-overdue">—</div><div class="stat-label">Overdue e-Transfers</div></div>
       <div class="stat"><div class="stat-num warn" id="stat-new">—</div><div class="stat-label">New requests</div></div>
+    </div>
+    <div class="card" id="overdue-card" hidden>
+      <div class="card-title">⚠ Payment follow-ups — unpaid e-Transfers</div>
+      <div id="overdue-list"><div class="empty">None</div></div>
     </div>
     <div class="card">
       <div class="card-title">Upcoming arrivals — next 14 days</div>
@@ -299,6 +314,17 @@
           <div><label>Party size</label><input type="number" id="add-party" min="1" max="20" placeholder="2"></div>
           <div><label>Boat length (ft)</label><input type="number" id="add-boat" min="8" max="100" placeholder="—"></div>
           <div><label>Amount due ($)</label><input type="number" id="add-amount" min="0" step="0.01" placeholder="0.00"></div>
+          <div><label>Payment method</label><select id="add-pay-method">
+            <option value="">—</option>
+            <option value="etransfer">Interac e-Transfer</option>
+            <option value="on_arrival">Pay on arrival</option>
+            <option value="honesty_box">Honesty box</option>
+            <option value="other">Other</option>
+          </select></div>
+          <div><label>Payment status</label><select id="add-pay-status">
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+          </select></div>
           <div class="full"><label>Notes</label><textarea id="add-notes" placeholder="Any notes…"></textarea></div>
         </div>
         <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
@@ -354,6 +380,30 @@
       </div>
       <p id="cleanup-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
     </div>
+
+    <div class="card" style="max-width:600px">
+      <div class="card-title">Year-end tax / GST export</div>
+      <p style="font-size:.875rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
+        Downloads a CSV of every <strong>paid</strong> reservation — category (camping / moorage / parking / launch),
+        amount paid and GST collected — so you can total the GST you owe at year-end and see what it was for.
+      </p>
+      <button class="btn btn-green btn-sm" onclick="exportRevenue()">⬇ Download paid bookings (CSV)</button>
+      <p id="export-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
+    </div>
+
+    <div class="card" style="max-width:600px;border:1px solid #fca5a5;background:#fef2f2">
+      <div class="card-title" style="color:#b91c1c">⚠ Danger zone — wipe the database</div>
+      <p style="font-size:.875rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
+        Permanently deletes <strong>every</strong> record — no age limit. For beta testing or a full
+        season reset. You'll be asked to confirm, then to type <code>DELETE</code>. This cannot be undone.
+      </p>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn btn-red btn-sm" onclick="wipeAll('reservations')">Delete ALL reservations</button>
+        <button class="btn btn-red btn-sm" onclick="wipeAll('submissions')">Delete ALL requests</button>
+        <button class="btn btn-red btn-sm" onclick="wipeAll('all')">Delete EVERYTHING</button>
+      </div>
+      <p id="wipe-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
+    </div>
   </div>
 
 </div>
@@ -379,19 +429,24 @@
         <div><label>Phone</label><input type="tel" id="edit-phone"></div>
         <div><label>Party size</label><input type="number" id="edit-party" min="1" max="20"></div>
         <div><label>Boat length (ft)</label><input type="number" id="edit-boat" min="8" max="100"></div>
-        <div><label>Payment status</label><select id="edit-payment">
+        <div class="full" style="border-top:1px solid #e5e7eb;margin-top:.25rem;padding-top:.6rem">
+          <strong style="font-size:.9rem">Payment &amp; tax</strong>
+          <span style="font-size:.78rem;color:var(--grey)"> — when you mark a booking <em>Paid</em>, fill in <strong>Amount paid</strong> and <strong>GST collected</strong> so the year-end tax export is accurate.</span>
+        </div>
+        <div><label>Payment status</label><select id="edit-payment" onchange="onEditPayStatus()">
           <option value="unpaid">Unpaid</option><option value="deposit">Deposit paid</option><option value="paid">Paid in full</option>
         </select></div>
         <div><label>Payment method</label><select id="edit-pay-method">
           <option value="">— Unknown —</option>
-          <option value="honesty_box">Honesty box</option>
           <option value="etransfer">e-Transfer</option>
           <option value="on_arrival">On arrival</option>
+          <option value="honesty_box">Honesty box</option>
+          <option value="other">Other</option>
         </select></div>
         <div><label>Amount due ($)</label><input type="number" id="edit-amount-due" min="0" step="0.01"></div>
-        <div><label>Amount paid ($)</label><input type="number" id="edit-amount-paid" min="0" step="0.01"></div>
-        <div><label>Est. total ($)</label><input type="number" id="edit-est-total" min="0" step="0.01"></div>
-        <div><label>GST ($)</label><input type="number" id="edit-gst-amount" min="0" step="0.01"></div>
+        <div><label>Amount paid ($) <span style="color:var(--grey);font-weight:400">— fill when paid</span></label><input type="number" id="edit-amount-paid" min="0" step="0.01"></div>
+        <div><label>GST collected ($) <span style="color:var(--grey);font-weight:400">— for taxes</span></label><input type="number" id="edit-gst-amount" min="0" step="0.01"></div>
+        <div><label>Est. total ($) <span style="color:var(--grey);font-weight:400">— auto estimate, reference only</span></label><input type="number" id="edit-est-total" min="0" step="0.01"></div>
         <div><label>Parking type</label><select id="edit-parking-type">
           <option value="">None</option>
           <option value="car">Car only</option>
@@ -408,6 +463,7 @@
       </div>
       <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
         <button type="submit" class="btn btn-green">Save changes</button>
+        <button type="button" class="btn btn-outline" onclick="sendPaymentRequestFromEdit()" title="Save, then email a 48-hour payment request">✉ Send payment request</button>
         <button type="button" class="btn btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
         <span id="edit-status-msg" style="font-size:.875rem;color:var(--grey)"></span>
       </div>
@@ -449,8 +505,35 @@
         <div><label>Check-out *</label><input type="date" id="accept-checkout" required></div>
         <div><label>Party size</label><input type="number" id="accept-party" min="1" max="20"></div>
         <div><label>Boat length (ft)</label><input type="number" id="accept-boat" min="8" max="100"></div>
+        <div><label>Payment method</label><select id="accept-pay-method">
+          <option value="etransfer">Interac e-Transfer</option>
+          <option value="on_arrival">Pay on arrival</option>
+          <option value="other">Other</option>
+        </select></div>
+        <div><label>Payment status</label><select id="accept-pay-status">
+          <option value="unpaid">Unpaid</option>
+          <option value="paid">Paid</option>
+        </select></div>
         <div class="full"><label>Notes</label><textarea id="accept-notes"></textarea></div>
       </div>
+
+      <div class="accept-email-box">
+        <label class="accept-email-toggle">
+          <input type="checkbox" id="accept-send-email" checked onchange="toggleAcceptEmail()"> Email the guest now
+        </label>
+        <div id="accept-email-fields">
+          <label style="margin-top:.6rem">Message preset</label>
+          <select id="accept-msg-preset" onchange="applyAcceptPreset()">
+            <option value="awaiting">Reservation accepted — awaiting payment</option>
+            <option value="paid">Reservation accepted — payment received</option>
+            <option value="custom">Custom message…</option>
+          </select>
+          <label style="margin-top:.6rem">Message to guest</label>
+          <textarea id="accept-message" rows="2"></textarea>
+          <p class="accept-email-hint">Reservation details and (for e-Transfer) payment instructions are added to the email automatically.</p>
+        </div>
+      </div>
+
       <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
         <button type="submit" class="btn btn-green">Accept &amp; create booking</button>
         <button type="button" class="btn btn-outline" onclick="closeModal('accept-modal')">Cancel</button>
@@ -544,6 +627,19 @@ async function loadDashboard() {
     document.getElementById('stat-unpaid').textContent = all.filter(r => (r.payment_status||'unpaid') !== 'paid').length;
     document.getElementById('stat-new').textContent    = newSubs.length;
 
+    /* Overdue: unpaid e-Transfers whose arrival is within 7 days or already passed */
+    const overdue = all.filter(isOverdue).sort((a,b) => (a.check_in||'').localeCompare(b.check_in||''));
+    document.getElementById('stat-overdue').textContent = overdue.length;
+    const oCard = document.getElementById('overdue-card');
+    const oList = document.getElementById('overdue-list');
+    oCard.hidden = overdue.length === 0;
+    oList.innerHTML = overdue.map(r => `
+      <div class="upcoming-row">
+        <div class="upcoming-dates">${r.check_in} → ${r.check_out}</div>
+        <div class="upcoming-name">${esc(r.guest_name)}${r.guest_email ? ' &mdash; <a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>' : ''} <span class="badge badge-red">⚠ Overdue</span>${r.estimated_total ? ' <strong>$'+Number(r.estimated_total).toFixed(2)+'</strong>' : ''}</div>
+        <div class="upcoming-site">${esc(siteLabelDisplay(r))}</div>
+      </div>`).join('') || '<div class="empty">None</div>';
+
     const pill = document.getElementById('req-pill');
     if (newSubs.length) { pill.hidden = false; pill.textContent = newSubs.length; } else { pill.hidden = true; }
 
@@ -559,19 +655,44 @@ async function loadDashboard() {
   } catch(e) { console.error(e); }
 }
 
-/* ── Payment badge + cycle ── */
+/* ── Payment badge + toggle ── */
 function payBadge(p) {
   p = p || 'unpaid';
   const map = { paid:['badge-green','Paid'], deposit:['badge-orange','Deposit'], unpaid:['badge-red','Unpaid'] };
   const [cls,label] = map[p] || map.unpaid;
   return `<span class="badge ${cls}">${label}</span>`;
 }
-async function cyclePayment(id, current) {
-  const order = ['unpaid','deposit','paid'];
-  const next = order[(order.indexOf(current||'unpaid') + 1) % order.length];
-  await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, paymentStatus: next }) });
+/* One-click unpaid ↔ paid. Marking paid offers to email the guest. */
+async function togglePaid(id) {
+  const r = allReservations.find(x => x.id === id);
+  if (!r) return;
+  const makePaid = (r.payment_status || 'unpaid') !== 'paid';
+  let notifyPaid = false;
+  if (makePaid && r.guest_email) {
+    notifyPaid = confirm(`Mark reservation #${id} as PAID.\n\nEmail ${r.guest_name} to confirm payment received and that their booking is complete?`);
+  }
+  await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id, paymentStatus: makePaid ? 'paid' : 'unpaid', notifyPaid }) });
   loadReservations(); loadDashboard();
 }
+
+/* Display label for a reservation's assigned site / service. */
+function siteLabelDisplay(r) {
+  const id = String(r.site_id || '').toUpperCase();
+  if (id === 'PARKING') return r.parking_type === 'trailer' ? 'Trailer Lot' : 'Parking Lot';
+  if (id === 'TRAILER') return 'Trailer Lot';
+  if (id === 'LAUNCH')  return 'Boat Launch';
+  return r.site_name || r.site_id || '—';
+}
+/* An unpaid e-Transfer booking is "overdue" once arrival is within 7 days (or past). */
+function isOverdue(r) {
+  if ((r.payment_status || 'unpaid') === 'paid') return false;
+  if (r.payment_method !== 'etransfer') return false;
+  if (!r.check_in) return false;
+  const soon = new Date(Date.now() + 7*86400000).toISOString().slice(0,10);
+  return r.check_in <= soon;
+}
+function firstSiteOfType(t) { const s = allSites.find(x => x.type === t); return s ? s.id : null; }
 
 /* ── Sort ── */
 function sortBy(col) {
@@ -600,9 +721,13 @@ function renderReservations() {
     const nights = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000);
     const sBadge = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
     const pay    = r.payment_status || 'unpaid';
-    return `<tr>
+    const overdue = isOverdue(r);
+    const svcSub  = ['reserved'].includes(r.site_type)
+      ? [r.boat_launch_period, r.parking_type].filter(Boolean).join(' · ')
+      : (r.site_type || '');
+    return `<tr class="${overdue ? 'row-overdue' : ''}">
       <td data-label="#">${r.id}</td>
-      <td data-label="Site"><strong>${esc(r.site_name||r.site_id)}</strong><small style="color:var(--grey);display:block">${esc(r.site_type||'')}</small></td>
+      <td data-label="Site"><strong>${esc(siteLabelDisplay(r))}</strong><small style="color:var(--grey);display:block">${esc(svcSub)}</small></td>
       <td data-label="Guest">${esc(r.guest_name)}</td>
       <td data-label="Contact">${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':'—'}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
       <td data-label="Check-in">${r.check_in}</td>
@@ -611,10 +736,11 @@ function renderReservations() {
       <td data-label="Party">${r.party_size||'—'}</td>
       <td data-label="Source"><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
       <td data-label="Status"><span class="badge ${sBadge}">${r.status}</span></td>
-      <td data-label="Payment"><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}${r.payment_method?'<br><small style="color:var(--grey)">'+esc(payMethodLabel(r.payment_method))+'</small>':''}</td>
+      <td data-label="Payment"><button class="pay-toggle" onclick="togglePaid(${r.id})" title="Click to mark ${pay==='paid'?'unpaid':'paid'}">${payBadge(pay)}</button>${overdue?'<br><span class="badge badge-red">⚠ Overdue</span>':''}${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}${r.payment_method?'<br><small style="color:var(--grey)">'+esc(payMethodLabel(r.payment_method))+'</small>':''}</td>
       <td data-label="Est. Total">${r.estimated_total?'<strong>$'+Number(r.estimated_total).toFixed(2)+'</strong>'+(r.gst_amount?'<br><small style="color:var(--grey)">GST $'+Number(r.gst_amount).toFixed(2)+'</small>':''):'—'}</td>
       <td data-label="Actions" class="action-cell">
         <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
+        ${pay !== 'paid' && r.guest_email ? `<button class="btn btn-sm btn-outline" onclick="requestPayment(${r.id})" title="Email a 48-hour payment request">Req $</button>` : ''}
         ${r.status==='confirmed'
           ? `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
           : `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'confirmed')">Restore</button>`}
@@ -636,7 +762,7 @@ async function loadReservations() {
   try {
     const { reservations = [], error } = await (await fetch('/admin/api/reservations?' + params)).json();
     const tbody = document.getElementById('res-tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="12" class="empty">Error: ${esc(error)}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="13" class="empty">Error: ${esc(error)}</td></tr>`; return; }
     allReservations = reservations;
     renderReservations();
   } catch(e) { console.error(e); }
@@ -666,6 +792,7 @@ async function openEdit(id) {
     setVal('edit-gst-amount', r.gst_amount || '');
     setVal('edit-parking-type', r.parking_type || '');
     setVal('edit-launch-period', r.boat_launch_period || '');
+    window._editOrigPay = r.payment_status || 'unpaid';
     document.getElementById('edit-site').innerHTML = siteOptions(r.site_id);
     document.getElementById('edit-status-msg').textContent = '';
     openModal('edit-modal');
@@ -683,12 +810,68 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
     paymentMethod: val('edit-pay-method'), estimatedTotal: val('edit-est-total'), gstAmount: val('edit-gst-amount'),
     parkingType: val('edit-parking-type'), boatLaunchPeriod: val('edit-launch-period')
   };
+  /* Offer the payment-received email when status flips to Paid */
+  if (val('edit-payment') === 'paid' && window._editOrigPay !== 'paid' && val('edit-email')) {
+    payload.notifyPaid = confirm('Payment marked as PAID.\n\nEmail the guest to confirm payment received and that their booking is complete?');
+  }
   try {
     const res = await (await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
     if (res.ok) { msg.textContent='✓ Saved'; msg.style.color='#16a34a'; setTimeout(()=>{ closeModal('edit-modal'); loadReservations(); loadDashboard(); }, 500); }
     else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
   } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
+
+/* When the admin flips status to Paid, prefill the tax fields if blank so they
+   remember to record what was actually collected. They can still edit. */
+function onEditPayStatus() {
+  if (val('edit-payment') !== 'paid') return;
+  const due = parseFloat(val('edit-amount-due')) || parseFloat(val('edit-est-total')) || 0;
+  if (!val('edit-amount-paid') && due) setVal('edit-amount-paid', due.toFixed(2));
+  if (!val('edit-gst-amount')) {
+    const base = parseFloat(val('edit-est-total')) || parseFloat(val('edit-amount-paid')) || due;
+    if (base) setVal('edit-gst-amount', (base * 5 / 105).toFixed(2));  // 5% GST included in the total
+  }
+}
+
+/* Save current edits, then email the guest a 48-hour payment request. */
+async function sendPaymentRequestFromEdit() {
+  const id = parseInt(val('edit-id'));
+  const email = val('edit-email');
+  if (!id) return;
+  if (!email) { alert('Add a guest email first, then save.'); return; }
+  if (!confirm(`Email ${val('edit-name')||'the guest'} a payment request?\n\nThe email says their reservation is held for 48 hours and includes payment instructions.`)) return;
+  const msg = document.getElementById('edit-status-msg'); msg.textContent='Saving & sending…'; msg.style.color='var(--grey)';
+  const payload = {
+    id, siteId: val('edit-site'), status: val('edit-status'),
+    checkIn: val('edit-checkin'), checkOut: val('edit-checkout'),
+    guestName: val('edit-name'), guestEmail: email, guestPhone: val('edit-phone'),
+    partySize: val('edit-party'), boatLength: val('edit-boat'), notes: val('edit-notes'),
+    paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid'),
+    paymentMethod: val('edit-pay-method'), estimatedTotal: val('edit-est-total'), gstAmount: val('edit-gst-amount'),
+    parkingType: val('edit-parking-type'), boatLaunchPeriod: val('edit-launch-period'),
+    requestPayment: true
+  };
+  try {
+    const res = await (await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok && res.paymentRequestSent) { msg.textContent='✓ Payment request emailed'; msg.style.color='#16a34a'; loadReservations(); loadDashboard(); }
+    else if (res.ok) { msg.textContent='Saved, but email could not be sent (check email settings).'; msg.style.color='#d4830a'; }
+    else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
+  } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
+}
+
+/* One-click payment request from a reservation row (uses the stored amount/method). */
+async function requestPayment(id) {
+  const r = allReservations.find(x => x.id === id);
+  if (!r) return;
+  if (!r.guest_email) { alert('No guest email on file for #'+id); return; }
+  const method = r.payment_method === 'on_arrival' ? 'on-arrival instructions' : 'e-Transfer instructions';
+  if (!confirm(`Email ${r.guest_name||'the guest'} a payment request?\n\nIt says their reservation is held for 48 hours and includes ${method}.`)) return;
+  try {
+    const res = await (await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, requestPayment:true }) })).json();
+    if (res.paymentRequestSent) alert('✓ Payment request sent to '+r.guest_email);
+    else alert('Could not send the email — check email settings (RESEND_API_KEY).');
+  } catch(e) { alert('Error: '+e.message); }
+}
 
 /* ── Requests (form inbox) ── */
 function setReqFilter(s) {
@@ -700,8 +883,8 @@ async function loadRequests() {
   try {
     const { submissions = [], error } = await (await fetch('/admin/api/submissions?status=' + reqFilter)).json();
     const tbody = document.getElementById('req-tbody');
-    if (error) { tbody.innerHTML = `<tr><td colspan="12" class="empty">Error: ${esc(error)}</td></tr>`; return; }
-    if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No requests</td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="13" class="empty">Error: ${esc(error)}</td></tr>`; return; }
+    if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No requests</td></tr>'; return; }
 
     tbody.innerHTML = submissions.map(s => {
       const wants = [s.need_campsite==='yes'&&'Campsite', s.need_moorage==='yes'&&'Moorage', s.need_parking==='yes'&&'Parking', s.need_boat_launch==='yes'&&'Launch'].filter(Boolean).join(', ') || '—';
@@ -740,6 +923,21 @@ async function declineSub(id) {
 }
 
 /* ── Accept request modal ── */
+const ACCEPT_PRESETS = {
+  awaiting: 'Your reservation request has been approved and is now awaiting payment. Please use the payment details below to secure your booking.',
+  paid:     "Your reservation request has been approved and your payment has been received — your booking is confirmed. We look forward to seeing you!",
+  custom:   ''
+};
+function applyAcceptPreset() {
+  const p = document.getElementById('accept-msg-preset').value;
+  const ta = document.getElementById('accept-message');
+  if (p === 'custom') { ta.value = ''; ta.focus(); }
+  else ta.value = ACCEPT_PRESETS[p] || '';
+}
+function toggleAcceptEmail() {
+  document.getElementById('accept-email-fields').style.display =
+    document.getElementById('accept-send-email').checked ? '' : 'none';
+}
 function openAccept(id) {
   const s = (window._subs||[]).find(x => x.id === id);
   if (!s) return;
@@ -753,9 +951,25 @@ function openAccept(id) {
   setVal('accept-party', s.group_size); setVal('accept-boat', s.boat_length);
   setVal('accept-amount', s.estimated_total || '');
   setVal('accept-notes', s.additional_requests);
-  /* prefer matching site type */
-  const wantMoor = s.need_moorage === 'yes' && s.need_campsite !== 'yes';
-  document.getElementById('accept-site').innerHTML = siteOptions(null, wantMoor ? 'moorage' : null);
+  setVal('accept-pay-method', s.payment_method || 'etransfer');
+  setVal('accept-pay-status', 'unpaid');
+
+  /* Preselect a sensible site/lot from what they requested — but show all so
+     the admin can override. Parking/launch-only requests get a generic lot
+     (no numbered slot); moorage/camping default to the first slot of that type. */
+  const wantsCamp = s.need_campsite==='yes', wantsMoor = s.need_moorage==='yes',
+        wantsPark = s.need_parking==='yes', wantsLaunch = s.need_boat_launch==='yes';
+  let preSel = null;
+  if (wantsPark && !wantsCamp && !wantsMoor)        preSel = (s.parking_type==='trailer') ? 'TRAILER' : 'PARKING';
+  else if (wantsLaunch && !wantsCamp && !wantsMoor && !wantsPark) preSel = 'LAUNCH';
+  else if (wantsMoor && !wantsCamp)                 preSel = firstSiteOfType('moorage');
+  else if (wantsCamp)                               preSel = firstSiteOfType('campsite');
+  document.getElementById('accept-site').innerHTML = siteOptions(preSel);
+
+  document.getElementById('accept-send-email').checked = true;
+  toggleAcceptEmail();
+  document.getElementById('accept-msg-preset').value = 'awaiting';
+  applyAcceptPreset();
   document.getElementById('accept-msg').textContent = '';
   openModal('accept-modal');
 }
@@ -766,11 +980,18 @@ document.getElementById('accept-form').addEventListener('submit', async function
     submissionId: parseInt(val('accept-subid')), siteId: val('accept-site'),
     checkIn: val('accept-checkin'), checkOut: val('accept-checkout'),
     partySize: val('accept-party'), boatLength: val('accept-boat'),
-    amountDue: val('accept-amount'), notes: val('accept-notes')
+    amountDue: val('accept-amount'), notes: val('accept-notes'),
+    paymentMethod: val('accept-pay-method'), paymentStatus: val('accept-pay-status'),
+    sendEmail: document.getElementById('accept-send-email').checked,
+    adminMessage: val('accept-message')
   };
   try {
     const res = await (await fetch('/admin/api/submissions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
-    if (res.ok) { msg.textContent='✓ Booking #'+res.reservationId+' created'; msg.style.color='#16a34a'; setTimeout(()=>{ closeModal('accept-modal'); loadRequests(); loadReservations(); loadDashboard(); }, 800); }
+    if (res.ok) {
+      msg.textContent = '✓ Booking #'+res.reservationId+' created' + (res.emailSent ? ' · email sent' : (payload.sendEmail ? ' · email not sent' : ''));
+      msg.style.color='#16a34a';
+      setTimeout(()=>{ closeModal('accept-modal'); loadRequests(); loadReservations(); loadDashboard(); }, 900);
+    }
     else { msg.textContent = res.error || 'Error'; msg.style.color='#dc2626'; }
   } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
@@ -846,6 +1067,69 @@ async function runCleanup() {
   } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
 }
 
+/* ── Danger zone — full wipe (beta reset) ── */
+async function wipeAll(type) {
+  const label = type === 'all' ? 'ALL reservations AND all requests'
+              : type === 'reservations' ? 'ALL reservations' : 'ALL requests';
+  if (!confirm(`⚠ This permanently deletes ${label} from the database.\n\nThis CANNOT be undone. Continue?`)) return;
+  const typed = prompt(`Type DELETE to confirm wiping ${label}:`);
+  if ((typed || '').trim().toUpperCase() !== 'DELETE') { alert('Cancelled — confirmation text did not match.'); return; }
+  const msg = document.getElementById('wipe-msg'); msg.textContent = 'Deleting…'; msg.style.color = 'var(--grey)';
+  try {
+    const r = await (await fetch('/admin/api/cleanup', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ wipeAll: true, type })
+    })).json();
+    if (r.ok) {
+      msg.style.color = '#16a34a';
+      msg.textContent = `✓ Wiped — reservations deleted: ${r.reservationsDeleted}, requests deleted: ${r.submissionsDeleted}`;
+      loadReservations(); loadRequests(); loadDashboard();
+    } else { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + (r.error || 'unknown'); }
+  } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
+}
+
+/* ── Tax category + CSV export ── */
+/* Primary good a reservation is billed under, for GST remittance. */
+function revenueCategory(r) {
+  const id = String(r.site_id || '').toUpperCase();
+  if (id === 'PARKING' || id === 'TRAILER') return 'Parking';
+  if (id === 'LAUNCH') return 'Boat launch';
+  if (r.site_type === 'campsite') return 'Camping';
+  if (r.site_type === 'moorage')  return 'Moorage';
+  if (r.site_type === 'reserved') return 'Parking';
+  return r.site_type || 'Other';
+}
+function csvCell(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+async function exportRevenue() {
+  const msg = document.getElementById('export-msg'); msg.textContent = 'Building export…'; msg.style.color = 'var(--grey)';
+  try {
+    const { reservations = [], error } = await (await fetch('/admin/api/reservations?status=all&payment=paid')).json();
+    if (error) throw new Error(error);
+    if (!reservations.length) { msg.style.color = 'var(--grey)'; msg.textContent = 'No paid bookings to export yet.'; return; }
+    const headers = ['Reservation #','Category','Site','Guest','Check-in','Check-out','Payment method','Amount paid (CAD)','GST collected (CAD)','Add-ons'];
+    let gst = 0, rev = 0;
+    const rows = reservations.map(r => {
+      const addons = [r.parking_type && ('parking:' + r.parking_type), r.boat_launch_period && ('launch:' + r.boat_launch_period)].filter(Boolean).join(' / ');
+      const paid = (r.amount_paid != null && r.amount_paid !== '') ? r.amount_paid : (r.estimated_total || '');
+      gst += parseFloat(r.gst_amount) || 0; rev += parseFloat(paid) || 0;
+      return [r.id, revenueCategory(r), siteLabelDisplay(r), r.guest_name, r.check_in, r.check_out,
+              payMethodLabel(r.payment_method || ''), paid, (r.gst_amount || ''), addons];
+    });
+    const csv = [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'paid-bookings-gst-' + today + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    msg.style.color = '#16a34a';
+    msg.textContent = `✓ Exported ${reservations.length} paid bookings · revenue $${rev.toFixed(2)} · GST $${gst.toFixed(2)}`;
+  } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
+}
+
 /* ── Add booking ── */
 async function loadSites() {
   try {
@@ -869,7 +1153,8 @@ document.getElementById('add-form').addEventListener('submit', async function(e)
   const payload = {
     siteId: val('add-site'), source: val('add-source'), checkIn: val('add-checkin'), checkOut: val('add-checkout'),
     guestName: val('add-name'), guestEmail: val('add-email'), guestPhone: val('add-phone'),
-    partySize: val('add-party'), boatLength: val('add-boat'), amountDue: val('add-amount'), notes: val('add-notes')
+    partySize: val('add-party'), boatLength: val('add-boat'), amountDue: val('add-amount'), notes: val('add-notes'),
+    paymentMethod: val('add-pay-method'), paymentStatus: val('add-pay-status')
   };
   try {
     const res = await (await fetch('/admin/api/reservations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
@@ -881,7 +1166,7 @@ document.getElementById('add-form').addEventListener('submit', async function(e)
 /* ── Helpers ── */
 function esc(v) { return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function val(id) { return document.getElementById(id).value; }
-function payMethodLabel(m) { return {etransfer:'e-Transfer',honesty_box:'Honesty box',on_arrival:'On arrival'}[m] || m; }
+function payMethodLabel(m) { return {etransfer:'e-Transfer',honesty_box:'Honesty box',on_arrival:'On arrival',other:'Other'}[m] || m; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v==null?'':v); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

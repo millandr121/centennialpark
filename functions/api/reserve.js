@@ -89,6 +89,21 @@ export async function onRequestPost(context) {
   const row    = `padding:9px 12px;border-bottom:1px solid #e5e7eb;font-size:14px`;
   const head   = `background:#2e5d33;color:#fff;padding:9px 12px;font-size:12px;font-weight:600`;
 
+  const pmLabel = { etransfer: 'Interac e-Transfer', honesty_box: 'Honesty box', on_arrival: 'Cash / card on arrival' };
+  const extraSvcs = [
+    parkingType ? 'Parking: ' + parkingType : '',
+    launchPrd   ? 'Boat launch: ' + launchPrd : '',
+    boatWash > 0 ? 'Boat washes: ' + boatWash : '',
+    freezer  > 0 ? 'Freezer days: ' + freezer  : ''
+  ].filter(Boolean).join(' · ');
+
+  const priceNote = estTotal > 0
+    ? `<p style="margin-top:1rem;padding:10px 14px;background:#f0f7f1;border-radius:6px;font-size:14px">
+        <strong>Estimated total: $${estTotal.toFixed(2)} CAD</strong>
+        ${gstAmt > 0 ? ` (incl. $${gstAmt.toFixed(2)} GST)` : ''}
+        ${payMethod ? '<br>Payment: ' + esc(pmLabel[payMethod] || payMethod) : ''}
+       </p>` : '';
+
   /* Guest confirmation */
   const guestSent = await sendEmail(env, {
     subject: `Booking confirmed — ${site.name}, Eileen Scott Centennial Park`,
@@ -123,21 +138,6 @@ export async function onRequestPost(context) {
         <p style="color:#9ca3af;font-size:12px;margin-top:2rem">Confirmation #${rid}</p>
       </div>`
   });
-
-  const pmLabel = { etransfer: 'Interac e-Transfer', honesty_box: 'Honesty box', on_arrival: 'Cash / card on arrival' };
-  const extraSvcs = [
-    parkingType ? 'Parking: ' + parkingType : '',
-    launchPrd   ? 'Boat launch: ' + launchPrd : '',
-    boatWash > 0 ? 'Boat washes: ' + boatWash : '',
-    freezer  > 0 ? 'Freezer days: ' + freezer  : ''
-  ].filter(Boolean).join(' · ');
-
-  const priceNote = estTotal > 0
-    ? `<p style="margin-top:1rem;padding:10px 14px;background:#f0f7f1;border-radius:6px;font-size:14px">
-        <strong>Estimated total: $${estTotal.toFixed(2)} CAD</strong>
-        ${gstAmt > 0 ? ` (incl. $${gstAmt.toFixed(2)} GST)` : ''}
-        ${payMethod ? '<br>Payment: ' + esc(pmLabel[payMethod] || payMethod) : ''}
-       </p>` : '';
 
   /* Park notification */
   await sendEmail(env, {
