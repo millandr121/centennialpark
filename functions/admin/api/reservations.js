@@ -2,7 +2,7 @@
    All routes require auth via _middleware.js. */
 
 import { clean, tableCols, sendEmail } from '../../api/_lib.js';
-import { paidEmail } from '../../api/_emails.js';
+import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
@@ -12,6 +12,12 @@ function json(o, s) {
 
 /* Numbered slots are single-occupancy; generic service lots are not. */
 function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
+
+/* Site row with schema fallback — this DB uses label/status, older code used name/active. */
+async function lookupSite(env, siteId) {
+  try { return await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first(); }
+  catch { return await env.DB.prepare('SELECT id, label as name, type FROM sites WHERE id = ?').bind(siteId).first(); }
+}
 
 /* Build a "party size" SELECT expression that works on either schema. */
 function partyExpr(cols) {
@@ -153,18 +159,36 @@ export async function onRequestPut(context) {
     try {
       const r = await env.DB.prepare('SELECT * FROM reservations WHERE id = ?').bind(id).first();
       if (r && r.guest_email) {
-        const site = await env.DB.prepare('SELECT id,name,type FROM sites WHERE id = ?').bind(r.site_id).first();
+        const site = await lookupSite(env, r.site_id);
         const { subject, html } = paidEmail({
           name: r.guest_name, site, parkingType: r.parking_type,
           checkIn: r.check_in, checkOut: r.check_out, resId: id,
-          estTotal: parseFloat(r.estimated_total) || parseFloat(r.amount_paid) || parseFloat(r.amount_due) || 0
+          estTotal: parseFloat(r.amount_paid) || parseFloat(r.estimated_total) || parseFloat(r.amount_due) || 0
         });
         paidEmailSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
       }
     } catch (_e) { /* email is best-effort */ }
   }
 
-  return json({ ok: true, paidEmailSent });
+  /* Optional: email the guest a payment request with a 48-hour hold. Admin-triggered. */
+  let paymentRequestSent = false;
+  if (d.requestPayment) {
+    try {
+      const r = await env.DB.prepare('SELECT * FROM reservations WHERE id = ?').bind(id).first();
+      if (r && r.guest_email) {
+        const site = await lookupSite(env, r.site_id);
+        const due = parseFloat(r.amount_due) || parseFloat(r.estimated_total) || 0;
+        const { subject, html } = paymentRequestEmail({
+          name: r.guest_name, site, parkingType: r.parking_type,
+          checkIn: r.check_in, checkOut: r.check_out, resId: id,
+          amountDue: due, payMethod: r.payment_method
+        });
+        paymentRequestSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
+      }
+    } catch (_e) { /* best-effort */ }
+  }
+
+  return json({ ok: true, paidEmailSent, paymentRequestSent });
 }
 
 /* DELETE /admin/api/reservations?id=123 — permanently remove a reservation */

@@ -63,7 +63,7 @@ export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, es
         Please send ${amtNote} to:<br>
         <strong>${ETRANSFER_TO}</strong><br>
         Reference: <strong>#${resId} ${esc(name)}</strong><br><br>
-        <span style="color:#6b7280;font-size:13px">Your reservation is held pending payment. We'll email you again once it's received.</span>
+        <span style="color:#6b7280;font-size:13px">Your reservation is held for 48 hours pending payment. We'll email you again once it's received.</span>
       </div>`
     : payMethod === 'on_arrival'
     ? `<div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
@@ -84,6 +84,32 @@ export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, es
     <p style="color:#9ca3af;font-size:12px">Reservation #${resId}</p>`;
 
   return { subject: `Reservation accepted — ${label}, Eileen Scott Centennial Park`, html: shell(`Reservation Accepted — ${esc(label)}`, inner) };
+}
+
+/* Payment-request / 48-hour-hold reminder, sent on demand from the admin panel.
+   Leads with the hold notice, then the same payment instructions style as the
+   acceptance email. `amountDue` is the figure the guest still owes. */
+export function paymentRequestEmail({ name, site, parkingType, checkIn, checkOut, amountDue, resId, payMethod }) {
+  const nights = Math.max(1, Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)) || 0;
+  const label  = siteLabel(site, parkingType);
+  const amtNote = amountDue > 0 ? `$${amountDue.toFixed(2)} CAD` : 'your balance';
+
+  const payLine = payMethod === 'on_arrival'
+    ? `${amtNote !== 'your balance' ? amtNote + ' is ' : ''}payable by cash or card when you arrive at the park.`
+    : `Please send ${amtNote} by Interac e-Transfer to:<br><strong>${ETRANSFER_TO}</strong><br>Reference: <strong>#${resId} ${esc(name)}</strong>`;
+
+  const inner = `
+    <p>Hi <strong>${esc(name)}</strong>,</p>
+    <p style="font-size:15px;color:#1f2937">This is a friendly reminder that payment is needed to confirm your reservation.</p>
+    <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
+      <strong style="color:${AMBER}">⏳ Held for 48 hours</strong><br><br>
+      ${payLine}<br><br>
+      <span style="color:#6b7280;font-size:13px">Your spot is held for 48 hours. If payment isn't received by then it may be released to other guests.</span>
+    </div>
+    ${detailsTable(label, checkIn, checkOut, nights)}
+    <p style="color:#9ca3af;font-size:12px">Reservation #${resId}</p>`;
+
+  return { subject: `Payment needed to hold your booking — ${label} (#${resId})`, html: shell(`Payment Requested — ${esc(label)}`, inner) };
 }
 
 /* Payment-received / booking-complete email sent when an admin marks paid. */

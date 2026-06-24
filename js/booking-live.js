@@ -421,16 +421,17 @@ function bind() {
     if (el) el.addEventListener('input', updateLivePricing);
   });
 
-  /* Explicitly render Turnstile — auto-render won't fire for dynamically injected elements */
+  /* Explicitly render Turnstile — auto-render won't fire for dynamically injected
+     elements. Remove any prior widget first so a second booking (after the form
+     re-renders) gets a fresh, unspent token instead of silently failing. */
   var tsWrap = document.getElementById('lb-turnstile-wrap');
   if (tsWrap) {
-    if (window.turnstile) {
-      window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
-    } else {
-      window.onloadTurnstileCallback = function() {
-        window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' });
-      };
-    }
+    var renderTs = function () {
+      try { if (window._lbTsWidget != null) turnstile.remove(window._lbTsWidget); } catch (e) {}
+      try { window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' }); } catch (e) {}
+    };
+    if (window.turnstile) renderTs();
+    else window.onloadTurnstileCallback = renderTs;
   }
 }
 
@@ -519,20 +520,30 @@ async function submitBooking(e) {
     var res = await r.json();
 
     if (res.ok) {
-      /* Success — show confirmation */
+      /* Success — show confirmation. Tidy up the spent Turnstile widget so the
+         next booking starts clean. */
+      try { if (window.turnstile && window._lbTsWidget != null) { turnstile.remove(window._lbTsWidget); window._lbTsWidget = null; } } catch (e) {}
+      var bookedId = state.selected;
       var wrap = document.getElementById('lb-form-wrap');
       if (wrap) wrap.innerHTML =
         '<div class="lb-success">' +
           '<div class="lb-success-icon">✓</div>' +
           '<h3>Booking confirmed!</h3>' +
           '<p>Check your email for confirmation. A confirmation email has been sent to the address you provided.</p>' +
-          '<p class="lb-success-details">' + esc(state.selected) + ' · ' + esc(state.checkin) + ' → ' + esc(state.checkout) + '</p>' +
+          '<p class="lb-success-details">' + esc(bookedId) + ' · ' + esc(state.checkin) + ' → ' + esc(state.checkout) + '</p>' +
           '<p style="color:#6b7280;font-size:.85rem">Payment is collected on arrival. Questions? Call 250-728-3006.</p>' +
+          '<button type="button" class="lb-submit-btn" id="lb-book-another" style="margin-top:1rem">Book another site</button>' +
         '</div>';
       /* Mark site booked on map */
-      state.booked.push(state.selected);
-      state.available = state.available.filter(function(id){ return id !== state.selected; });
+      state.booked.push(bookedId);
+      state.available = state.available.filter(function(id){ return id !== bookedId; });
       state.selected  = null;
+      /* Let the guest start a fresh booking — re-check availability so the site
+         they just booked now shows as taken, then re-render with a new form. */
+      var again = document.getElementById('lb-book-another');
+      if (again) again.addEventListener('click', function () {
+        if (state.checkin && state.checkout) checkAvailability(); else render();
+      });
     } else {
       st.textContent = res.error || 'Something went wrong. Please try again.';
       st.className   = 'lb-status lb-status-error';

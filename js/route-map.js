@@ -251,7 +251,7 @@
       iconSize: [22, 22], iconAnchor: [11, 11], className: ''
     });
     return L.marker(pos, { icon: icon, zIndexOffset: 350 }).addTo(map)
-      .bindPopup('<strong>Carmanah Mainline / Bamfield Rd junction</strong><br>About 32 km from Bamfield. Chip-seal resumes here for the run into Bamfield; the mainline back toward Youbou is rough logging road.');
+      .bindPopup('<strong>Carmanah Mainline / Bamfield Rd junction</strong><br>About km 34 — the Bamfield Road km-markers count up from Port Alberni. Chip-seal resumes here for the run into Bamfield; the mainline back toward Youbou is rough logging road.');
   }
 
   /* cluster bubble for zoomed-out view */
@@ -414,7 +414,7 @@
     /* Bamfield area gas — only 1 marker, show directly (no cluster) */
     placeGas(1);
 
-    /* chip-seal intersection: Carmanah Mainline / Bamfield Rd junction (~32 km from Bamfield) */
+    /* chip-seal intersection: Carmanah Mainline / Bamfield Rd junction (~km 34 from Port Alberni) */
     chipSealMark = chipSealMarker(driveMap, CARMANAH_JCT);
     driveMap.removeLayer(chipSealMark);
 
