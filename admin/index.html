@@ -123,10 +123,67 @@
     .confirm-modal p { font-size: .95rem; line-height: 1.55; color: #374151; margin-bottom: 1.25rem; }
     .confirm-modal .warn-detail { font-size: .82rem; color: var(--grey); margin-top: .4rem; }
 
-    @media (max-width: 600px) {
-      .form-grid { grid-template-columns: 1fr; }
+    /* ── Mobile ────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .main { padding: 1rem; }
+
+      /* Tabs scroll horizontally */
+      .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding: 0 1rem; }
+      .tab-btn { white-space: nowrap; padding: .8rem .9rem; font-size: .8rem; }
+
+      /* Sub-tabs */
+      .sub-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: .25rem; }
+      .sub-tab  { white-space: nowrap; }
+
+      /* Toolbar stacks */
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar input, .toolbar select { width: 100%; }
+
+      /* Stats: 2 per row */
       .stats { grid-template-columns: 1fr 1fr; }
-      .modal { padding: 1rem; }
+      .stat-num { font-size: 1.5rem; }
+
+      /* Tables → card layout */
+      .tbl-wrap { overflow-x: unset; }
+      .tbl-wrap table, .tbl-wrap tbody, .tbl-wrap tr, .tbl-wrap td { display: block; width: 100%; }
+      .tbl-wrap thead { display: none; }
+      .tbl-wrap tr {
+        border: 1px solid var(--border); border-radius: var(--radius);
+        margin-bottom: .75rem; background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      }
+      .tbl-wrap tr:nth-child(even) td { background: transparent; }
+      .tbl-wrap tr:hover td { background: transparent; }
+      .tbl-wrap td {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: .55rem .9rem; border: none; border-bottom: 1px solid var(--border);
+        font-size: .82rem; gap: .5rem;
+      }
+      .tbl-wrap td:last-child { border-bottom: none; }
+      .tbl-wrap td::before {
+        content: attr(data-label);
+        font-weight: 700; font-size: .68rem; color: var(--grey);
+        text-transform: uppercase; letter-spacing: .04em;
+        min-width: 82px; flex-shrink: 0; padding-top: .1rem;
+      }
+      .tbl-wrap td[data-label="Actions"],
+      .tbl-wrap td[data-label=""] { flex-direction: column; }
+      .tbl-wrap .action-cell { flex-wrap: wrap; }
+
+      /* Modals slide up full-screen on mobile */
+      .modal-bg { align-items: flex-end; padding: 0; }
+      .modal {
+        border-radius: 16px 16px 0 0; max-width: 100%; max-height: 90vh;
+        padding: 1.25rem 1rem;
+      }
+      .confirm-modal { border-radius: 16px 16px 0 0; max-width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .modal-head h2 { font-size: 1rem; }
+    }
+
+    @media (max-width: 400px) {
+      .stats { grid-template-columns: 1fr; }
+      .top-bar h1 { font-size: .85rem; }
     }
   </style>
 </head>
@@ -523,16 +580,18 @@ function renderReservations() {
     const sBadge = r.status==='confirmed' ? 'badge-green' : r.status==='cancelled' ? 'badge-red' : 'badge-yellow';
     const pay    = r.payment_status || 'unpaid';
     return `<tr>
-      <td>${r.id}</td>
-      <td><strong>${esc(r.site_name||r.site_id)}</strong><br><small style="color:var(--grey)">${esc(r.site_type||'')}</small></td>
-      <td>${esc(r.guest_name)}</td>
-      <td>${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':''}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
-      <td>${r.check_in}</td><td>${r.check_out}</td><td>${nights}</td>
-      <td>${r.party_size||'—'}</td>
-      <td><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
-      <td><span class="badge ${sBadge}">${r.status}</span></td>
-      <td><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
-      <td class="action-cell">
+      <td data-label="#">${r.id}</td>
+      <td data-label="Site"><strong>${esc(r.site_name||r.site_id)}</strong><small style="color:var(--grey);display:block">${esc(r.site_type||'')}</small></td>
+      <td data-label="Guest">${esc(r.guest_name)}</td>
+      <td data-label="Contact">${r.guest_email?'<a href="mailto:'+esc(r.guest_email)+'">'+esc(r.guest_email)+'</a>':'—'}${r.guest_phone?'<br><small>'+esc(r.guest_phone)+'</small>':''}</td>
+      <td data-label="Check-in">${r.check_in}</td>
+      <td data-label="Check-out">${r.check_out}</td>
+      <td data-label="Nights">${nights}</td>
+      <td data-label="Party">${r.party_size||'—'}</td>
+      <td data-label="Source"><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
+      <td data-label="Status"><span class="badge ${sBadge}">${r.status}</span></td>
+      <td data-label="Payment"><button class="pay-toggle" onclick="cyclePayment(${r.id},'${pay}')" title="Click to change">${payBadge(pay)}</button>${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}</td>
+      <td data-label="Actions" class="action-cell">
         <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
         ${r.status==='confirmed'
           ? `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
@@ -621,16 +680,18 @@ async function loadRequests() {
       const stBadge = st==='accepted' ? 'badge-green' : st==='declined' ? 'badge-grey' : 'badge-blue';
       const name = esc([s.first_name, s.last_name].filter(Boolean).join(' '));
       return `<tr>
-        <td>${s.id}</td>
-        <td style="white-space:nowrap;font-size:.78rem">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
-        <td>${name}</td>
-        <td><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></td>
-        <td><span class="badge badge-blue">${esc(wants)}</span></td>
-        <td>${esc(s.check_in||'—')}</td><td>${esc(s.check_out||'—')}</td>
-        <td>${esc(s.group_size||'—')}</td><td>${esc(s.boat_length||'—')}</td>
-        <td style="max-width:160px;font-size:.78rem">${esc(s.additional_requests||'')}</td>
-        <td><span class="badge ${stBadge}">${st}</span></td>
-        <td class="action-cell">
+        <td data-label="#">${s.id}</td>
+        <td data-label="Received" style="font-size:.78rem">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
+        <td data-label="Name">${name}</td>
+        <td data-label="Email"><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></td>
+        <td data-label="Wants"><span class="badge badge-blue">${esc(wants)}</span></td>
+        <td data-label="Check-in">${esc(s.check_in||'—')}</td>
+        <td data-label="Check-out">${esc(s.check_out||'—')}</td>
+        <td data-label="Party">${esc(s.group_size||'—')}</td>
+        <td data-label="Boat">${esc(s.boat_length||'—')}</td>
+        <td data-label="Notes" style="font-size:.78rem">${esc(s.additional_requests||'')}</td>
+        <td data-label="Status"><span class="badge ${stBadge}">${st}</span></td>
+        <td data-label="Actions" class="action-cell">
           ${st!=='accepted' ? `<button class="btn btn-sm btn-green" onclick='openAccept(${s.id})'>Accept</button>` : ''}
           <button class="btn btn-sm btn-accent" onclick='openSubEdit(${s.id})'>Edit</button>
           ${st!=='declined' && st!=='accepted' ? `<button class="btn btn-sm btn-outline" onclick="declineSub(${s.id})">Decline</button>` : ''}

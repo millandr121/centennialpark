@@ -63,17 +63,18 @@ export async function verifyTurnstile(env, token, ip) {
 }
 
 /*
- * Send a notification email via Resend (https://resend.com).
+ * Send an email via Resend (https://resend.com).
+ * `to` defaults to the park's NOTIFY_TO address when omitted.
  * Returns true on success, false if not configured or the API rejects it.
  * Never throws — callers treat email as best-effort on top of the D1 record.
  */
-export async function sendEmail(env, { subject, html, replyTo }) {
+export async function sendEmail(env, { subject, html, replyTo, to }) {
   const key = env.RESEND_API_KEY;
-  if (!key) return false;                       // not configured yet
-  const to   = env.NOTIFY_TO   || 'bamfieldcentennialpark@gmail.com';
+  if (!key) return false;
+  const dest = to || env.NOTIFY_TO || 'bamfieldcentennialpark@gmail.com';
   const from = env.RESEND_FROM || 'Centennial Park <onboarding@resend.dev>';
 
-  const body = { from, to, subject, html };
+  const body = { from, to: dest, subject, html };
   if (replyTo) body.reply_to = replyTo;
 
   try {
