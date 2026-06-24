@@ -280,10 +280,20 @@
                   <input type="checkbox" id="needMoorageChip" value="yes">
                   <span>Moorage</span>
                 </label>
+                <label class="choice-chip">
+                  <input type="checkbox" id="needParkingChip" value="yes">
+                  <span>Parking</span>
+                </label>
+                <label class="choice-chip">
+                  <input type="checkbox" id="needLaunchChip" value="yes">
+                  <span>Boat Launch</span>
+                </label>
               </div>
-              <p class="field-hint wizard-hint">Pick one or both</p>
+              <p class="field-hint wizard-hint">Select all that apply</p>
               <input type="hidden" name="needCampsite" id="needCampsite" value="no">
               <input type="hidden" name="needMoorage" id="needMoorage" value="no">
+              <input type="hidden" name="needParking" id="needParking" value="no">
+              <input type="hidden" name="needLaunch" id="needLaunch" value="no">
             </fieldset>
 
             <fieldset class="wizard-panel" data-wizard-step="2">
@@ -324,7 +334,47 @@
                   <label for="boatLength">Boat length (ft)</label>
                 </div>
               </div>
-              <div class="booking-section is-hidden" data-booking-section="dates">
+              <div class="booking-section is-hidden" data-booking-section="parking">
+                <p class="wizard-subhead">Parking</p>
+                <div class="form-field">
+                  <select id="parkingType" name="parkingType">
+                    <option value="">Select type…</option>
+                    <option value="car">Car — $6.50/day · $40/wk · $136.50/mo</option>
+                    <option value="trailer">Trailer — $6.50/day · $40/wk · $136.50/mo</option>
+                    <option value="both">Car + Trailer — $11/day · $55/wk · $236.50/mo</option>
+                  </select>
+                  <label for="parkingType">Parking type</label>
+                </div>
+              </div>
+              <div class="booking-section is-hidden" data-booking-section="launch">
+                <p class="wizard-subhead">Boat Launch</p>
+                <div class="form-field">
+                  <select id="launchPeriod" name="launchPeriod">
+                    <option value="day">Per day — $20 (GST incl.)</option>
+                    <option value="seasonal">Seasonal pass — $142 (GST incl.)</option>
+                    <option value="annual">Annual pass — $216 (GST incl.)</option>
+                  </select>
+                  <label for="launchPeriod">Period</label>
+                </div>
+                <div class="form-field" id="launchDaysWrap">
+                  <input type="number" id="launchDays" name="launchDays" min="1" value="1" placeholder=" ">
+                  <label for="launchDays">Number of launches</label>
+                </div>
+              </div>
+              <div class="booking-section is-hidden" data-booking-section="addons">
+                <p class="wizard-subhead">Add-ons</p>
+                <div class="form-row">
+                  <div class="form-field">
+                    <input type="number" id="boatWashQty" name="boatWashQty" min="0" value="0" placeholder=" ">
+                    <label for="boatWashQty">Boat washes ($5 each)</label>
+                  </div>
+                  <div class="form-field">
+                    <input type="number" id="freezerDays" name="freezerDays" min="0" value="0" placeholder=" ">
+                    <label for="freezerDays">Freezer space (days, $5/day)</label>
+                  </div>
+                </div>
+              </div>
+              <div class="booking-section" data-booking-section="dates">
                 <p class="wizard-subhead">Dates</p>
                 <div class="form-row">
                   <div class="form-field">
@@ -337,15 +387,30 @@
                   </div>
                 </div>
               </div>
+              <div class="booking-section" data-booking-section="payment">
+                <p class="wizard-subhead">Payment preference</p>
+                <div class="form-field">
+                  <select id="paymentMethod" name="paymentMethod">
+                    <option value="">I'll arrange on arrival</option>
+                    <option value="etransfer">Interac e-Transfer (bamfieldcentennialpark@gmail.com)</option>
+                    <option value="honesty_box">Honesty box at park office</option>
+                    <option value="on_arrival">Cash / card on arrival</option>
+                  </select>
+                  <label for="paymentMethod">Payment method</label>
+                </div>
+              </div>
             </fieldset>
 
             <fieldset class="wizard-panel" data-wizard-step="4">
               <legend class="sr-only">Review and send</legend>
               <div class="wizard-review" id="booking-review" aria-live="polite"></div>
+              <div class="wizard-pricing" id="booking-pricing" aria-live="polite"></div>
               <div class="form-field">
                 <textarea id="additionalRequests" name="additionalRequests" rows="2" placeholder=" "></textarea>
                 <label for="additionalRequests">Notes (optional)</label>
               </div>
+              <input type="hidden" name="estimatedTotal" id="estimatedTotal" value="0">
+              <input type="hidden" name="gstAmount" id="gstAmount" value="0">
               <div class="cf-turnstile" data-sitekey="0x4AAAAAADkrvFsmB0Re_CbD" data-theme="light"></div>
             </fieldset>
           </div>
@@ -540,6 +605,7 @@
   <script src="/js/route-map.js" defer></script>
   <script src="/js/translate.js" defer></script>
   <script src="/js/home.js?v=2" defer></script>
+  <script src="/js/pricing.js" defer></script>
   <script src="/js/booking-wizard.js" defer></script>
   <script src="/js/booking-form.js" defer></script>
   <script src="/js/forms.js" defer></script>

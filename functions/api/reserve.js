@@ -13,15 +13,22 @@ export async function onRequestPost(context) {
   const human = await verifyTurnstile(env, data['cf-turnstile-response'], ip);
   if (!human) return json({ error: 'Could not verify you are human. Please try again.' }, 403);
 
-  const siteId    = clean(data.siteId, 10);
-  const checkIn   = clean(data.checkIn, 12);
-  const checkOut  = clean(data.checkOut, 12);
-  const name      = clean(data.guestName, 200);
-  const email     = clean(data.guestEmail, 200);
-  const phone     = clean(data.guestPhone, 50);
-  const partySize = parseInt(data.partySize)  || null;
-  const boatLen   = parseInt(data.boatLength) || null;
-  const notes     = clean(data.notes, 2000);
+  const siteId      = clean(data.siteId, 10);
+  const checkIn     = clean(data.checkIn, 12);
+  const checkOut    = clean(data.checkOut, 12);
+  const name        = clean(data.guestName, 200);
+  const email       = clean(data.guestEmail, 200);
+  const phone       = clean(data.guestPhone, 50);
+  const partySize   = parseInt(data.partySize)  || null;
+  const boatLen     = parseInt(data.boatLength) || null;
+  const notes       = clean(data.notes, 2000);
+  const parkingType = clean(data.parkingType, 20)       || null;
+  const launchPrd   = clean(data.boatLaunchPeriod, 20)  || null;
+  const boatWash    = parseInt(data.boatWashQty)  || 0;
+  const freezer     = parseInt(data.freezerDays)  || 0;
+  const payMethod   = clean(data.paymentMethod, 40)     || null;
+  const estTotal    = parseFloat(data.estimatedTotal)   || 0;
+  const gstAmt      = parseFloat(data.gstAmount)        || 0;
 
   if (!siteId || !checkIn || !checkOut || !name || !looksLikeEmail(email))
     return json({ error: 'Please fill in all required fields.' }, 422);
@@ -54,15 +61,27 @@ export async function onRequestPost(context) {
   try {
     res = await env.DB.prepare(
       `INSERT INTO reservations
-       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source,status)
-       VALUES (?,?,?,?,?,?,?,?,?,'online','confirmed')`
-    ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
+       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,
+        parking_type,boat_launch_period,boat_wash_qty,freezer_days,payment_method,
+        estimated_total,gst_amount,notes,source,status)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'online','confirmed')`
+    ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,
+      parkingType,launchPrd,boatWash,freezer,payMethod,
+      estTotal||null,gstAmt||null,notes||null).run();
   } catch (_) {
-    res = await env.DB.prepare(
-      `INSERT INTO reservations
-       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes,status)
-       VALUES (?,?,?,?,?,?,?,'confirmed')`
-    ).bind(siteId,checkIn,checkOut,name,email,phone||null,notes||null).run();
+    try {
+      res = await env.DB.prepare(
+        `INSERT INTO reservations
+         (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source,status)
+         VALUES (?,?,?,?,?,?,?,?,?,'online','confirmed')`
+      ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
+    } catch (_2) {
+      res = await env.DB.prepare(
+        `INSERT INTO reservations
+         (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes,status)
+         VALUES (?,?,?,?,?,?,?,'confirmed')`
+      ).bind(siteId,checkIn,checkOut,name,email,phone||null,notes||null).run();
+    }
   }
 
   const rid    = (res.meta && res.meta.last_row_id) || '';
@@ -85,17 +104,40 @@ export async function onRequestPost(context) {
           <tr><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Site</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-in</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-out</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Nights</th></tr>
           <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(site.name)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(checkIn)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${esc(checkOut)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${nights}</td></tr>
         </table>
+        ${estTotal > 0 ? `<div style="background:#f0f7f1;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
+          <strong style="color:#2e5d33">Estimated total: $${estTotal.toFixed(2)} CAD</strong>
+          ${gstAmt > 0 ? `<br><span style="color:#6b7280;font-size:13px">Includes $${gstAmt.toFixed(2)} GST</span>` : ''}
+          ${extraSvcs ? `<br><span style="color:#6b7280;font-size:13px">${esc(extraSvcs)}</span>` : ''}
+        </div>` : ''}
         <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-          <strong style="color:#d4830a">💳 Payment — Interac e-Transfer</strong><br><br>
-          Please send a deposit (or full payment) to:<br>
-          <strong>bamfieldcentennialpark@gmail.com</strong><br>
-          Reference: <strong>#${rid} ${esc(name)}</strong><br><br>
-          <span style="color:#6b7280;font-size:13px">Balance is due on arrival. Cash and card also accepted at the park.</span>
+          <strong style="color:#d4830a">💳 Payment</strong><br><br>
+          ${payMethod === 'etransfer'
+            ? `Interac e-Transfer to <strong>bamfieldcentennialpark@gmail.com</strong><br>Reference: <strong>#${rid} ${esc(name)}</strong>`
+            : payMethod === 'honesty_box'
+            ? 'Honesty box at the park office on arrival.'
+            : 'Cash and card accepted at the park on arrival.'}
+          <br><br>
+          <span style="color:#6b7280;font-size:13px">Staff will confirm your booking total before payment is due.</span>
         </div>
         <p style="color:#374151">Questions? Reply to this email or call <a href="tel:+12507283006">250-728-3006</a>.</p>
         <p style="color:#9ca3af;font-size:12px;margin-top:2rem">Confirmation #${rid}</p>
       </div>`
   });
+
+  const pmLabel = { etransfer: 'Interac e-Transfer', honesty_box: 'Honesty box', on_arrival: 'Cash / card on arrival' };
+  const extraSvcs = [
+    parkingType ? 'Parking: ' + parkingType : '',
+    launchPrd   ? 'Boat launch: ' + launchPrd : '',
+    boatWash > 0 ? 'Boat washes: ' + boatWash : '',
+    freezer  > 0 ? 'Freezer days: ' + freezer  : ''
+  ].filter(Boolean).join(' · ');
+
+  const priceNote = estTotal > 0
+    ? `<p style="margin-top:1rem;padding:10px 14px;background:#f0f7f1;border-radius:6px;font-size:14px">
+        <strong>Estimated total: $${estTotal.toFixed(2)} CAD</strong>
+        ${gstAmt > 0 ? ` (incl. $${gstAmt.toFixed(2)} GST)` : ''}
+        ${payMethod ? '<br>Payment: ' + esc(pmLabel[payMethod] || payMethod) : ''}
+       </p>` : '';
 
   /* Park notification */
   await sendEmail(env, {
@@ -103,13 +145,19 @@ export async function onRequestPost(context) {
     replyTo: email,
     html: `
       <div style="font-family:sans-serif;max-width:540px">
-        <h2 style="color:#2e5d33">New Online Booking</h2>
+        <div style="background:#2e5d33;color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:1.2rem">
+          <div style="font-size:18px;font-weight:700">New Online Booking — ${esc(site.name)}</div>
+          <div style="font-size:13px;opacity:.8">Eileen Scott Centennial Park · Bamfield, BC</div>
+        </div>
         <p><strong>${esc(name)}</strong> booked <strong>${esc(site.name)}</strong><br>
         ${esc(checkIn)} → ${esc(checkOut)} (${nights} night${nights!==1?'s':''})</p>
         <p>Email: <a href="mailto:${esc(email)}">${esc(email)}</a><br>
         Phone: ${esc(phone||'not provided')}<br>
         Party: ${partySize||'?'} people${boatLen?'<br>Boat: '+boatLen+' ft':''}</p>
+        ${extraSvcs ? `<p>${esc(extraSvcs)}</p>` : ''}
+        ${priceNote}
         ${notes?`<p>Notes: ${esc(notes)}</p>`:''}
+        <div style="margin:20px 0 8px"><a href="${env.SITE_URL||'https://centennialpark.pages.dev'}/admin" style="display:inline-block;padding:10px 22px;background:#2e5d33;color:#fff;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px">Open Admin Panel →</a></div>
         <p style="color:#9ca3af;font-size:12px">Reservation #${rid} · source: online</p>
       </div>`
   });
