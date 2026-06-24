@@ -85,7 +85,12 @@ export async function onRequestPost(context) {
   const sub = await env.DB.prepare('SELECT * FROM booking_submissions WHERE id = ?').bind(submissionId).first();
   if (!sub) return json({ error: 'Submission not found' }, 404);
 
-  const site = await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first();
+  let site = null;
+  try {
+    site = await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first();
+  } catch (_) {
+    site = await env.DB.prepare('SELECT id, label as name, type FROM sites WHERE id = ?').bind(siteId).first();
+  }
   if (!site) return json({ error: 'Unknown site' }, 404);
 
   /* availability guard — only exclusive numbered campsite/moorage slots */
