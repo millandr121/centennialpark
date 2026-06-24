@@ -13,20 +13,27 @@ CREATE TABLE IF NOT EXISTS sites (
 );
 
 CREATE TABLE IF NOT EXISTS reservations (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  site_id     TEXT    NOT NULL REFERENCES sites(id),
-  check_in    TEXT    NOT NULL,   -- YYYY-MM-DD
-  check_out   TEXT    NOT NULL,   -- YYYY-MM-DD (departure day)
-  guest_name  TEXT    NOT NULL,
-  guest_email TEXT    NOT NULL,
-  guest_phone TEXT,
-  party_size  INTEGER,
-  boat_length INTEGER,
-  notes       TEXT,
-  status      TEXT    NOT NULL DEFAULT 'confirmed' CHECK(status IN ('confirmed','cancelled','pending')),
-  source      TEXT    NOT NULL DEFAULT 'online'    CHECK(source IN ('online','phone','walkin','admin')),
-  created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-  emailed     INTEGER NOT NULL DEFAULT 0
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id            TEXT    NOT NULL REFERENCES sites(id),
+  check_in           TEXT    NOT NULL,
+  check_out          TEXT    NOT NULL,
+  guest_name         TEXT    NOT NULL,
+  guest_email        TEXT    NOT NULL,
+  guest_phone        TEXT,
+  party_size         INTEGER,
+  boat_length        INTEGER,
+  parking_type       TEXT,
+  boat_launch_period TEXT,
+  boat_wash_qty      INTEGER DEFAULT 0,
+  freezer_days       INTEGER DEFAULT 0,
+  payment_method     TEXT,
+  estimated_total    REAL    DEFAULT 0,
+  gst_amount         REAL    DEFAULT 0,
+  notes              TEXT,
+  status             TEXT    NOT NULL DEFAULT 'confirmed' CHECK(status IN ('confirmed','cancelled','pending')),
+  source             TEXT    NOT NULL DEFAULT 'online'    CHECK(source IN ('online','phone','walkin','admin')),
+  created_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+  emailed            INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS park_settings (

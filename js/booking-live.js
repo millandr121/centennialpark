@@ -232,14 +232,17 @@ function treeDots(W, H) {
 /* ── Booking form ─────────────────────────────────────────────────────── */
 function bookingForm() {
   var site = findSite(state.selected);
+  var isMoorage = site && site.type === 'moorage';
   var nights = state.checkin && state.checkout
     ? Math.round((new Date(state.checkout) - new Date(state.checkin)) / 86400000) : 0;
+
+  var pricingHtml = buildLivePricing(nights, isMoorage, 0, 0, 0);
 
   return '<div class="lb-booking-form" id="lb-form-wrap">' +
     '<div class="lb-form-header">' +
       '<div>' +
         '<div class="lb-form-site">' + esc(state.selected) + '</div>' +
-        '<div class="lb-form-dates">' + esc(state.checkin) + ' → ' + esc(state.checkout) + ' · ' + nights + ' night' + (nights!==1?'s':'') + '</div>' +
+        '<div class="lb-form-dates">' + esc(state.checkin) + ' → ' + esc(state.checkout) + ' \xb7 ' + nights + ' night' + (nights!==1?'s':'') + '</div>' +
       '</div>' +
       '<button class="lb-form-close" id="lb-deselect">✕</button>' +
     '</div>' +
@@ -253,15 +256,103 @@ function bookingForm() {
         '<div class="lb-field"><label for="lb-fphone">Phone</label><input type="tel" id="lb-fphone" autocomplete="tel" placeholder="250-555-0000"></div>' +
         '<div class="lb-field"><label for="lb-fparty">Party size</label><input type="number" id="lb-fparty" min="1" max="20" placeholder="2"></div>' +
       '</div>' +
-      (site && site.type === 'moorage'
+      (isMoorage
         ? '<div class="lb-field"><label for="lb-fboat">Boat length (ft) *</label><input type="number" id="lb-fboat" min="8" max="100" required placeholder="e.g. 24"></div>'
         : '') +
+      /* Parking add-on */
+      '<div class="lb-field">' +
+        '<label for="lb-fparking">Parking needed?</label>' +
+        '<select id="lb-fparking">' +
+          '<option value="">No parking</option>' +
+          '<option value="car">Car — $6.50/day</option>' +
+          '<option value="trailer">Trailer — $6.50/day</option>' +
+          '<option value="both">Car + Trailer — $11/day</option>' +
+        '</select>' +
+      '</div>' +
+      /* Boat launch add-on */
+      '<div class="lb-field">' +
+        '<label for="lb-flaunch">Boat launch?</label>' +
+        '<select id="lb-flaunch">' +
+          '<option value="">No launch</option>' +
+          '<option value="day">Per day — $20 (GST incl.)</option>' +
+          '<option value="seasonal">Seasonal pass — $142 (GST incl.)</option>' +
+          '<option value="annual">Annual pass — $216 (GST incl.)</option>' +
+        '</select>' +
+      '</div>' +
+      /* Boat wash + freezer (shown always, zero default) */
+      (isMoorage
+        ? '<div class="lb-two">' +
+            '<div class="lb-field"><label for="lb-fbwash">Boat washes ($5 ea.)</label><input type="number" id="lb-fbwash" min="0" value="0" placeholder="0"></div>' +
+            '<div class="lb-field"><label for="lb-ffreezer">Freezer days ($5/day)</label><input type="number" id="lb-ffreezer" min="0" value="0" placeholder="0"></div>' +
+          '</div>'
+        : '') +
+      /* Payment preference */
+      '<div class="lb-field">' +
+        '<label for="lb-fpayment">Payment preference</label>' +
+        '<select id="lb-fpayment">' +
+          '<option value="">I\'ll arrange on arrival</option>' +
+          '<option value="etransfer">Interac e-Transfer</option>' +
+          '<option value="honesty_box">Honesty box at park office</option>' +
+          '<option value="on_arrival">Cash / card on arrival</option>' +
+        '</select>' +
+      '</div>' +
       '<div class="lb-field"><label for="lb-fnotes">Notes (optional)</label><textarea id="lb-fnotes" rows="2" placeholder="Anything we should know…"></textarea></div>' +
+      '<div id="lb-pricing-wrap">' + pricingHtml + '</div>' +
       '<div id="lb-turnstile-wrap"></div>' +
       '<div class="lb-status" id="lb-fstatus" role="status" aria-live="polite"></div>' +
       '<button type="submit" class="lb-submit-btn" id="lb-fsubmit"><span>Confirm booking</span></button>' +
     '</form>' +
   '</div>';
+}
+
+function buildLivePricing(nights, isMoorage, boatFt, boatWash, freezerDays) {
+  if (!window.ParkPricing || nights <= 0) return '';
+  var site = findSite(state.selected);
+  var parking = (document.getElementById('lb-fparking') || {}).value || '';
+  var launchPrd = (document.getElementById('lb-flaunch') || {}).value || '';
+
+  var p = window.ParkPricing.calcPricing({
+    nights:       nights,
+    needCampsite: site && site.type === 'campsite',
+    siteCount:    1,
+    needMoorage:  isMoorage,
+    boatLength:   boatFt || 0,
+    needParking:  !!parking,
+    parkingType:  parking,
+    needLaunch:   !!launchPrd,
+    launchPeriod: launchPrd,
+    launchDays:   launchPrd === 'day' ? nights : 0,
+    boatWashQty:  parseInt(boatWash)    || 0,
+    freezerDays:  parseInt(freezerDays) || 0
+  });
+  if (p.lines.length === 0) return '';
+
+  var fmt = window.ParkPricing.fmtCAD;
+  var html = '<div class="lb-pricing">';
+  p.lines.forEach(function (l) {
+    html += '<div class="lb-price-row"><span>' + l.label + '</span><span>' + fmt(l.amount) + '</span></div>';
+  });
+  if (p.gst > 0) {
+    html += '<div class="lb-price-row lb-price-sub"><span>Subtotal</span><span>' + fmt(p.subtotal) + '</span></div>';
+    html += '<div class="lb-price-row lb-price-sub"><span>GST (5%)</span><span>' + fmt(p.gst) + '</span></div>';
+  }
+  html += '<div class="lb-price-row lb-price-total"><span>Estimated total</span><span>' + fmt(p.total) + '</span></div>';
+  html += '<div class="lb-price-note">Estimate only — staff confirm before payment is due.</div>';
+  html += '</div>';
+  return html;
+}
+
+function updateLivePricing() {
+  var wrap = document.getElementById('lb-pricing-wrap');
+  if (!wrap) return;
+  var site = findSite(state.selected);
+  var isMoorage = site && site.type === 'moorage';
+  var nights = state.checkin && state.checkout
+    ? Math.round((new Date(state.checkout) - new Date(state.checkin)) / 86400000) : 0;
+  var boatFt    = parseFloat((document.getElementById('lb-fboat')    || {}).value) || 0;
+  var boatWash  = parseInt((document.getElementById('lb-fbwash')   || {}).value) || 0;
+  var freezer   = parseInt((document.getElementById('lb-ffreezer') || {}).value) || 0;
+  wrap.innerHTML = buildLivePricing(nights, isMoorage, boatFt, boatWash, freezer);
 }
 
 function findSite(id) {
@@ -323,6 +414,13 @@ function bind() {
   var form = document.getElementById('lb-guest-form');
   if (form) form.addEventListener('submit', submitBooking);
 
+  /* Live pricing updates */
+  ['lb-fboat','lb-fbwash','lb-ffreezer','lb-fparking','lb-flaunch'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', updateLivePricing);
+    if (el) el.addEventListener('input', updateLivePricing);
+  });
+
   /* Explicitly render Turnstile — auto-render won't fire for dynamically injected elements */
   var tsWrap = document.getElementById('lb-turnstile-wrap');
   if (tsWrap) {
@@ -364,16 +462,47 @@ async function submitBooking(e) {
 
   var site = findSite(state.selected);
 
+  var site2 = findSite(state.selected);
+  var nights2 = state.checkin && state.checkout
+    ? Math.round((new Date(state.checkout) - new Date(state.checkin)) / 86400000) : 0;
+  var parkingVal = (document.getElementById('lb-fparking') ||{}).value || '';
+  var launchVal  = (document.getElementById('lb-flaunch')  ||{}).value || '';
+  var boatWash2  = parseInt((document.getElementById('lb-fbwash')   ||{}).value) || 0;
+  var freezer2   = parseInt((document.getElementById('lb-ffreezer') ||{}).value) || 0;
+  var boatFt2    = parseFloat((document.getElementById('lb-fboat')  ||{}).value) || 0;
+
+  var priceData = window.ParkPricing ? window.ParkPricing.calcPricing({
+    nights:       nights2,
+    needCampsite: site2 && site2.type === 'campsite',
+    siteCount:    1,
+    needMoorage:  site2 && site2.type === 'moorage',
+    boatLength:   boatFt2,
+    needParking:  !!parkingVal,
+    parkingType:  parkingVal,
+    needLaunch:   !!launchVal,
+    launchPeriod: launchVal,
+    launchDays:   launchVal === 'day' ? nights2 : 0,
+    boatWashQty:  boatWash2,
+    freezerDays:  freezer2
+  }) : { total: 0, gst: 0 };
+
   var payload = {
-    siteId:     state.selected,
-    checkIn:    state.checkin,
-    checkOut:   state.checkout,
-    guestName:  (document.getElementById('lb-fname')  ||{}).value || '',
-    guestEmail: (document.getElementById('lb-femail') ||{}).value || '',
-    guestPhone: (document.getElementById('lb-fphone') ||{}).value || '',
-    partySize:  (document.getElementById('lb-fparty') ||{}).value || '',
-    boatLength: (document.getElementById('lb-fboat')  ||{}).value || '',
-    notes:      (document.getElementById('lb-fnotes') ||{}).value || '',
+    siteId:          state.selected,
+    checkIn:         state.checkin,
+    checkOut:        state.checkout,
+    guestName:       (document.getElementById('lb-fname')    ||{}).value || '',
+    guestEmail:      (document.getElementById('lb-femail')   ||{}).value || '',
+    guestPhone:      (document.getElementById('lb-fphone')   ||{}).value || '',
+    partySize:       (document.getElementById('lb-fparty')   ||{}).value || '',
+    boatLength:      (document.getElementById('lb-fboat')    ||{}).value || '',
+    parkingType:     parkingVal,
+    boatLaunchPeriod:launchVal,
+    boatWashQty:     boatWash2,
+    freezerDays:     freezer2,
+    paymentMethod:   (document.getElementById('lb-fpayment') ||{}).value || '',
+    estimatedTotal:  priceData.total,
+    gstAmount:       priceData.gst,
+    notes:           (document.getElementById('lb-fnotes')   ||{}).value || '',
     'cf-turnstile-response': ''
   };
 

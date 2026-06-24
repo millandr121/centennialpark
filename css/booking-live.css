@@ -37,6 +37,7 @@
   margin-bottom: .4rem;
 }
 .lb-field input,
+.lb-field select,
 .lb-field textarea {
   width: 100%;
   padding: .55em .85em;
@@ -47,7 +48,10 @@
   font-size: .95rem;
   transition: border-color .2s;
 }
+.lb-field select { appearance: none; cursor: pointer; }
+.lb-field select option { background: #1a2e1c; color: #fff; }
 .lb-field input:focus,
+.lb-field select:focus,
 .lb-field textarea:focus {
   outline: none;
   border-color: var(--clr-accent-light, #f0b84a);
@@ -204,4 +208,34 @@
   .lb-two { grid-template-columns: 1fr; }
   .lb-dates-inner { flex-direction: column; align-items: stretch; }
   .lb-check-btn { width: 100%; text-align: center; }
+}
+
+/* ── Live pricing estimate ── */
+.lb-pricing {
+  background: rgba(46,93,51,.25);
+  border: 1px solid rgba(46,93,51,.5);
+  border-radius: 8px;
+  padding: .9rem 1rem;
+  margin: .8rem 0 1rem;
+  font-size: .85rem;
+}
+.lb-price-row {
+  display: flex; justify-content: space-between;
+  padding: .3rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.85);
+}
+.lb-price-row:last-of-type { border-bottom: none; }
+.lb-price-sub { color: rgba(255,255,255,.55); font-size: .8rem; }
+.lb-price-total {
+  font-weight: 700;
+  color: #fff;
+  border-top: 1px solid rgba(255,255,255,.2) !important;
+  padding-top: .4rem !important;
+  margin-top: .2rem;
+}
+.lb-price-note {
+  margin-top: .5rem;
+  font-size: .75rem;
+  color: rgba(255,255,255,.45);
 }

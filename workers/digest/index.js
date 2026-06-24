@@ -46,32 +46,49 @@ async function runDigest(env) {
       '<th style="' + th + '">Received</th>' +
       '<th style="' + th + '">Name</th>' +
       '<th style="' + th + '">Email</th>' +
-      '<th style="' + th + '">Booking</th>' +
+      '<th style="' + th + '">Services</th>' +
       '<th style="' + th + '">Details</th>' +
       '<th style="' + th + '">Dates</th>' +
+      '<th style="' + th + '">Total</th>' +
+      '<th style="' + th + '">Payment</th>' +
       '<th style="' + th + '">Notes</th>' +
       '<th style="' + th + '">Sent</th>' +
       '</tr></thead><tbody>';
     bRows.forEach(function (r, i) {
       var cell = i % 2 === 0 ? td : tdAlt;
-      var wants = [
-        r.need_campsite === 'yes' ? 'Campsite' : '',
-        r.need_moorage  === 'yes' ? 'Moorage'  : ''
+      var services = [
+        r.need_campsite    === 'yes' ? 'Campsite'    : '',
+        r.need_moorage     === 'yes' ? 'Moorage'     : '',
+        r.need_parking     === 'yes' ? 'Parking'     : '',
+        r.need_boat_launch === 'yes' ? 'Boat Launch' : ''
       ].filter(Boolean).join(' + ') || '—';
       var details = [];
       if (r.need_campsite === 'yes') {
-        details.push((r.site_count || '?') + ' site(s), ' + (r.group_size || '?') + ' people');
+        details.push((r.site_count || '?') + ' site(s), ' + (r.group_size || '?') + ' ppl');
       }
       if (r.need_moorage === 'yes') {
         details.push('Boat: ' + (r.boat_length || '?') + ' ft');
       }
+      if (r.need_parking === 'yes' && r.parking_type) {
+        details.push('Park: ' + r.parking_type);
+      }
+      if (r.need_boat_launch === 'yes' && r.boat_launch_period) {
+        details.push('Launch: ' + r.boat_launch_period);
+      }
+      if (r.boat_wash_qty > 0)  details.push('Wash ×' + r.boat_wash_qty);
+      if (r.freezer_days  > 0)  details.push('Freezer ' + r.freezer_days + 'd');
+      var totalStr = r.estimated_total > 0 ? '$' + (+r.estimated_total).toFixed(2) : '—';
+      var pmLabels = { etransfer: 'e-Transfer', honesty_box: 'Honesty box', on_arrival: 'On arrival' };
+      var pmStr = r.payment_method ? (pmLabels[r.payment_method] || r.payment_method) : '—';
       html += '<tr>' +
         '<td style="' + cell + '"><span style="' + time + '">' + esc(fmt(r.created_at)) + '</span></td>' +
         '<td style="' + cell + '">' + esc(r.first_name) + ' ' + esc(r.last_name) + '</td>' +
         '<td style="' + cell + '"><a href="mailto:' + esc(r.email) + '" style="color:#2e5d33">' + esc(r.email) + '</a></td>' +
-        '<td style="' + cell + '">' + esc(wants) + '</td>' +
+        '<td style="' + cell + '">' + esc(services) + '</td>' +
         '<td style="' + cell + '">' + esc(details.join(', ') || '—') + '</td>' +
         '<td style="' + cell + '">' + esc(r.check_in || '—') + (r.check_out ? ' → ' + esc(r.check_out) : '') + '</td>' +
+        '<td style="' + cell + ';font-weight:600;color:#2e5d33">' + esc(totalStr) + '</td>' +
+        '<td style="' + cell + '">' + esc(pmStr) + '</td>' +
         '<td style="' + cell + '">' + esc(r.additional_requests || '—').replace(/\n/g, '<br>') + '</td>' +
         '<td style="' + cell + '">' + (r.emailed ? '✓' : '⚠️') + '</td>' +
         '</tr>';
