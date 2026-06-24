@@ -1,8 +1,9 @@
 /* Admin API: form booking requests (the "inbox").
    GET list · PUT edit/status · POST accept → convert to a real reservation. */
 
-import { clean, tableCols } from '../../api/_lib.js';
+import { clean, tableCols, sendEmail } from '../../api/_lib.js';
 import { insertReservation } from './reservations.js';
+import { acceptanceEmail } from '../../api/_emails.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
@@ -84,20 +85,33 @@ export async function onRequestPost(context) {
   const sub = await env.DB.prepare('SELECT * FROM booking_submissions WHERE id = ?').bind(submissionId).first();
   if (!sub) return json({ error: 'Submission not found' }, 404);
 
-  const site = await env.DB.prepare('SELECT id FROM sites WHERE id = ?').bind(siteId).first();
+  const site = await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first();
   if (!site) return json({ error: 'Unknown site' }, 404);
 
-  /* availability guard */
-  const conflict = await env.DB.prepare(
-    `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
-     AND check_in < ? AND date(check_out, '+1 day') > ?`
-  ).bind(siteId, checkOut, checkIn).first();
-  if (conflict) return json({ error: 'That site is already booked for those dates (reservation #' + conflict.id + ')' }, 409);
+  /* availability guard — only exclusive numbered campsite/moorage slots */
+  if (site.type === 'campsite' || site.type === 'moorage') {
+    const conflict = await env.DB.prepare(
+      `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
+       AND check_in < ? AND date(check_out, '+1 day') > ?`
+    ).bind(siteId, checkOut, checkIn).first();
+    if (conflict) return json({ error: 'That site is already booked for those dates (reservation #' + conflict.id + ')' }, 409);
+  }
 
   const name = [sub.first_name, sub.last_name].filter(Boolean).join(' ') || 'Guest';
+
+  /* Pricing + service fields: an admin override wins, else fall back to the
+     values the guest submitted on the request form. */
+  const num = (v, fb) => (v != null && v !== '' ? parseFloat(v) : (parseFloat(fb) || 0));
+  const estTotal    = num(d.estimatedTotal, sub.estimated_total);
+  const gstAmt      = num(d.gstAmount, sub.gst_amount);
+  const payMethod   = clean(d.paymentMethod, 40) || sub.payment_method || null;
+  const payStatus   = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
+  const parkingType = clean(d.parkingType, 20) || sub.parking_type || null;
+  const launchPrd   = clean(d.boatLaunchPeriod, 20) || sub.boat_launch_period || null;
+  const amountDue   = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : (estTotal || null);
+
   const id = await insertReservation(env, {
-    siteId, checkIn, checkOut,
-    name,
+    siteId, checkIn, checkOut, name,
     email:     sub.email || '',
     phone:     null,
     partySize: parseInt(d.partySize) || parseInt(sub.group_size) || null,
@@ -105,7 +119,13 @@ export async function onRequestPost(context) {
     notes:     clean(d.notes, 2000) || sub.additional_requests || null,
     source:    'form',
     status:    'confirmed',
-    amountDue: d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : null,
+    amountDue,
+    paymentStatus:    payStatus,
+    paymentMethod:    payMethod,
+    estimatedTotal:   estTotal || null,
+    gstAmount:        gstAmt || null,
+    parkingType,
+    boatLaunchPeriod: launchPrd,
     submissionId
   });
 
@@ -118,42 +138,23 @@ export async function onRequestPost(context) {
     await env.DB.prepare(`UPDATE booking_submissions SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run().catch(() => {});
   }
 
-  /* Send acceptance email to guest */
-  const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
-  const siteName = siteId;
-  const amtNote = d.amountDue ? `$${parseFloat(d.amountDue).toFixed(2)} deposit` : 'deposit';
-  await env.RESEND_API_KEY && fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: env.RESEND_FROM || 'Centennial Park <onboarding@resend.dev>',
-      to: sub.email,
-      reply_to: env.NOTIFY_TO || 'bamfieldcentennialpark@gmail.com',
-      subject: `Booking confirmed — ${siteName}, Eileen Scott Centennial Park`,
-      html: `<div style="font-family:sans-serif;max-width:540px;margin:0 auto">
-        <div style="background:#2e5d33;color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:1.2rem">
-          <div style="font-size:18px;font-weight:700">Your Booking is Confirmed — ${siteName}</div>
-          <div style="font-size:13px;opacity:.8">Eileen Scott Centennial Park · Bamfield, BC</div>
-        </div>
-        <p>Hi <strong>${name}</strong>, we've confirmed your reservation!</p>
-        <table style="border-collapse:collapse;width:100%;margin:1rem 0">
-          <tr><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Site</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-in</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Check-out</th><th style="background:#2e5d33;color:#fff;padding:8px 12px;font-size:12px">Nights</th></tr>
-          <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${siteName}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${checkIn}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${checkOut}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${nights}</td></tr>
-        </table>
-        <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-          <strong style="color:#d4830a">💳 Payment — Interac e-Transfer</strong><br><br>
-          Please send your ${amtNote} to:<br>
-          <strong>bamfieldcentennialpark@gmail.com</strong><br>
-          Reference: <strong>#${id} ${name}</strong><br><br>
-          <span style="color:#6b7280;font-size:13px">Balance is due on arrival. Cash and card also accepted at the park.</span>
-        </div>
-        <p style="color:#374151">Questions? Reply to this email or call <a href="tel:+12507283006">250-728-3006</a>.</p>
-        <p style="color:#9ca3af;font-size:12px;margin-top:2rem">Reservation #${id}</p>
-      </div>`
-    })
-  }).catch(() => {});
+  /* Acceptance email — only when the admin opted to send it, with their note.
+     The "pay this" figure is the admin's amount-due (defaults to the estimate). */
+  let emailSent = false;
+  if (d.sendEmail && sub.email) {
+    const emailTotal = (amountDue != null && !isNaN(amountDue)) ? amountDue : (estTotal || 0);
+    const { subject, html } = acceptanceEmail({
+      name, site, parkingType, checkIn, checkOut,
+      estTotal: emailTotal, gstAmt: emailTotal === estTotal ? (gstAmt || 0) : 0, resId: id,
+      adminMessage: clean(d.adminMessage, 1000), payMethod
+    });
+    emailSent = await sendEmail(env, {
+      subject, html, to: sub.email,
+      replyTo: env.NOTIFY_TO || 'bamfieldcentennialpark@gmail.com'
+    });
+  }
 
-  return json({ ok: true, reservationId: id });
+  return json({ ok: true, reservationId: id, emailSent });
 }
 
 /* DELETE /admin/api/submissions?id=123 — permanently remove a request */
