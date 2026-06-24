@@ -8,6 +8,31 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-cache
 
+/admin/docs.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+  X-Frame-Options: SAMEORIGIN
+
+/CLAUDE.md
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+
+/SETUP.md
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+
+/schema.sql
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+
+/schema-items.sql
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+
+/wrangler.toml
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-cache
+
 /*.js
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
