@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knowledge Base — Centennial Park Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2e5d33; --green-light: #4a8a52; --green-bg: #f0f7f1;
+      --accent: #d4830a; --border: #e5e7eb; --grey: #6b7280;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body { background: #f9fafb; color: #111827; min-height: 100vh; }
+
+    .top-bar { background: var(--green); color: #fff; padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
+    .top-bar h1 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .top-bar a { color: rgba(255,255,255,.75); font-size: .85rem; text-decoration: none; }
+    .top-bar a:hover { color: #fff; }
+
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; gap: 2rem; }
+
+    nav { width: 220px; flex-shrink: 0; position: sticky; top: 72px; align-self: flex-start; }
+    nav ul { list-style: none; }
+    nav li a { display: block; padding: .45em .75em; border-radius: 6px; font-size: .875rem;
+      color: var(--grey); text-decoration: none; }
+    nav li a:hover, nav li a.active { background: var(--green-bg); color: var(--green); font-weight: 600; }
+    nav .section-head { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      color: #9ca3af; padding: .9em .75em .2em; }
+
+    main { flex: 1; min-width: 0; }
+
+    h2 { font-size: 1.5rem; font-weight: 700; color: var(--green); margin-bottom: 1.25rem;
+      padding-bottom: .5rem; border-bottom: 2px solid var(--border); }
+    h3 { font-size: 1rem; font-weight: 700; margin: 1.5rem 0 .5rem; }
+    h4 { font-size: .875rem; font-weight: 700; margin: 1.2rem 0 .4rem; color: var(--green-light); }
+    p { font-size: .9rem; line-height: 1.65; margin-bottom: .75rem; color: #374151; }
+    ul, ol { margin: .5rem 0 .75rem 1.4rem; font-size: .9rem; line-height: 1.65; color: #374151; }
+    li { margin-bottom: .3rem; }
+    code { background: #f3f4f6; border: 1px solid var(--border); border-radius: 4px;
+      padding: .1em .4em; font-size: .82rem; font-family: 'Courier New', monospace; }
+    pre { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 1rem;
+      font-size: .82rem; overflow-x: auto; margin: .75rem 0; line-height: 1.5; }
+
+    .section { margin-bottom: 3rem; scroll-margin-top: 72px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: .75rem 0 1rem; }
+    th { background: var(--green-bg); color: var(--green); text-align: left; padding: .55em .8em;
+      font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+    td { padding: .55em .8em; border-top: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: #fafafa; }
+
+    .badge { display: inline-block; border-radius: 99px; padding: .15em .7em; font-size: .75rem; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-grey { background: #f3f4f6; color: #374151; }
+
+    .alert { border-radius: 8px; padding: .9rem 1.1rem; margin: .75rem 0; font-size: .875rem; line-height: 1.6; }
+    .alert-info { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .alert-warn { background: #fffbeb; border-left: 4px solid var(--accent); }
+    .alert-ok   { background: #f0fdf4; border-left: 4px solid #22c55e; }
+
+    @media (max-width: 700px) {
+      .layout { flex-direction: column; }
+      nav { width: 100%; position: static; }
+    }
+    @media print {
+      .top-bar, nav { display: none; }
+      .layout { padding: 0; }
+      main { padding: 0; }
+      a { color: inherit; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>📋 Knowledge Base — Eileen Scott Centennial Park</h1>
+  <a href="/admin/">← Back to Admin</a>
+</div>
+
+<div class="layout">
+  <nav>
+    <ul>
+      <li class="section-head">System</li>
+      <li><a href="#objective">Objective</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#files">Key Files</a></li>
+      <li><a href="#env-vars">Environment Variables</a></li>
+      <li class="section-head">Operations</li>
+      <li><a href="#admin-howto">Admin How-To</a></li>
+      <li><a href="#email">Email (Resend)</a></li>
+      <li><a href="#database">Database (D1)</a></li>
+      <li><a href="#limits">Service Limits</a></li>
+      <li class="section-head">Troubleshooting</li>
+      <li><a href="#trouble">Common Issues</a></li>
+      <li class="section-head">Park Info</li>
+      <li><a href="#park-sites">Campsites</a></li>
+      <li><a href="#park-moorage">Moorage</a></li>
+      <li><a href="#park-facilities">Facilities</a></li>
+      <li><a href="#park-pricing">Pricing</a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <!-- ─── OBJECTIVE ─── -->
+    <section id="objective" class="section">
+      <h2>System Objective</h2>
+      <p>Build and maintain a fully operational park management system for <strong>Eileen Scott Centennial Park</strong> in Bamfield, BC. The system must remain <strong>simple to operate</strong> even as features grow — automation is good, complexity visible to the manager is bad.</p>
+      <h3>Priorities</h3>
+      <ol>
+        <li><strong>Reservation system</strong> — online booking form (public-facing) + admin management panel (password-gated)</li>
+        <li><strong>Email notifications</strong> — instant emails to park and guest on every booking/contact; daily digest as safety backup</li>
+        <li><strong>Financial tracking</strong> — all-in amounts, GST extracted automatically, misc income ledger, period income/GST reports</li>
+        <li><strong>Usability</strong> — automated where possible; 100% editable and readable by the manager</li>
+        <li><strong>Reliability</strong> — D1 database as durable backup; graceful degradation when any service is unavailable</li>
+      </ol>
+      <div class="alert alert-ok">
+        Guiding principle: if something breaks, the manager is never left without a fallback. Forms show "email us directly", the daily digest catches missed emails, and the database always has a copy.
+      </div>
+    </section>
+
+    <!-- ─── ARCHITECTURE ─── -->
+    <section id="architecture" class="section">
+      <h2>Architecture</h2>
+
+      <h3>Hosting</h3>
+      <table>
+        <tr><th>Component</th><th>Service</th><th>Details</th></tr>
+        <tr><td>Website + admin</td><td>Cloudflare Pages</td><td>Auto-deploys from <code>main</code> branch on every GitHub push</td></tr>
+        <tr><td>API functions</td><td>Cloudflare Pages Functions</td><td><code>functions/</code> directory — runs at the edge</td></tr>
+        <tr><td>Database</td><td>Cloudflare D1 (SQLite)</td><td>Binding name <code>DB</code>, database name <code>centennialpark</code></td></tr>
+        <tr><td>Email sending</td><td>Resend</td><td>API key stored as secret in Cloudflare</td></tr>
+        <tr><td>Daily digest</td><td>Cloudflare Worker (cron)</td><td><code>workers/digest/</code> — runs 15:00 UTC (~8 AM Pacific)</td></tr>
+        <tr><td>Code repository</td><td>GitHub</td><td><code>millandr121/centennialpark</code></td></tr>
+      </table>
+
+      <h3>How deploys work</h3>
+      <p>Every push to the <code>main</code> branch on GitHub triggers an automatic Cloudflare Pages build. No manual steps needed. Changes are live within ~1 minute.</p>
+      <div class="alert alert-info">Files at the repo root are publicly accessible by URL — but none of them contain secrets. All credentials (passwords, API keys) live in Cloudflare environment variables, never in files.</div>
+
+      <h3>Admin panel security</h3>
+      <p>The <code>/admin/</code> path is protected by HTTP Basic Auth via <code>functions/admin/_middleware.js</code>. The password is stored in the <code>ADMIN_PASSWORD</code> Cloudflare environment variable. All <code>/admin/</code> pages are marked <code>noindex</code> so search engines don't index them.</p>
+
+      <h3>GST calculation</h3>
+      <p>All amounts are <strong>all-in</strong> (GST already included, not added on top). GST is extracted as:</p>
+      <pre>GST = amount × 5 / 105</pre>
+      <p>Example: guest pays $105 → $5 is GST, $100 is the base. The manager enters the one total the guest pays; the system handles the rest. GST-exempt items (donations, etc.) can be toggled off per line.</p>
+    </section>
+
+    <!-- ─── KEY FILES ─── -->
+    <section id="files" class="section">
+      <h2>Key Files</h2>
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>admin/index.html</code></td><td>Entire admin panel UI — single HTML file, vanilla JS</td></tr>
+        <tr><td><code>admin/docs.html</code></td><td>This knowledge base page</td></tr>
+        <tr><td><code>functions/admin/api/reservations.js</code></td><td>Reservations CRUD, mark-paid, GST columns</td></tr>
+        <tr><td><code>functions/admin/api/items.js</code></td><td>Misc income items CRUD</td></tr>
+        <tr><td><code>functions/admin/api/cleanup.js</code></td><td>Database wipe (with sqlite_sequence reset)</td></tr>
+        <tr><td><code>functions/admin/api/sites.js</code></td><td>Campsite/moorage definitions</td></tr>
+        <tr><td><code>functions/admin/api/stats.js</code></td><td>Dashboard summary stats</td></tr>
+        <tr><td><code>functions/api/booking.js</code></td><td>Public booking form POST handler</td></tr>
+        <tr><td><code>functions/api/contact.js</code></td><td>Public contact form POST handler</td></tr>
+        <tr><td><code>schema.sql</code></td><td>Original database schema — run once on new D1</td></tr>
+        <tr><td><code>schema-items.sql</code></td><td>Migration: gst_exempt, paid_at columns + misc_items table</td></tr>
+        <tr><td><code>workers/digest/</code></td><td>Daily digest cron Worker</td></tr>
+        <tr><td><code>SETUP.md</code></td><td>Step-by-step first-time deployment guide</td></tr>
+        <tr><td><code>CLAUDE.md</code></td><td>Machine-readable system reference (Claude reads this automatically)</td></tr>
+      </table>
+    </section>
+
+    <!-- ─── ENV VARS ─── -->
+    <section id="env-vars" class="section">
+      <h2>Environment Variables</h2>
+      <p>Set in: <strong>Cloudflare Dashboard → Workers & Pages → centennialpark → Settings → Environment variables</strong>. Must be set for both Production and Preview.</p>
+      <table>
+        <tr><th>Variable</th><th>Type</th><th>Value</th></tr>
+        <tr><td><code>ADMIN_PASSWORD</code></td><td><span class="badge badge-red">Secret</span></td><td>Park admin login password</td></tr>
+        <tr><td><code>RESEND_API_KEY</code></td><td><span class="badge badge-red">Secret</span></td><td>From Resend dashboard → API Keys</td></tr>
+        <tr><td><code>NOTIFY_TO</code></td><td><span class="badge badge-grey">Plain</span></td><td><code>bamfieldcentennialpark@gmail.com</code></td></tr>
+        <tr><td><code>RESEND_FROM</code></td><td><span class="badge badge-grey">Plain</span></td><td><code>Centennial Park &lt;noreply@your-verified-domain&gt;</code></td></tr>
+        <tr><td><code>DB</code></td><td><span class="badge badge-green">D1 Binding</span></td><td>Database: <code>centennialpark</code></td></tr>
+      </table>
+      <div class="alert alert-warn">After changing any environment variable, trigger a redeploy (push a commit, or use Cloudflare dashboard → Deployments → Retry). Changes don't take effect until the next deploy.</div>
+    </section>
+
+    <!-- ─── ADMIN HOW-TO ─── -->
+    <section id="admin-howto" class="section">
+      <h2>Admin Panel How-To</h2>
+
+      <h3>Tabs overview</h3>
+      <table>
+        <tr><th>Tab</th><th>What it does</th></tr>
+        <tr><td><strong>Reservations</strong></td><td>All bookings. Filter by status. Edit, delete, mark paid/unpaid, email guest.</td></tr>
+        <tr><td><strong>Submissions</strong></td><td>Raw form submissions — enquiries not yet converted to reservations.</td></tr>
+        <tr><td><strong>Add → Booking</strong></td><td>Manually create a reservation (phone-in, walk-in).</td></tr>
+        <tr><td><strong>Add → Misc Item</strong></td><td>Record non-booking income: boat launches, showers, parking, donations, freezer.</td></tr>
+        <tr><td><strong>Reports → Bookings</strong></td><td>Filter reservations by date range, type, site, status. Print-friendly.</td></tr>
+        <tr><td><strong>Reports → Income &amp; GST</strong></td><td>Period income report grouped by category. Export to CSV. Print-friendly.</td></tr>
+        <tr><td><strong>Settings</strong></td><td>Manage campsite/moorage definitions. Danger zone: wipe database scopes.</td></tr>
+      </table>
+
+      <h3>Marking a reservation as paid</h3>
+      <ol>
+        <li>Find the reservation in the Reservations tab</li>
+        <li>Click the <strong>Unpaid</strong> badge — a confirmation dialog asks "Mark #N as PAID?"</li>
+        <li>Confirm → a second dialog asks "Email the guest to notify them it is now paid?"</li>
+        <li>Choose Yes or No — the reservation updates immediately</li>
+      </ol>
+
+      <h3>Editing a reservation</h3>
+      <ol>
+        <li>Click the pencil icon on any reservation row</li>
+        <li>Edit dates, amounts, notes, status</li>
+        <li><strong>Amount Paid</strong> — enter the all-in total the guest actually paid. GST auto-calculates.</li>
+        <li>Check <strong>GST Exempt</strong> if applicable (donations, etc.) — GST zeros out</li>
+        <li>Click Save</li>
+      </ol>
+
+      <h3>Recording misc income</h3>
+      <ol>
+        <li>Go to <strong>Add → Misc Item</strong></li>
+        <li>Choose category (launch, shower, parking, donation, etc.)</li>
+        <li>Enter date, description, amount</li>
+        <li>GST auto-calculates; toggle exempt if needed</li>
+        <li>Click Add Item</li>
+      </ol>
+      <p>Misc items appear in the <strong>Income &amp; GST</strong> report alongside reservation income.</p>
+
+      <h3>Running income reports</h3>
+      <ol>
+        <li>Go to <strong>Reports → Income &amp; GST</strong></li>
+        <li>Select a preset (This Month, Last Month, This Year, etc.) or enter custom dates</li>
+        <li>Click <strong>Generate</strong></li>
+        <li><strong>Print</strong> — opens browser print dialog (report only, no nav/controls)</li>
+        <li><strong>Export CSV</strong> — downloads per-transaction detail file</li>
+      </ol>
+
+      <h3>Running booking reports</h3>
+      <ol>
+        <li>Go to <strong>Reports → Bookings</strong></li>
+        <li>Filter by date range, type (camping/moorage/launch/parking), site, status (paid/unpaid/requested/all)</li>
+        <li>Click <strong>Generate</strong></li>
+        <li>Click <strong>Print</strong></li>
+      </ol>
+
+      <h3>Wiping the database</h3>
+      <p>Found in <strong>Settings → Danger Zone</strong>. Scopes:</p>
+      <ul>
+        <li><strong>Reservations only</strong> — clears bookings; reference numbers restart from 1</li>
+        <li><strong>Submissions only</strong> — clears form submissions</li>
+        <li><strong>Misc Items only</strong> — clears the income ledger</li>
+        <li><strong>Wipe ALL</strong> — clears everything; all IDs reset to 1</li>
+      </ul>
+      <div class="alert alert-warn">Wipes are permanent and cannot be undone. Use at season start or for testing only.</div>
+    </section>
+
+    <!-- ─── EMAIL ─── -->
+    <section id="email" class="section">
+      <h2>Email Service (Resend)</h2>
+
+      <h3>How it works</h3>
+      <p>When a guest submits the booking or contact form, the Cloudflare Function calls the Resend API to instantly email the park Gmail. The same API sends the guest a confirmation. All sends are also saved to the D1 database first.</p>
+
+      <h3>Free tier limits</h3>
+      <table>
+        <tr><th>Limit</th><th>Value</th><th>Status</th></tr>
+        <tr><td>Emails per month</td><td>3,000</td><td><span class="badge badge-green">Very comfortable</span></td></tr>
+        <tr><td>Rate limit</td><td>5 requests/second</td><td><span class="badge badge-green">Not a concern</span></td></tr>
+        <tr><td>Daily limit</td><td>None</td><td><span class="badge badge-green">OK</span></td></tr>
+      </table>
+      <p>At typical campground volume (~10 bookings/day peak, confirmations + park notifications + daily digest), estimated monthly usage is <strong>200–400 emails</strong> — well under the 3,000 limit.</p>
+
+      <h3>What happens when email fails</h3>
+      <p>The form submission is <em>always</em> saved to D1 first. If Resend fails (quota, outage, misconfigured key):</p>
+      <ul>
+        <li>The form still shows success to the guest</li>
+        <li>Data is safe in the database</li>
+        <li>The daily digest Worker emails a recap the next morning</li>
+      </ul>
+      <p>Resend logs are visible in the Resend dashboard. There is no "log overflow" that would block sending — logs are just history.</p>
+
+      <h3>Sending domain</h3>
+      <p>The <code>RESEND_FROM</code> address must use a domain verified in Resend. Until a domain is verified, Resend only allows sending to the Resend account owner's email address (test mode). To send to guests, verify your domain via DNS records in the Resend dashboard.</p>
+    </section>
+
+    <!-- ─── DATABASE ─── -->
+    <section id="database" class="section">
+      <h2>Database (Cloudflare D1)</h2>
+
+      <h3>What it is</h3>
+      <p>Cloudflare D1 is a serverless SQLite database hosted at Cloudflare's edge. It's accessed only by the Cloudflare Functions via the <code>DB</code> binding — not publicly accessible. Data is durable (replicated) and survives indefinitely.</p>
+
+      <h3>Tables</h3>
+      <table>
+        <tr><th>Table</th><th>Contents</th></tr>
+        <tr><td><code>reservations</code></td><td>All bookings — manual and form-submitted</td></tr>
+        <tr><td><code>booking_submissions</code></td><td>Raw public booking form submissions (pre-review)</td></tr>
+        <tr><td><code>contact_submissions</code></td><td>Raw contact form submissions</td></tr>
+        <tr><td><code>misc_items</code></td><td>Non-booking income entries (launch, shower, parking, donations)</td></tr>
+        <tr><td><code>sites</code></td><td>Campsite and moorage definitions</td></tr>
+        <tr><td><code>sqlite_sequence</code></td><td>Internal SQLite AUTOINCREMENT counters — cleared on database wipe</td></tr>
+      </table>
+
+      <h3>Running a manual query</h3>
+      <p>Cloudflare Dashboard → D1 → centennialpark → Console. Example:</p>
+      <pre>SELECT created_at, first_name, last_name, email FROM reservations ORDER BY created_at DESC LIMIT 20;</pre>
+
+      <h3>Schema migrations</h3>
+      <p>New columns or tables must be added manually in the D1 console. Migration files:</p>
+      <ul>
+        <li><code>schema.sql</code> — original setup (run once)</li>
+        <li><code>schema-items.sql</code> — adds <code>gst_exempt</code>, <code>paid_at</code>, creates <code>misc_items</code></li>
+      </ul>
+      <div class="alert alert-info">The API functions are backward-compatible — they check whether columns exist before using them. So the site won't break before a migration is run, it just won't use the new features yet.</div>
+
+      <h3>Free tier limits</h3>
+      <table>
+        <tr><th>Limit</th><th>Value</th><th>Status</th></tr>
+        <tr><td>Reads per day</td><td>5 million</td><td><span class="badge badge-green">Far under</span></td></tr>
+        <tr><td>Writes per day</td><td>100,000</td><td><span class="badge badge-green">Far under</span></td></tr>
+        <tr><td>Storage</td><td>5 GB</td><td><span class="badge badge-green">Far under</span></td></tr>
+      </table>
+    </section>
+
+    <!-- ─── LIMITS ─── -->
+    <section id="limits" class="section">
+      <h2>Service Limits Summary</h2>
+      <table>
+        <tr><th>Service</th><th>Key Limit</th><th>Estimated Usage</th><th>Risk</th></tr>
+        <tr><td>Resend</td><td>3,000 emails/month</td><td>200–400/month</td><td><span class="badge badge-green">Low</span></td></tr>
+        <tr><td>Cloudflare D1 reads</td><td>5M/day</td><td>&lt;1,000/day</td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>Cloudflare D1 writes</td><td>100K/day</td><td>&lt;100/day</td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>Cloudflare Pages builds</td><td>500/month</td><td>~10–20/month</td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>GitHub repo storage</td><td>5 GB soft limit</td><td>~1 MB</td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>Cloudflare Workers requests</td><td>100K/day free</td><td>&lt;500/day</td><td><span class="badge badge-green">None</span></td></tr>
+      </table>
+    </section>
+
+    <!-- ─── TROUBLESHOOTING ─── -->
+    <section id="trouble" class="section">
+      <h2>Troubleshooting</h2>
+
+      <h4>Forms show "please email us directly"</h4>
+      <p>Both Resend AND D1 failed at the same time. Check: Is the <code>DB</code> binding set in Cloudflare? Is <code>RESEND_API_KEY</code> set? Was a redeploy triggered after adding env vars?</p>
+
+      <h4>Emails from forms not arriving</h4>
+      <p>Check the Resend dashboard for send logs. Verify the sending domain is verified. Check if monthly quota (3,000) is exhausted. Note: the daily digest Worker still runs as a backup even if instant emails fail.</p>
+
+      <h4>Admin panel login fails</h4>
+      <p>The <code>ADMIN_PASSWORD</code> env var is missing or was typed incorrectly. Set it in Cloudflare dashboard and redeploy.</p>
+
+      <h4>Reference numbers not resetting after a database wipe</h4>
+      <p>Old wipe code didn't clear <code>sqlite_sequence</code>. Ensure the version of <code>cleanup.js</code> from PR #6 or later is deployed (checks for <code>sqlite_sequence</code> clearing on wipe).</p>
+
+      <h4>New features (GST exempt, paid date, misc items) not working</h4>
+      <p>Run <code>schema-items.sql</code> in the D1 console: Cloudflare Dashboard → D1 → centennialpark → Console → paste the full file contents and run.</p>
+
+      <h4>Cloudflare build failing</h4>
+      <p>Check Cloudflare Dashboard → Workers & Pages → centennialpark → Deployments for error logs. Most common cause: syntax error in a function file. Fix in GitHub and push again.</p>
+
+      <h4>Site not updating after a GitHub push</h4>
+      <p>Check the Cloudflare Pages deployment list. Builds usually complete within 60 seconds. If the build is stuck, try a manual retry from the Cloudflare dashboard.</p>
+
+      <h4>Daily digest not arriving</h4>
+      <p>Check the digest Worker's logs in Cloudflare Dashboard → Workers → (digest worker name). Common causes: <code>RESEND_API_KEY</code> not set on the Worker, database binding not set, or the cron trigger wasn't deployed. To test manually, visit the Worker's URL in a browser.</p>
+    </section>
+
+    <!-- ─── PARK SITES ─── -->
+    <section id="park-sites" class="section">
+      <h2>Campsites</h2>
+      <div class="alert alert-warn">Fill in your campsite details below. Edit this file (<code>admin/docs.html</code>) to update.</div>
+
+      <table>
+        <tr><th>Site #</th><th>Type</th><th>Size / Notes</th><th>Power</th><th>Water</th><th>Max RV Length</th></tr>
+        <tr><td>1</td><td>Campsite</td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>2</td><td>Campsite</td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>3</td><td>Campsite</td><td></td><td></td><td></td><td></td></tr>
+        <!-- Add more rows as needed -->
+      </table>
+    </section>
+
+    <!-- ─── MOORAGE ─── -->
+    <section id="park-moorage" class="section">
+      <h2>Moorage</h2>
+      <div class="alert alert-warn">Fill in your moorage details below.</div>
+      <table>
+        <tr><th>Slip #</th><th>Max boat length</th><th>Max beam</th><th>Notes</th></tr>
+        <tr><td>1</td><td></td><td></td><td></td></tr>
+        <tr><td>2</td><td></td><td></td><td></td></tr>
+        <!-- Add more rows as needed -->
+      </table>
+    </section>
+
+    <!-- ─── FACILITIES ─── -->
+    <section id="park-facilities" class="section">
+      <h2>Facilities</h2>
+      <div class="alert alert-warn">Fill in facility details below.</div>
+      <h3>Parking</h3>
+      <p>Number of day-use parking spots: <em>(fill in)</em>. Overnight parking: <em>(rules)</em>.</p>
+      <h3>Boat Launch</h3>
+      <p><em>(Fill in: hours, conditions, fee, any restrictions)</em></p>
+      <h3>Showers / Washrooms</h3>
+      <p><em>(Fill in: location, hours, shower token cost, etc.)</em></p>
+      <h3>Freezer / Ice</h3>
+      <p><em>(Fill in: availability, cost per bag/block, etc.)</em></p>
+    </section>
+
+    <!-- ─── PRICING ─── -->
+    <section id="park-pricing" class="section">
+      <h2>Pricing</h2>
+      <div class="alert alert-warn">Fill in current rates below. All amounts are GST-inclusive (all-in prices).</div>
+      <table>
+        <tr><th>Item</th><th>Rate</th><th>GST Exempt?</th><th>Notes</th></tr>
+        <tr><td>Camping — standard site</td><td>$</td><td>No</td><td></td></tr>
+        <tr><td>Camping — powered site</td><td>$</td><td>No</td><td></td></tr>
+        <tr><td>Moorage — per night</td><td>$</td><td>No</td><td></td></tr>
+        <tr><td>Day parking</td><td>$</td><td></td><td></td></tr>
+        <tr><td>Boat launch</td><td>$</td><td></td><td></td></tr>
+        <tr><td>Shower token</td><td>$</td><td></td><td></td></tr>
+        <tr><td>Freezer / ice</td><td>$</td><td></td><td></td></tr>
+        <tr><td>General donation</td><td>—</td><td>Yes</td><td></td></tr>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
