@@ -133,6 +133,26 @@
     .confirm-modal p { font-size: .95rem; line-height: 1.55; color: #374151; margin-bottom: 1.25rem; }
     .confirm-modal .warn-detail { font-size: .82rem; color: var(--grey); margin-top: .4rem; }
 
+    /* ── Reports ───────────────────────────────────── */
+    .report-title { font-size: 1.1rem; font-weight: 700; color: var(--green); margin-bottom: .15rem; }
+    .report-sub   { font-size: .82rem; color: var(--grey); margin-bottom: 1rem; }
+    .report-section-title { font-size: .9rem; font-weight: 700; margin: 1.2rem 0 .5rem; color: #111827; }
+    #report-output table { margin-top: .25rem; }
+    #report-output tfoot td, #report-output .totrow td { font-weight: 700; background: var(--green-bg); border-top: 2px solid var(--green); }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    /* ── Print ─────────────────────────────────────── */
+    @media print {
+      body * { visibility: hidden; }
+      #report-output, #report-output * { visibility: visible; }
+      #report-output { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; margin: 0; box-shadow: none; }
+      #report-output table { font-size: 11px; }
+      #report-output th { background: #2e5d33 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      #report-output tfoot td, #report-output .totrow td { background: #f0f7f1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print, .top-bar, .tabs { display: none !important; }
+      @page { margin: 1.2cm; }
+    }
+
     /* ── Mobile ────────────────────────────────────── */
     @media (max-width: 768px) {
       .main { padding: 1rem; }
@@ -209,7 +229,8 @@
   <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
   <button class="tab-btn" data-tab="reservations">Reservations</button>
   <button class="tab-btn" data-tab="requests">Requests <span class="pill" id="req-pill" hidden>0</span></button>
-  <button class="tab-btn" data-tab="add">Add Booking</button>
+  <button class="tab-btn" data-tab="add">Add</button>
+  <button class="tab-btn" data-tab="reports">Reports</button>
   <button class="tab-btn" data-tab="settings">Settings</button>
 </nav>
 
@@ -268,7 +289,7 @@
           <th class="sortable" data-col="source"      onclick="sortBy('source')"     >Source</th>
           <th class="sortable" data-col="status"      onclick="sortBy('status')"     >Status</th>
           <th class="sortable" data-col="payment_status" onclick="sortBy('payment_status')">Payment</th>
-          <th class="sortable" data-col="estimated_total" onclick="sortBy('estimated_total')">Est. Total</th>
+          <th class="sortable" data-col="amount_due" onclick="sortBy('amount_due')">Amount</th>
           <th>Actions</th>
         </tr></thead>
         <tbody id="res-tbody"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody>
@@ -296,9 +317,15 @@
     </div>
   </div>
 
-  <!-- ── ADD BOOKING ── -->
+  <!-- ── ADD (booking / misc item) ── -->
   <div class="panel" id="tab-add">
-    <div class="card" style="max-width:660px">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-add="booking" onclick="setAddTab('booking')">📅 Booking</button>
+      <button class="sub-tab" data-add="item" onclick="setAddTab('item')">🧾 Misc item</button>
+    </div>
+
+    <!-- Manual reservation -->
+    <div class="card" id="add-booking-card" style="max-width:660px">
       <div class="card-title">Add manual reservation</div>
       <form id="add-form">
         <div class="form-grid">
@@ -332,6 +359,58 @@
           <span id="add-status" style="font-size:.875rem;color:var(--grey)"></span>
         </div>
       </form>
+    </div>
+
+    <!-- Misc income item (boat launch, donations, showers, freezer, parking drop-in…) -->
+    <div class="card" id="add-item-card" style="max-width:660px;display:none">
+      <div class="card-title">Record a misc item</div>
+      <p style="font-size:.85rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
+        For non-booking income you want on the tax/income reports — drop-in boat launches, shower or
+        general donations, parking, freezer space, etc. The amount is the <strong>all-in</strong> figure;
+        GST is auto-figured as the 5% already inside it (editable, or tick <em>GST-exempt</em>).
+      </p>
+      <form id="item-form">
+        <div class="form-grid">
+          <div><label>Date *</label><input type="date" id="item-date" required></div>
+          <div><label>Category *</label><select id="item-category" onchange="onItemGstInput()">
+            <option value="launch">Boat launch</option>
+            <option value="parking">Parking</option>
+            <option value="camping">Camping</option>
+            <option value="moorage">Moorage</option>
+            <option value="shower">Shower</option>
+            <option value="freezer">Freezer space</option>
+            <option value="donation">Donation</option>
+            <option value="other">Other</option>
+          </select></div>
+          <div><label>Amount ($) *</label><input type="number" id="item-amount" min="0" step="0.01" placeholder="0.00" oninput="onItemGstInput()"></div>
+          <div><label>GST included ($)</label><input type="number" id="item-gst" min="0" step="0.01" placeholder="0.00"></div>
+          <div><label>Payment method</label><select id="item-pay-method">
+            <option value="">—</option>
+            <option value="cash">Cash</option>
+            <option value="etransfer">Interac e-Transfer</option>
+            <option value="honesty_box">Honesty box</option>
+            <option value="card">Card</option>
+            <option value="other">Other</option>
+          </select></div>
+          <div style="display:flex;align-items:flex-end;gap:.5rem;padding-bottom:.4rem">
+            <label style="display:flex;align-items:center;gap:.45rem;margin:0;font-weight:600">
+              <input type="checkbox" id="item-gst-exempt" style="width:auto" onchange="onItemGstInput()"> GST-exempt
+            </label>
+          </div>
+          <div class="full"><label>Description / notes</label><input type="text" id="item-desc" placeholder="e.g. Donation jar, weekend launches…"></div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
+          <button type="submit" class="btn btn-green">Save item</button>
+          <span id="item-status" style="font-size:.875rem;color:var(--grey)"></span>
+        </div>
+      </form>
+      <div style="margin-top:1.25rem">
+        <div class="card-title">Recent items</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>GST</th><th>Method</th><th></th></tr></thead>
+          <tbody id="item-tbody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
     </div>
   </div>
 
@@ -381,16 +460,6 @@
       <p id="cleanup-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
     </div>
 
-    <div class="card" style="max-width:600px">
-      <div class="card-title">Year-end tax / GST export</div>
-      <p style="font-size:.875rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
-        Downloads a CSV of every <strong>paid</strong> reservation — category (camping / moorage / parking / launch),
-        amount paid and GST collected — so you can total the GST you owe at year-end and see what it was for.
-      </p>
-      <button class="btn btn-green btn-sm" onclick="exportRevenue()">⬇ Download paid bookings (CSV)</button>
-      <p id="export-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
-    </div>
-
     <div class="card" style="max-width:600px;border:1px solid #fca5a5;background:#fef2f2">
       <div class="card-title" style="color:#b91c1c">⚠ Danger zone — wipe the database</div>
       <p style="font-size:.875rem;color:#374151;line-height:1.6;margin-bottom:.9rem">
@@ -400,10 +469,79 @@
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
         <button class="btn btn-red btn-sm" onclick="wipeAll('reservations')">Delete ALL reservations</button>
         <button class="btn btn-red btn-sm" onclick="wipeAll('submissions')">Delete ALL requests</button>
+        <button class="btn btn-red btn-sm" onclick="wipeAll('items')">Delete ALL misc items</button>
         <button class="btn btn-red btn-sm" onclick="wipeAll('all')">Delete EVERYTHING</button>
       </div>
-      <p id="wipe-msg" style="margin-top:.75rem;font-size:.85rem;color:var(--grey)"></p>
+      <p style="margin-top:.6rem;font-size:.8rem;color:var(--grey)">A full wipe also restarts reference numbers (#1, #2…) from the beginning.</p>
+      <p id="wipe-msg" style="margin-top:.5rem;font-size:.85rem;color:var(--grey)"></p>
     </div>
+  </div>
+
+  <!-- ── REPORTS (print / tax) ── -->
+  <div class="panel" id="tab-reports">
+    <div class="sub-tabs no-print">
+      <button class="sub-tab active" data-rep="bookings" onclick="setRepTab('bookings')">📋 Bookings list</button>
+      <button class="sub-tab" data-rep="income" onclick="setRepTab('income')">💰 Income &amp; GST</button>
+    </div>
+
+    <!-- Bookings report controls -->
+    <div class="card no-print" id="rep-bookings-ctrls">
+      <div class="card-title">Printable bookings report</div>
+      <p style="font-size:.83rem;color:#374151;line-height:1.6;margin-bottom:.8rem">
+        Pull any slice — a month of camping, one site for a date range, all unpaid bookings, pending requests — then print it.
+      </p>
+      <div class="toolbar">
+        <label style="margin:0;font-size:.8rem">From <input type="date" id="rep-from"></label>
+        <label style="margin:0;font-size:.8rem">To <input type="date" id="rep-to"></label>
+        <select id="rep-type" onchange="onRepTypeChange()">
+          <option value="all">All types</option>
+          <option value="campsite">Camping</option>
+          <option value="moorage">Moorage</option>
+          <option value="camp_moor">Camping + Moorage</option>
+          <option value="parking">Parking</option>
+          <option value="launch">Boat launch</option>
+          <option value="__site">Specific site…</option>
+        </select>
+        <select id="rep-site" style="display:none"></select>
+        <select id="rep-status">
+          <option value="all">All records</option>
+          <option value="paid">Paid / completed</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="requests">Requests (pending)</option>
+          <option value="unpaid_requests">Unpaid + requests</option>
+        </select>
+        <select id="rep-basis" title="Which date the range filters on">
+          <option value="check_in">By arrival date</option>
+          <option value="created_at">By date booked</option>
+        </select>
+        <button class="btn btn-green" onclick="buildBookingsReport()">Generate</button>
+        <button class="btn btn-outline" onclick="printReport()">🖨 Print</button>
+      </div>
+    </div>
+
+    <!-- Income report controls -->
+    <div class="card no-print" id="rep-income-ctrls" style="display:none">
+      <div class="card-title">Income &amp; GST report — for taxes</div>
+      <p style="font-size:.83rem;color:#374151;line-height:1.6;margin-bottom:.8rem">
+        Totals what was actually paid in over a period, split per item (camping, moorage, launch, showers, freezer,
+        donations…), with the GST you collected on each. Pulls from paid bookings <em>and</em> misc items.
+      </p>
+      <div class="toolbar">
+        <select id="inc-preset" onchange="incPreset()">
+          <option value="month">This month</option>
+          <option value="ytd">This year</option>
+          <option value="week">This week</option>
+          <option value="custom">Custom range</option>
+        </select>
+        <label style="margin:0;font-size:.8rem">From <input type="date" id="inc-from" onchange="document.getElementById('inc-preset').value='custom'"></label>
+        <label style="margin:0;font-size:.8rem">To <input type="date" id="inc-to" onchange="document.getElementById('inc-preset').value='custom'"></label>
+        <button class="btn btn-green" onclick="buildIncomeReport()">Generate</button>
+        <button class="btn btn-outline" onclick="printReport()">🖨 Print</button>
+        <button class="btn btn-outline" onclick="downloadIncomeCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <div class="card" id="report-output"><div class="empty">Choose your options above, then press <strong>Generate</strong>.</div></div>
   </div>
 
 </div>
@@ -431,7 +569,7 @@
         <div><label>Boat length (ft)</label><input type="number" id="edit-boat" min="8" max="100"></div>
         <div class="full" style="border-top:1px solid #e5e7eb;margin-top:.25rem;padding-top:.6rem">
           <strong style="font-size:.9rem">Payment &amp; tax</strong>
-          <span style="font-size:.78rem;color:var(--grey)"> — when you mark a booking <em>Paid</em>, fill in <strong>Amount paid</strong> and <strong>GST collected</strong> so the year-end tax export is accurate.</span>
+          <span style="font-size:.78rem;color:var(--grey)"> — <strong>Amount due</strong> is the quote. Mark it <em>Paid</em> and <strong>Amount paid</strong> + <strong>GST</strong> auto-fill (GST = the 5% already inside the amount). Edit either, or tick <em>GST-exempt</em> if no tax applies.</span>
         </div>
         <div><label>Payment status</label><select id="edit-payment" onchange="onEditPayStatus()">
           <option value="unpaid">Unpaid</option><option value="deposit">Deposit paid</option><option value="paid">Paid in full</option>
@@ -443,10 +581,14 @@
           <option value="honesty_box">Honesty box</option>
           <option value="other">Other</option>
         </select></div>
-        <div><label>Amount due ($)</label><input type="number" id="edit-amount-due" min="0" step="0.01"></div>
-        <div><label>Amount paid ($) <span style="color:var(--grey);font-weight:400">— fill when paid</span></label><input type="number" id="edit-amount-paid" min="0" step="0.01"></div>
-        <div><label>GST collected ($) <span style="color:var(--grey);font-weight:400">— for taxes</span></label><input type="number" id="edit-gst-amount" min="0" step="0.01"></div>
-        <div><label>Est. total ($) <span style="color:var(--grey);font-weight:400">— auto estimate, reference only</span></label><input type="number" id="edit-est-total" min="0" step="0.01"></div>
+        <div><label>Amount due ($) <span style="color:var(--grey);font-weight:400">— the quote</span></label><input type="number" id="edit-amount-due" min="0" step="0.01" oninput="onEditGstRecalc()"></div>
+        <div><label>Amount paid ($) <span style="color:var(--grey);font-weight:400">— all-in, what came in</span></label><input type="number" id="edit-amount-paid" min="0" step="0.01" oninput="onEditGstRecalc()"></div>
+        <div><label>GST collected ($) <span style="color:var(--grey);font-weight:400">— inside the amount</span></label><input type="number" id="edit-gst-amount" min="0" step="0.01"></div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:.45rem">
+          <label style="display:flex;align-items:center;gap:.45rem;margin:0;font-weight:600">
+            <input type="checkbox" id="edit-gst-exempt" style="width:auto" onchange="onEditGstRecalc()"> GST-exempt (no tax)
+          </label>
+        </div>
         <div><label>Parking type</label><select id="edit-parking-type">
           <option value="">None</option>
           <option value="car">Car only</option>
@@ -586,6 +728,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'requests') loadRequests();
+    if (btn.dataset.tab === 'add')      loadItems();
+    if (btn.dataset.tab === 'reports')  initReports();
   });
 });
 
@@ -662,14 +806,33 @@ function payBadge(p) {
   const [cls,label] = map[p] || map.unpaid;
   return `<span class="badge ${cls}">${label}</span>`;
 }
-/* One-click unpaid ↔ paid. Marking paid offers to email the guest. */
+/* True once GST has been waived on a booking. */
+function isExempt(r) { return !!(r.gst_exempt && Number(r.gst_exempt) !== 0); }
+/* Amount column: what was paid (if paid) else the quote, with GST underneath. */
+function amountCell(r) {
+  const gst = (!isExempt(r) && r.gst_amount != null && r.gst_amount !== '') ? Number(r.gst_amount) : 0;
+  const gstLine = gst ? '<br><small style="color:var(--grey)">GST $'+gst.toFixed(2)+'</small>'
+                      : (isExempt(r) ? '<br><small style="color:var(--grey)">GST-exempt</small>' : '');
+  if ((r.payment_status || 'unpaid') === 'paid') {
+    const paid = (r.amount_paid != null && r.amount_paid !== '') ? Number(r.amount_paid)
+               : (r.amount_due != null && r.amount_due !== '') ? Number(r.amount_due)
+               : (r.estimated_total ? Number(r.estimated_total) : null);
+    return (paid != null ? '<strong>$'+paid.toFixed(2)+'</strong> <small style="color:#16a34a">paid</small>' : '<small style="color:#16a34a">paid</small>') + gstLine;
+  }
+  const quote = (r.amount_due != null && r.amount_due !== '') ? Number(r.amount_due)
+              : (r.estimated_total ? Number(r.estimated_total) : null);
+  return (quote != null ? '$'+quote.toFixed(2)+' <small style="color:var(--grey)">quote</small>' : '—') + gstLine;
+}
+/* One-click unpaid ↔ paid. Marking paid first asks to confirm (guards against a
+   misclick), then offers to email the guest. */
 async function togglePaid(id) {
   const r = allReservations.find(x => x.id === id);
   if (!r) return;
   const makePaid = (r.payment_status || 'unpaid') !== 'paid';
+  if (makePaid && !confirm(`Mark reservation #${id} (${r.guest_name||'guest'}) as PAID?`)) return;
   let notifyPaid = false;
   if (makePaid && r.guest_email) {
-    notifyPaid = confirm(`Mark reservation #${id} as PAID.\n\nEmail ${r.guest_name} to confirm payment received and that their booking is complete?`);
+    notifyPaid = confirm(`Email ${r.guest_name} to confirm payment received and that their booking is complete?`);
   }
   await fetch('/admin/api/reservations', { method:'PUT', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ id, paymentStatus: makePaid ? 'paid' : 'unpaid', notifyPaid }) });
@@ -737,7 +900,7 @@ function renderReservations() {
       <td data-label="Source"><span class="badge badge-grey">${esc(r.source||'online')}</span></td>
       <td data-label="Status"><span class="badge ${sBadge}">${r.status}</span></td>
       <td data-label="Payment"><button class="pay-toggle" onclick="togglePaid(${r.id})" title="Click to mark ${pay==='paid'?'unpaid':'paid'}">${payBadge(pay)}</button>${overdue?'<br><span class="badge badge-red">⚠ Overdue</span>':''}${r.amount_due?'<br><small>$'+r.amount_due+'</small>':''}${r.payment_method?'<br><small style="color:var(--grey)">'+esc(payMethodLabel(r.payment_method))+'</small>':''}</td>
-      <td data-label="Est. Total">${r.estimated_total?'<strong>$'+Number(r.estimated_total).toFixed(2)+'</strong>'+(r.gst_amount?'<br><small style="color:var(--grey)">GST $'+Number(r.gst_amount).toFixed(2)+'</small>':''):'—'}</td>
+      <td data-label="Amount">${amountCell(r)}</td>
       <td data-label="Actions" class="action-cell">
         <button class="btn btn-sm btn-accent" onclick="openEdit(${r.id})">Edit</button>
         ${pay !== 'paid' && r.guest_email ? `<button class="btn btn-sm btn-outline" onclick="requestPayment(${r.id})" title="Email a 48-hour payment request">Req $</button>` : ''}
@@ -788,8 +951,10 @@ async function openEdit(id) {
     setVal('edit-payment', r.payment_status || 'unpaid');
     setVal('edit-amount-due', r.amount_due); setVal('edit-amount-paid', r.amount_paid);
     setVal('edit-pay-method', r.payment_method || '');
-    setVal('edit-est-total', r.estimated_total || '');
     setVal('edit-gst-amount', r.gst_amount || '');
+    const exEl = document.getElementById('edit-gst-exempt');
+    exEl.checked = isExempt(r);
+    document.getElementById('edit-gst-amount').disabled = exEl.checked;
     setVal('edit-parking-type', r.parking_type || '');
     setVal('edit-launch-period', r.boat_launch_period || '');
     window._editOrigPay = r.payment_status || 'unpaid';
@@ -807,7 +972,8 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
     guestName: val('edit-name'), guestEmail: val('edit-email'), guestPhone: val('edit-phone'),
     partySize: val('edit-party'), boatLength: val('edit-boat'), notes: val('edit-notes'),
     paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid'),
-    paymentMethod: val('edit-pay-method'), estimatedTotal: val('edit-est-total'), gstAmount: val('edit-gst-amount'),
+    paymentMethod: val('edit-pay-method'), gstAmount: val('edit-gst-amount'),
+    gstExempt: document.getElementById('edit-gst-exempt').checked,
     parkingType: val('edit-parking-type'), boatLaunchPeriod: val('edit-launch-period')
   };
   /* Offer the payment-received email when status flips to Paid */
@@ -821,16 +987,25 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
   } catch(ex) { msg.textContent = ex.message; msg.style.color='#dc2626'; }
 });
 
-/* When the admin flips status to Paid, prefill the tax fields if blank so they
-   remember to record what was actually collected. They can still edit. */
+/* When the admin flips status to Paid, copy the quote into Amount paid (if blank)
+   then auto-figure GST. They can still edit either field afterward. */
 function onEditPayStatus() {
   if (val('edit-payment') !== 'paid') return;
-  const due = parseFloat(val('edit-amount-due')) || parseFloat(val('edit-est-total')) || 0;
-  if (!val('edit-amount-paid') && due) setVal('edit-amount-paid', due.toFixed(2));
-  if (!val('edit-gst-amount')) {
-    const base = parseFloat(val('edit-est-total')) || parseFloat(val('edit-amount-paid')) || due;
-    if (base) setVal('edit-gst-amount', (base * 5 / 105).toFixed(2));  // 5% GST included in the total
+  if (!val('edit-amount-paid')) {
+    const due = parseFloat(val('edit-amount-due')) || 0;
+    if (due) setVal('edit-amount-paid', due.toFixed(2));
   }
+  onEditGstRecalc();
+}
+/* GST = the 5% already inside the amount (amount × 5/105). Exempt → 0, locked.
+   Re-runs when the amount or the exempt box changes; manual GST edits stick until
+   the amount changes again. */
+function onEditGstRecalc() {
+  const gstEl = document.getElementById('edit-gst-amount');
+  if (document.getElementById('edit-gst-exempt').checked) { gstEl.value = '0.00'; gstEl.disabled = true; return; }
+  gstEl.disabled = false;
+  const base = parseFloat(val('edit-amount-paid')) || parseFloat(val('edit-amount-due')) || 0;
+  gstEl.value = base ? (base * 5 / 105).toFixed(2) : '';
 }
 
 /* Save current edits, then email the guest a 48-hour payment request. */
@@ -847,7 +1022,8 @@ async function sendPaymentRequestFromEdit() {
     guestName: val('edit-name'), guestEmail: email, guestPhone: val('edit-phone'),
     partySize: val('edit-party'), boatLength: val('edit-boat'), notes: val('edit-notes'),
     paymentStatus: val('edit-payment'), amountDue: val('edit-amount-due'), amountPaid: val('edit-amount-paid'),
-    paymentMethod: val('edit-pay-method'), estimatedTotal: val('edit-est-total'), gstAmount: val('edit-gst-amount'),
+    paymentMethod: val('edit-pay-method'), gstAmount: val('edit-gst-amount'),
+    gstExempt: document.getElementById('edit-gst-exempt').checked,
     parkingType: val('edit-parking-type'), boatLaunchPeriod: val('edit-launch-period'),
     requestPayment: true
   };
@@ -1069,9 +1245,9 @@ async function runCleanup() {
 
 /* ── Danger zone — full wipe (beta reset) ── */
 async function wipeAll(type) {
-  const label = type === 'all' ? 'ALL reservations AND all requests'
-              : type === 'reservations' ? 'ALL reservations' : 'ALL requests';
-  if (!confirm(`⚠ This permanently deletes ${label} from the database.\n\nThis CANNOT be undone. Continue?`)) return;
+  const label = { all:'ALL reservations, requests AND misc items', reservations:'ALL reservations',
+                  submissions:'ALL requests', items:'ALL misc items' }[type] || 'these records';
+  if (!confirm(`⚠ This permanently deletes ${label} from the database — and restarts reference numbers from #1.\n\nThis CANNOT be undone. Continue?`)) return;
   const typed = prompt(`Type DELETE to confirm wiping ${label}:`);
   if ((typed || '').trim().toUpperCase() !== 'DELETE') { alert('Cancelled — confirmation text did not match.'); return; }
   const msg = document.getElementById('wipe-msg'); msg.textContent = 'Deleting…'; msg.style.color = 'var(--grey)';
@@ -1082,13 +1258,13 @@ async function wipeAll(type) {
     })).json();
     if (r.ok) {
       msg.style.color = '#16a34a';
-      msg.textContent = `✓ Wiped — reservations deleted: ${r.reservationsDeleted}, requests deleted: ${r.submissionsDeleted}`;
-      loadReservations(); loadRequests(); loadDashboard();
+      msg.textContent = `✓ Wiped — reservations: ${r.reservationsDeleted}, requests: ${r.submissionsDeleted}, items: ${r.itemsDeleted||0}`;
+      loadReservations(); loadRequests(); loadDashboard(); loadItems();
     } else { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + (r.error || 'unknown'); }
   } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
 }
 
-/* ── Tax category + CSV export ── */
+/* ── Tax category + CSV helpers (used by Reports) ── */
 /* Primary good a reservation is billed under, for GST remittance. */
 function revenueCategory(r) {
   const id = String(r.site_id || '').toUpperCase();
@@ -1103,31 +1279,258 @@ function csvCell(v) {
   const s = String(v == null ? '' : v);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-async function exportRevenue() {
-  const msg = document.getElementById('export-msg'); msg.textContent = 'Building export…'; msg.style.color = 'var(--grey)';
+function money(n) { return '$' + (Number(n) || 0).toFixed(2); }
+function categoryLabel(c) {
+  return ({ launch:'Boat launch', parking:'Parking', camping:'Camping', moorage:'Moorage',
+            shower:'Shower', freezer:'Freezer space', donation:'Donation', other:'Other' })[c]
+    || (c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other');
+}
+
+/* ── Add → Misc item ── */
+const GST_RATE = 0.05;
+function setAddTab(which) {
+  document.querySelectorAll('[data-add]').forEach(b => b.classList.toggle('active', b.dataset.add === which));
+  document.getElementById('add-booking-card').style.display = which === 'booking' ? '' : 'none';
+  document.getElementById('add-item-card').style.display    = which === 'item'    ? '' : 'none';
+  if (which === 'item') { if (!val('item-date')) setVal('item-date', today); loadItems(); }
+}
+/* Auto-figure the GST already inside an all-in amount (amount × 5/105). */
+function onItemGstInput() {
+  const gstEl = document.getElementById('item-gst');
+  if (document.getElementById('item-gst-exempt').checked) { gstEl.value = '0.00'; gstEl.disabled = true; return; }
+  gstEl.disabled = false;
+  const amt = parseFloat(val('item-amount')) || 0;
+  gstEl.value = amt ? (amt * GST_RATE / (1 + GST_RATE)).toFixed(2) : '';
+}
+document.getElementById('item-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const st = document.getElementById('item-status'); st.textContent = 'Saving…'; st.style.color = 'var(--grey)';
+  const payload = {
+    itemDate: val('item-date'), category: val('item-category'), description: val('item-desc'),
+    amount: val('item-amount'), gstAmount: val('item-gst'),
+    gstExempt: document.getElementById('item-gst-exempt').checked, paymentMethod: val('item-pay-method')
+  };
   try {
-    const { reservations = [], error } = await (await fetch('/admin/api/reservations?status=all&payment=paid')).json();
-    if (error) throw new Error(error);
-    if (!reservations.length) { msg.style.color = 'var(--grey)'; msg.textContent = 'No paid bookings to export yet.'; return; }
-    const headers = ['Reservation #','Category','Site','Guest','Check-in','Check-out','Payment method','Amount paid (CAD)','GST collected (CAD)','Add-ons'];
-    let gst = 0, rev = 0;
-    const rows = reservations.map(r => {
-      const addons = [r.parking_type && ('parking:' + r.parking_type), r.boat_launch_period && ('launch:' + r.boat_launch_period)].filter(Boolean).join(' / ');
-      const paid = (r.amount_paid != null && r.amount_paid !== '') ? r.amount_paid : (r.estimated_total || '');
-      gst += parseFloat(r.gst_amount) || 0; rev += parseFloat(paid) || 0;
-      return [r.id, revenueCategory(r), siteLabelDisplay(r), r.guest_name, r.check_in, r.check_out,
-              payMethodLabel(r.payment_method || ''), paid, (r.gst_amount || ''), addons];
+    const res = await (await fetch('/admin/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })).json();
+    if (res.ok) {
+      st.textContent = '✓ Saved as #' + res.id; st.style.color = '#16a34a';
+      setVal('item-amount',''); setVal('item-gst',''); setVal('item-desc','');
+      document.getElementById('item-gst-exempt').checked = false; document.getElementById('item-gst').disabled = false;
+      loadItems();
+    } else { st.textContent = res.error || 'Error'; st.style.color = '#dc2626'; }
+  } catch(ex) { st.textContent = ex.message; st.style.color = '#dc2626'; }
+});
+async function loadItems() {
+  const tb = document.getElementById('item-tbody');
+  if (!tb) return;
+  try {
+    const { items = [], error } = await (await fetch('/admin/api/items')).json();
+    if (error) { tb.innerHTML = '<tr><td colspan="8" class="empty">'+esc(error)+'</td></tr>'; return; }
+    if (!items.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">No items yet</td></tr>'; return; }
+    tb.innerHTML = items.slice(0,40).map(it => `<tr>
+      <td data-label="#">${it.id}</td>
+      <td data-label="Date">${esc(it.item_date)}</td>
+      <td data-label="Category">${esc(categoryLabel(it.category))}</td>
+      <td data-label="Description">${esc(it.description||'')}</td>
+      <td data-label="Amount">${money(it.amount)}</td>
+      <td data-label="GST">${(it.gst_exempt&&Number(it.gst_exempt)!==0)?'<small style="color:var(--grey)">exempt</small>':money(it.gst_amount)}</td>
+      <td data-label="Method">${esc(payMethodLabel(it.payment_method||'—'))}</td>
+      <td data-label=""><button class="btn btn-sm btn-red" onclick="deleteItem(${it.id})">Del</button></td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = '<tr><td colspan="8" class="empty">Error loading items</td></tr>'; }
+}
+async function deleteItem(id) {
+  if (!confirm('Delete misc item #'+id+'?')) return;
+  await fetch('/admin/api/items?id='+id, { method:'DELETE' });
+  loadItems();
+}
+
+/* ── Reports (print / tax) ── */
+function addDays(dateStr, n) { const d = new Date(dateStr+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+let _reportsInit = false;
+function initReports() {
+  document.getElementById('rep-site').innerHTML = siteOptions();
+  if (_reportsInit) return;
+  _reportsInit = true;
+  setVal('rep-from', today.slice(0,7)+'-01'); setVal('rep-to', today);
+  incPreset();
+}
+function setRepTab(which) {
+  document.querySelectorAll('[data-rep]').forEach(b => b.classList.toggle('active', b.dataset.rep === which));
+  document.getElementById('rep-bookings-ctrls').style.display = which === 'bookings' ? '' : 'none';
+  document.getElementById('rep-income-ctrls').style.display   = which === 'income'   ? '' : 'none';
+  document.getElementById('report-output').innerHTML = '<div class="empty">Choose your options above, then press <strong>Generate</strong>.</div>';
+}
+function onRepTypeChange() { document.getElementById('rep-site').style.display = val('rep-type') === '__site' ? '' : 'none'; }
+function reportHead(title, sub) {
+  return `<div class="report-title">${esc(title)}</div><div class="report-sub">Eileen Scott Centennial Park · ${esc(sub)} · generated ${esc(today)}</div>`;
+}
+function repMatchesType(r, type, siteId) {
+  const id = String(r.site_id||'').toUpperCase();
+  switch (type) {
+    case 'campsite':  return r.site_type === 'campsite';
+    case 'moorage':   return r.site_type === 'moorage';
+    case 'camp_moor': return r.site_type === 'campsite' || r.site_type === 'moorage';
+    case 'parking':   return id === 'PARKING' || id === 'TRAILER';
+    case 'launch':    return id === 'LAUNCH';
+    case '__site':    return !siteId || r.site_id === siteId;
+    default:          return true;
+  }
+}
+const TYPE_LABEL   = { all:'All types', campsite:'Camping', moorage:'Moorage', camp_moor:'Camping + Moorage', parking:'Parking', launch:'Boat launch', __site:'Specific site' };
+const STATUS_LABEL = { all:'All records', paid:'Paid / completed', unpaid:'Unpaid', requests:'Pending requests', unpaid_requests:'Unpaid + requests' };
+async function buildBookingsReport() {
+  const out = document.getElementById('report-output');
+  out.innerHTML = '<div class="empty">Building…</div>';
+  const from = val('rep-from'), to = val('rep-to'), type = val('rep-type'), siteId = val('rep-site'),
+        status = val('rep-status'), basis = val('rep-basis');
+  try {
+    let reservations = [];
+    if (status !== 'requests') {
+      const r = await (await fetch('/admin/api/reservations?status=all')).json();
+      reservations = (r.reservations || []).filter(x => {
+        if (!repMatchesType(x, type, siteId)) return false;
+        if (status === 'paid' && (x.payment_status||'unpaid') !== 'paid') return false;
+        if ((status === 'unpaid' || status === 'unpaid_requests') && (x.payment_status||'unpaid') === 'paid') return false;
+        const d = basis === 'created_at' ? (x.created_at||'').slice(0,10) : (x.check_in||'');
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      }).sort((a,b) => (a.check_in||'').localeCompare(b.check_in||''));
+    }
+    let subs = [];
+    if (status === 'requests' || status === 'unpaid_requests') {
+      const s = await (await fetch('/admin/api/submissions?status=new')).json();
+      subs = (s.submissions || []).filter(x => {
+        const d = x.check_in || (x.created_at||'').slice(0,10);
+        if (from && d && d < from) return false;
+        if (to && d && d > to) return false;
+        return true;
+      });
+    }
+    const range = (from||'…') + ' → ' + (to||'…');
+    const typeLabel = type === '__site' ? ((allSites.find(x=>x.id===siteId)||{}).name || siteId || 'Site') : (TYPE_LABEL[type]||type);
+    let html = reportHead('Bookings — ' + typeLabel, STATUS_LABEL[status] + ' · ' + range + ' (by ' + (basis==='created_at'?'date booked':'arrival') + ')');
+
+    if (status !== 'requests') {
+      let totAmt = 0, totGst = 0;
+      const rows = reservations.map(r => {
+        const nights = r.check_in && r.check_out ? Math.round((new Date(r.check_out)-new Date(r.check_in))/86400000) : '';
+        const amt = (r.payment_status==='paid')
+          ? ((r.amount_paid!=null&&r.amount_paid!=='')?Number(r.amount_paid):(r.amount_due!=null&&r.amount_due!==''?Number(r.amount_due):(r.estimated_total?Number(r.estimated_total):0)))
+          : ((r.amount_due!=null&&r.amount_due!=='')?Number(r.amount_due):(r.estimated_total?Number(r.estimated_total):0));
+        totAmt += amt; totGst += isExempt(r)?0:(parseFloat(r.gst_amount)||0);
+        return `<tr>
+          <td>${r.id}</td><td>${esc(siteLabelDisplay(r))}</td><td>${esc(r.guest_name||'')}</td>
+          <td>${esc(r.guest_email||'')}${r.guest_phone?'<br>'+esc(r.guest_phone):''}</td>
+          <td>${esc(r.check_in||'')}</td><td>${esc(r.check_out||'')}</td><td class="num">${nights}</td>
+          <td class="num">${r.party_size||''}</td><td>${esc(r.status||'')}</td><td>${esc(r.payment_status||'unpaid')}</td>
+          <td class="num">${money(amt)}</td></tr>`;
+      }).join('');
+      html += `<div class="report-section-title">Reservations (${reservations.length})</div>`;
+      html += reservations.length ? `<table>
+        <thead><tr><th>#</th><th>Site</th><th>Guest</th><th>Contact</th><th>Check-in</th><th>Check-out</th><th>Nts</th><th>Party</th><th>Status</th><th>Payment</th><th class="num">Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><td colspan="10">Total — ${reservations.length} booking(s)${totGst?' · GST '+money(totGst):''}</td><td class="num">${money(totAmt)}</td></tr></tfoot>
+      </table>` : '<div class="empty">No reservations match.</div>';
+    }
+    if (status === 'requests' || status === 'unpaid_requests') {
+      const srows = subs.map(s => {
+        const name = [s.first_name,s.last_name].filter(Boolean).join(' ');
+        const wants = [s.need_campsite==='yes'&&'Camp', s.need_moorage==='yes'&&'Moor', s.need_parking==='yes'&&'Park', s.need_boat_launch==='yes'&&'Launch'].filter(Boolean).join(', ')||'—';
+        return `<tr><td>${s.id}</td><td>${esc((s.created_at||'').slice(0,10))}</td><td>${esc(name)}</td><td>${esc(s.email||'')}</td><td>${esc(wants)}</td><td>${esc(s.check_in||'')}</td><td>${esc(s.check_out||'')}</td><td class="num">${esc(s.group_size||'')}</td></tr>`;
+      }).join('');
+      html += `<div class="report-section-title">Pending requests (${subs.length})</div>`;
+      html += subs.length ? `<table>
+        <thead><tr><th>#</th><th>Received</th><th>Name</th><th>Email</th><th>Wants</th><th>Check-in</th><th>Check-out</th><th>Party</th></tr></thead>
+        <tbody>${srows}</tbody></table>` : '<div class="empty">No pending requests match.</div>';
+    }
+    out.innerHTML = html;
+  } catch(e) { out.innerHTML = '<div class="empty">Error: '+esc(e.message)+'</div>'; }
+}
+function incPreset() {
+  const p = val('inc-preset');
+  if (p === 'custom') return;
+  let from = today;
+  if (p === 'month')     from = today.slice(0,7)+'-01';
+  else if (p === 'ytd')  from = today.slice(0,4)+'-01-01';
+  else if (p === 'week') from = addDays(today, -6);
+  setVal('inc-from', from); setVal('inc-to', today);
+}
+function incomeDate(r) { return r.paid_at ? String(r.paid_at).slice(0,10) : (r.check_in||''); }
+function paidAmount(r) {
+  return (r.amount_paid!=null&&r.amount_paid!=='') ? Number(r.amount_paid)
+       : (r.amount_due!=null&&r.amount_due!=='')   ? Number(r.amount_due)
+       : (r.estimated_total ? Number(r.estimated_total) : 0);
+}
+async function buildIncomeReport() {
+  const out = document.getElementById('report-output');
+  out.innerHTML = '<div class="empty">Building…</div>';
+  const from = val('inc-from'), to = val('inc-to');
+  try {
+    const [resp, itemsR] = await Promise.all([
+      fetch('/admin/api/reservations?status=all&payment=paid').then(r=>r.json()),
+      fetch('/admin/api/items?from='+encodeURIComponent(from||'')+'&to='+encodeURIComponent(to||'')).then(r=>r.json())
+    ]);
+    const paidRes = (resp.reservations||[]).filter(r => {
+      const d = incomeDate(r);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
     });
-    const csv = [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'paid-bookings-gst-' + today + '.csv';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    msg.style.color = '#16a34a';
-    msg.textContent = `✓ Exported ${reservations.length} paid bookings · revenue $${rev.toFixed(2)} · GST $${gst.toFixed(2)}`;
-  } catch(e) { msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + e.message; }
+    const items = itemsR.items || [];
+    const groups = {}, detail = [];
+    const add = (cat, amount, gst) => { const g = groups[cat] || (groups[cat] = {count:0,revenue:0,gst:0}); g.count++; g.revenue+=amount; g.gst+=gst; };
+    paidRes.forEach(r => {
+      const amt = paidAmount(r), gst = isExempt(r)?0:(parseFloat(r.gst_amount)||0), cat = revenueCategory(r);
+      add(cat, amt, gst);
+      detail.push([incomeDate(r), 'Booking', cat, '#'+r.id, r.guest_name||'', amt, gst, amt-gst, payMethodLabel(r.payment_method||'')]);
+    });
+    items.forEach(it => {
+      const amt = parseFloat(it.amount)||0, gst = (it.gst_exempt&&Number(it.gst_exempt)!==0)?0:(parseFloat(it.gst_amount)||0), cat = categoryLabel(it.category);
+      add(cat, amt, gst);
+      detail.push([it.item_date, 'Item', cat, '#'+it.id, it.description||'', amt, gst, amt-gst, payMethodLabel(it.payment_method||'')]);
+    });
+    detail.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+    window._incomeDetail = detail; window._incomeRange = {from,to};
+    const cats = Object.keys(groups).sort();
+    let totRev=0, totGst=0, totCnt=0;
+    const rows = cats.map(c => {
+      const g = groups[c]; totRev+=g.revenue; totGst+=g.gst; totCnt+=g.count;
+      return `<tr><td>${esc(c)}</td><td class="num">${g.count}</td><td class="num">${money(g.revenue)}</td><td class="num">${money(g.gst)}</td><td class="num">${money(g.revenue-g.gst)}</td></tr>`;
+    }).join('');
+    const range = (from||'…')+' → '+(to||'…');
+    let html = reportHead('Income & GST', range);
+    html += cats.length ? `<table>
+      <thead><tr><th>Category (good)</th><th class="num">Txns</th><th class="num">Revenue (incl GST)</th><th class="num">GST collected</th><th class="num">Net (ex GST)</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>TOTAL</td><td class="num">${totCnt}</td><td class="num">${money(totRev)}</td><td class="num">${money(totGst)}</td><td class="num">${money(totRev-totGst)}</td></tr></tfoot>
+    </table>
+    <p style="font-size:.78rem;color:var(--grey);margin-top:.6rem">Amounts are GST-inclusive (what was collected). “GST collected” is the 5% portion within revenue — the part you remit. ${paidRes.length} paid booking(s) + ${items.length} misc item(s); bookings counted by date paid.</p>`
+      : '<div class="empty">No paid income in this period.</div>';
+    out.innerHTML = html;
+  } catch(e) { out.innerHTML = '<div class="empty">Error: '+esc(e.message)+'</div>'; }
+}
+function downloadIncomeCSV() {
+  const detail = window._incomeDetail;
+  if (!detail || !detail.length) { alert('Generate an income report first.'); return; }
+  const headers = ['Date','Type','Category','Reference','Description','Amount (incl GST)','GST','Net (ex GST)','Payment method'];
+  let tRev=0, tGst=0;
+  const body = detail.map(d => { tRev+=Number(d[5])||0; tGst+=Number(d[6])||0;
+    return [d[0],d[1],d[2],d[3],d[4],(Number(d[5])||0).toFixed(2),(Number(d[6])||0).toFixed(2),(Number(d[7])||0).toFixed(2),d[8]]; });
+  body.push(['','','','','TOTAL',tRev.toFixed(2),tGst.toFixed(2),(tRev-tGst).toFixed(2),'']);
+  const csv = [headers, ...body].map(r => r.map(csvCell).join(',')).join('\r\n');
+  const rg = window._incomeRange || {};
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'income-gst-'+(rg.from||'')+'_to_'+(rg.to||today)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function printReport() {
+  const out = document.getElementById('report-output');
+  if (!out || /Choose your options|Building…/.test(out.textContent)) { alert('Generate a report first.'); return; }
+  window.print();
 }
 
 /* ── Add booking ── */

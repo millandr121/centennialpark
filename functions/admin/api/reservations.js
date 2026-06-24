@@ -13,6 +13,9 @@ function json(o, s) {
 /* Numbered slots are single-occupancy; generic service lots are not. */
 function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
 
+/* 'YYYY-MM-DD HH:MM:SS' (UTC) — matches the DB's datetime('now') format. */
+function nowStamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
+
 /* Site row with schema fallback — this DB uses label/status, older code used name/active. */
 async function lookupSite(env, siteId) {
   try { return await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first(); }
@@ -137,11 +140,23 @@ export async function onRequestPut(context) {
     sets.push(`${col} = ?`); vals.push(parseInt(d.partySize) || null);
   }
   if (pay && rCols.has('payment_status'))      { sets.push('payment_status = ?'); vals.push(pay); }
+  /* Stamp when payment landed (income is reported by this date). Keep the first
+     paid date if already set; clear it if reverted to unpaid. */
+  if (pay && rCols.has('paid_at')) {
+    if (pay === 'paid')        sets.push("paid_at = COALESCE(paid_at, datetime('now'))");
+    else if (pay === 'unpaid') sets.push('paid_at = NULL');
+  }
   if (d.amountDue  !== undefined && rCols.has('amount_due'))  { sets.push('amount_due = ?');  vals.push(d.amountDue === '' ? null : parseFloat(d.amountDue)); }
   if (d.amountPaid !== undefined && rCols.has('amount_paid')) { sets.push('amount_paid = ?'); vals.push(d.amountPaid === '' ? null : parseFloat(d.amountPaid)); }
   if (d.paymentMethod   !== undefined && rCols.has('payment_method'))     { sets.push('payment_method = ?');     vals.push(clean(d.paymentMethod, 50) || null); }
   if (d.estimatedTotal  !== undefined && rCols.has('estimated_total'))     { sets.push('estimated_total = ?');    vals.push(d.estimatedTotal === '' ? null : parseFloat(d.estimatedTotal)); }
-  if (d.gstAmount       !== undefined && rCols.has('gst_amount'))          { sets.push('gst_amount = ?');         vals.push(d.gstAmount === '' ? null : parseFloat(d.gstAmount)); }
+  /* GST: an exempt booking always stores 0; otherwise store what was sent. */
+  const gstExempt = d.gstExempt === true || d.gstExempt === 1 || d.gstExempt === '1';
+  if (d.gstExempt !== undefined && rCols.has('gst_exempt')) { sets.push('gst_exempt = ?'); vals.push(gstExempt ? 1 : 0); }
+  if (rCols.has('gst_amount') && (d.gstAmount !== undefined || d.gstExempt !== undefined)) {
+    sets.push('gst_amount = ?');
+    vals.push(gstExempt ? 0 : (d.gstAmount === '' || d.gstAmount == null ? null : parseFloat(d.gstAmount)));
+  }
   if (d.parkingType     !== undefined && rCols.has('parking_type'))        { sets.push('parking_type = ?');       vals.push(clean(d.parkingType, 50) || null); }
   if (d.boatLaunchPeriod !== undefined && rCols.has('boat_launch_period')) { sets.push('boat_launch_period = ?'); vals.push(clean(d.boatLaunchPeriod, 50) || null); }
 
@@ -163,7 +178,7 @@ export async function onRequestPut(context) {
         const { subject, html } = paidEmail({
           name: r.guest_name, site, parkingType: r.parking_type,
           checkIn: r.check_in, checkOut: r.check_out, resId: id,
-          estTotal: parseFloat(r.amount_paid) || parseFloat(r.estimated_total) || parseFloat(r.amount_due) || 0
+          estTotal: parseFloat(r.amount_paid) || parseFloat(r.amount_due) || parseFloat(r.estimated_total) || 0
         });
         paidEmailSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
       }
@@ -219,6 +234,8 @@ export async function insertReservation(env, r) {
   opt('payment_method',     r.paymentMethod ?? null);
   opt('estimated_total',    r.estimatedTotal ?? null);
   opt('gst_amount',         r.gstAmount ?? null);
+  opt('gst_exempt',         r.gstExempt ? 1 : 0);
+  opt('paid_at',            r.paidAt ?? (r.paymentStatus === 'paid' ? nowStamp() : null));
   opt('parking_type',       r.parkingType ?? null);
   opt('boat_launch_period', r.boatLaunchPeriod ?? null);
   opt('submission_id', r.submissionId ?? null);
