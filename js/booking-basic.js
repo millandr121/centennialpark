@@ -49,7 +49,9 @@
   var cin  = form.querySelector('#bkbIn');
   var cout = form.querySelector('#bkbOut');
   if (cin && cout) {
-    var today = new Date().toISOString().split('T')[0];
+    // Local date — UTC toISOString() rolls a day ahead for evening Pacific users.
+    var _now = new Date();
+    var today = _now.getFullYear() + '-' + String(_now.getMonth() + 1).padStart(2, '0') + '-' + String(_now.getDate()).padStart(2, '0');
     cin.min = today;
     cout.min = today;
     cin.addEventListener('change', function () {

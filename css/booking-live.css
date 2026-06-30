@@ -48,6 +48,12 @@
   font-size: .95rem;
   transition: border-color .2s;
 }
+/* Avoid iOS Safari focus-zoom: float inputs to 16px on small/touch screens. */
+@media (max-width: 600px) {
+  .lb-field input,
+  .lb-field select,
+  .lb-field textarea { font-size: 16px; }
+}
 .lb-field select { appearance: none; cursor: pointer; }
 .lb-field select option { background: #1a2e1c; color: #fff; }
 .lb-field input:focus,
