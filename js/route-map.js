@@ -181,25 +181,26 @@
     }
   ];
 
-  /* ── Tile layer with OSM → CARTO fallback ─────────────── */
+  /* ── Tile layer: cached OSM proxy → direct OSM fallback ── */
   function addTiles(map) {
-    /* Primary: tiles through our own edge-cached proxy (functions/tiles/) so the
-       provider isn't hit directly by every visitor — survives traffic spikes. */
+    /* Primary: standard OpenStreetMap tiles through our own edge-cached proxy
+       (functions/tiles/) so OSM isn't hit directly by every visitor. Same tiles
+       as the original map — no visual change, just cached in front. */
     var proxied = L.tileLayer('/tiles/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
-    /* Fallback: hit CARTO directly if the proxy ever errors, so the map can
-       never break — same Voyager style, so the look is identical. */
-    var carto = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      { subdomains: 'abcd', maxZoom: 19, attribution: '&copy; OSM &copy; CARTO' }
-    );
+    /* Fallback: hit OSM directly if the proxy ever errors, so the map can never
+       break — identical tiles. */
+    var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    });
     var errors = 0;
     var layer = proxied.addTo(map);
     layer.on('tileerror', function () {
       errors++;
-      if (errors > 5 && map.hasLayer(layer)) { map.removeLayer(layer); carto.addTo(map); }
+      if (errors > 5 && map.hasLayer(layer)) { map.removeLayer(layer); osm.addTo(map); }
     });
   }
 

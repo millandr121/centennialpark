@@ -12,7 +12,7 @@
    The map layer falls back to the provider directly if this ever fails, so a
    proxy hiccup degrades gracefully instead of breaking the map. */
 
-const UPSTREAM = 'https://basemaps.cartocdn.com/rastertiles/voyager';
+const UPSTREAM = 'https://tile.openstreetmap.org';
 
 // Strict z/x/y.png — refuse anything that isn't a tile path so the proxy can't
 // be turned into an open relay to arbitrary upstream URLs.
