@@ -14,6 +14,7 @@
         '<div class="site-footer-tag">' +
           '<span class="site-footer-hand">see you at the end of the road</span>' +
           '<span class="site-footer-copy">&copy; ' + new Date().getFullYear() + ' Eileen Scott Centennial Park</span>' +
+          '<a href="/privacy.html" class="site-footer-link">Privacy</a>' +
           '<a href="/admin" class="site-footer-admin">&#9679;</a>' +
         '</div>' +
       '</div>';
