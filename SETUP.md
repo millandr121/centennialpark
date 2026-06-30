@@ -155,8 +155,12 @@ date-picker minimums update themselves.
 **Known deferred items (not yet done):**
 - **Images** are still hotlinked from `bamfieldparks.com` / Unsplash — migrate
   them into the repo (or R2) so they live and die with the site.
-- **Admin lists** (`submissions`, `reservations`) load with no `LIMIT`. Fine for
-  now; add a default date window + pagination before the tables reach thousands
-  of rows, and prune raw submissions older than ~1–2 years (privacy + speed).
+- **Admin lists** now default to a recent window (reservations: recent + all
+  upcoming; requests: last 90 days) via `?recent=1`, with a **Show all** toggle
+  for full history — so the panel stays fast as tables grow. Dashboard and
+  income reports deliberately omit `recent` and still see all-time data. Still
+  worth adding later: an automatic **prune** of raw submissions older than
+  ~1–2 years (privacy + speed); the booking that matters is already a
+  reservation by then, and the monthly backup retains a copy.
 - **Leaflet** is self-hosted and pinned at 1.9.4 (`js/vendor/leaflet`). Check for
   security advisories when bumping; re-vendor with `npm pack leaflet@<ver>`.

@@ -44,6 +44,11 @@ export async function onRequestGet(context) {
   if (status !== 'all') { q += ' AND r.status = ?'; params.push(status); }
   if (site)    { q += ' AND r.site_id = ?'; params.push(site); }
   if (payment && rCols.has('payment_status')) { q += ' AND r.payment_status = ?'; params.push(payment); }
+  // Opt-in window for the admin list: recent past + everything upcoming. Off by
+  // default so the dashboard and income reports keep seeing all-time data.
+  if (url.searchParams.get('recent') === '1' && !month) {
+    q += " AND r.check_in >= date('now','-90 days')";
+  }
   q += ' ORDER BY r.check_in ASC, r.created_at ASC';
 
   try {
