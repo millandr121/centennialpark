@@ -7,6 +7,14 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://bamfieldparks.com/">
 
+  <!-- LCP: warm the hero-image origin and preload it (cross-origin, on the critical path) -->
+  <link rel="preconnect" href="https://bamfieldparks.com">
+  <link rel="preload" as="image" fetchpriority="high"
+        href="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <!-- Warm the other cross-origin asset hosts used lower on the page -->
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+
   <!-- Open Graph / social sharing -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://bamfieldparks.com/">
