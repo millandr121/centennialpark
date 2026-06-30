@@ -1,6 +1,7 @@
 /* GET /api/availability?checkin=YYYY-MM-DD&checkout=YYYY-MM-DD[&type=campsite|moorage|all] */
 
 import { OVERLAP_WHERE } from './_calc.js';
+import { json } from './_lib.js';
 
 export async function onRequestGet(context) {
   const { env, request } = context;
@@ -51,11 +52,7 @@ export async function onRequestGet(context) {
   });
 }
 
-function json(obj, s) {
-  return new Response(JSON.stringify(obj), {
-    status: s || 200,
-    headers: { 'Content-Type':'application/json', 'Access-Control-Allow-Origin':'*' }
-  });
-}
+/* Same-origin only — no CORS wildcard (the booking UI calls this from the
+   site's own origin). `json` is shared from _lib. */
 function err(msg, s) { return json({ error: msg }, s); }
 

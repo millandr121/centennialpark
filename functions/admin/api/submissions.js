@@ -1,15 +1,9 @@
 /* Admin API: form booking requests (the "inbox").
    GET list · PUT edit/status · POST accept → convert to a real reservation. */
 
-import { clean, tableCols, sendEmail } from '../../api/_lib.js';
+import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
 import { insertReservation, insertReservationGuarded, isExclusive } from './reservations.js';
 import { acceptanceEmail } from '../../api/_emails.js';
-
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s || 200, headers: { 'Content-Type': 'application/json' }
-  });
-}
 
 /* GET /admin/api/submissions[?month=YYYY-MM&status=new|accepted|declined|all] */
 export async function onRequestGet(context) {

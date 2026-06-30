@@ -1,15 +1,9 @@
 /* Admin API: CRUD for reservations — the unified booking backend.
    All routes require auth via _middleware.js. */
 
-import { clean, tableCols, sendEmail } from '../../api/_lib.js';
+import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
 import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
 import { OVERLAP_WHERE } from '../../api/_calc.js';
-
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s || 200, headers: { 'Content-Type': 'application/json' }
-  });
-}
 
 /* Numbered slots are single-occupancy; generic service lots are not. */
 export function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }

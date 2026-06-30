@@ -3,14 +3,8 @@
    Each row carries its own GST so income/tax reports can total it per category.
    All routes require auth via _middleware.js. */
 
-import { clean, tableCols } from '../../api/_lib.js';
+import { clean, tableCols, json } from '../../api/_lib.js';
 import { gstIncluded } from '../../api/_calc.js';
-
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s || 200, headers: { 'Content-Type': 'application/json' }
-  });
-}
 
 /* Normalise the money fields from a request body into what we store.
    `amount` is the all-in (GST-inclusive) figure; gst is the portion within it. */
