@@ -6,11 +6,7 @@
    numbers (the AUTOINCREMENT ids) restart at 1 — otherwise SQLite keeps
    counting up from the highest id ever used even after the rows are gone. */
 
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s || 200, headers: { 'Content-Type': 'application/json' }
-  });
-}
+import { json } from '../../api/_lib.js';
 
 /* Tables touched by each scope. 'all' clears bookings + requests + the misc
    income ledger (a full reset). 'items' clears just the ledger. */

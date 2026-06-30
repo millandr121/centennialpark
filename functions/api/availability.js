@@ -1,5 +1,8 @@
 /* GET /api/availability?checkin=YYYY-MM-DD&checkout=YYYY-MM-DD[&type=campsite|moorage|all] */
 
+import { OVERLAP_WHERE } from './_calc.js';
+import { json } from './_lib.js';
+
 export async function onRequestGet(context) {
   const { env, request } = context;
   const url      = new URL(request.url);
@@ -28,16 +31,17 @@ export async function onRequestGet(context) {
       const r = await env.DB.prepare(q).bind(...(type === 'all' ? [] : [type])).all();
       sites = r.results || [];
     } catch (e2) {
-      return err('Could not load sites: ' + e2.message, 500);
+      /* Don't leak DB error text (schema/column names) to anonymous callers. */
+      console.error('availability: site query failed —', e2 && e2.message);
+      return err('Booking system temporarily unavailable.', 500);
     }
   }
 
-  /* Conflict: existing check_in < requested checkout AND existing check_out+1day > requested checkin */
+  /* Overlap (half-open intervals): existing.check_in < requested.checkout AND
+     existing.check_out > requested.checkin. Same-day turnover is allowed. */
   const bookedRes = await env.DB.prepare(
     `SELECT DISTINCT site_id FROM reservations
-     WHERE status='confirmed'
-       AND check_in < ?
-       AND date(check_out,'+1 day') > ?`
+     WHERE status='confirmed' AND ${OVERLAP_WHERE}`
   ).bind(checkOut, checkIn).all();
 
   const booked = new Set((bookedRes.results || []).map(r => r.site_id));
@@ -50,11 +54,7 @@ export async function onRequestGet(context) {
   });
 }
 
-function json(obj, s) {
-  return new Response(JSON.stringify(obj), {
-    status: s || 200,
-    headers: { 'Content-Type':'application/json', 'Access-Control-Allow-Origin':'*' }
-  });
-}
+/* Same-origin only — no CORS wildcard (the booking UI calls this from the
+   site's own origin). `json` is shared from _lib. */
 function err(msg, s) { return json({ error: msg }, s); }
 

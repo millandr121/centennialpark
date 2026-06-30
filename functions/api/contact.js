@@ -13,12 +13,9 @@ function header(title, sub) {
   </div>`;
 }
 
-function adminBtn(url) {
-  return `<div style="margin:20px 0 8px">
-    <a href="${url}" style="display:inline-block;padding:10px 22px;background:${GREEN};color:#fff;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px">Open Admin Panel →</a>
-    <span style="font-size:12px;color:#9ca3af;margin-left:10px">Login required</span>
-  </div>`;
-}
+/* Collapse CR/LF so user-supplied text can't inject extra email headers when
+   placed in a Subject line. */
+function oneLine(v) { return String(v == null ? '' : v).replace(/[\r\n]+/g, ' ').trim(); }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -72,12 +69,11 @@ export async function onRequestPost(context) {
       </table>
       <div style="background:#f9fafb;border:1px solid ${BORDER};border-radius:8px;padding:14px 18px;font-size:14px;line-height:1.7;white-space:pre-wrap">${esc(message)}</div>
     </div>
-    ${adminBtn(siteUrl + '/admin')}
-    <p style="color:#9ca3af;font-size:12px;margin-top:1rem">Received ${new Date().toUTCString()}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-top:1rem">Manage this in the Park Admin panel · Received ${new Date().toUTCString()}</p>
   </div>`;
 
   const parkEmailed = await sendEmail(env, {
-    subject: 'New website message' + (subject ? ': ' + subject : ''),
+    subject: oneLine('New website message' + (subject ? ': ' + subject : '')),
     replyTo: email,
     html: parkHtml
   });

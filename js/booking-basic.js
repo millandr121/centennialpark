@@ -6,6 +6,27 @@
   var form = document.querySelector('[data-form="booking-basic"]');
   if (!form) return;
 
+  /* Per-field errors in TEXT + aria-invalid, not colour alone (1.4.1 / 3.3.1). */
+  function setError(inp, msg) {
+    var field = inp.closest('.form-field'); if (!field) return;
+    field.classList.add('has-error');
+    inp.setAttribute('aria-invalid', 'true');
+    var e = field.querySelector('.field-error');
+    if (!e) {
+      e = document.createElement('p'); e.className = 'field-error'; e.setAttribute('role', 'alert');
+      if (!inp.id) inp.id = 'f' + Math.random().toString(36).slice(2, 8);
+      e.id = inp.id + '-err'; field.appendChild(e);
+    }
+    inp.setAttribute('aria-describedby', e.id);
+    e.textContent = msg;
+  }
+  function clearError(inp) {
+    var field = inp.closest('.form-field'); if (!field) return;
+    field.classList.remove('has-error');
+    inp.removeAttribute('aria-invalid');
+    var e = field.querySelector('.field-error'); if (e) e.textContent = '';
+  }
+
   var campChip = form.querySelector('#bkbCampChip');
   var moorChip = form.querySelector('#bkbMoorChip');
   var campHid  = form.querySelector('#bkbCamp');
@@ -51,20 +72,20 @@
     /* validation */
     var ok = true;
     Array.from(form.querySelectorAll('[required]')).forEach(function (inp) {
-      var field = inp.closest('.form-field');
-      if (field) field.classList.remove('has-error');
+      clearError(inp);
       if (!inp.value.trim()) {
-        if (field) field.classList.add('has-error');
+        setError(inp, 'This field is required.');
         ok = false;
-      }
-      if (inp.type === 'email' && inp.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inp.value)) {
-        if (field) field.classList.add('has-error');
+      } else if (inp.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inp.value)) {
+        setError(inp, 'Enter a valid email address, e.g. name@example.com.');
         ok = false;
       }
     });
     if (!campChip.checked && !moorChip.checked) {
-      if (hint) hint.style.color = '#c0392b';
+      if (hint) { hint.textContent = 'Please choose Campsite, Moorage, or both to continue.'; hint.setAttribute('role', 'alert'); hint.classList.add('field-error'); }
       ok = false;
+    } else if (hint) {
+      hint.textContent = 'Select all that apply'; hint.removeAttribute('role'); hint.classList.remove('field-error');
     }
     if (!ok) return;
 

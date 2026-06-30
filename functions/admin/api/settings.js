@@ -1,5 +1,7 @@
 /* POST /admin/api/settings — update park settings */
 
+import { json } from '../../api/_lib.js';
+
 export async function onRequestPost(context) {
   const { env, request } = context;
   if (!env.DB) return json({ error: 'DB not bound' }, 503);
@@ -29,10 +31,4 @@ export async function onRequestGet(context) {
   const out  = {};
   (rows.results||[]).forEach(r => { out[r.key] = r.value; });
   return json(out);
-}
-
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s||200, headers: {'Content-Type':'application/json'}
-  });
 }

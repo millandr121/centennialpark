@@ -1,15 +1,10 @@
 /* Admin API: form booking requests (the "inbox").
    GET list · PUT edit/status · POST accept → convert to a real reservation. */
 
-import { clean, tableCols, sendEmail } from '../../api/_lib.js';
-import { insertReservation } from './reservations.js';
+import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
+import { insertReservation, insertReservationGuarded, isExclusive } from '../../api/_reservations.js';
+import { SUBMISSION_STATUSES, PAYMENT_STATUSES } from '../../api/_constants.js';
 import { acceptanceEmail } from '../../api/_emails.js';
-
-function json(o, s) {
-  return new Response(JSON.stringify(o), {
-    status: s || 200, headers: { 'Content-Type': 'application/json' }
-  });
-}
 
 /* GET /admin/api/submissions[?month=YYYY-MM&status=new|accepted|declined|all] */
 export async function onRequestGet(context) {
@@ -55,7 +50,7 @@ export async function onRequestPut(context) {
   for (const [k, col] of Object.entries(map)) {
     if (d[k] !== undefined && cols.has(col)) { sets.push(`${col} = ?`); vals.push(clean(d[k], 2000)); }
   }
-  if (d.status && cols.has('status') && ['new', 'accepted', 'declined'].includes(d.status)) {
+  if (d.status && cols.has('status') && SUBMISSION_STATUSES.includes(d.status)) {
     sets.push('status = ?'); vals.push(d.status);
   }
 
@@ -93,15 +88,6 @@ export async function onRequestPost(context) {
   }
   if (!site) return json({ error: 'Unknown site' }, 404);
 
-  /* availability guard — only exclusive numbered campsite/moorage slots */
-  if (site.type === 'campsite' || site.type === 'moorage') {
-    const conflict = await env.DB.prepare(
-      `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
-       AND check_in < ? AND date(check_out, '+1 day') > ?`
-    ).bind(siteId, checkOut, checkIn).first();
-    if (conflict) return json({ error: 'That site is already booked for those dates (reservation #' + conflict.id + ')' }, 409);
-  }
-
   const name = [sub.first_name, sub.last_name].filter(Boolean).join(' ') || 'Guest';
 
   /* Pricing + service fields: an admin override wins, else fall back to the
@@ -110,12 +96,12 @@ export async function onRequestPost(context) {
   const estTotal    = num(d.estimatedTotal, sub.estimated_total);
   const gstAmt      = num(d.gstAmount, sub.gst_amount);
   const payMethod   = clean(d.paymentMethod, 40) || sub.payment_method || null;
-  const payStatus   = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
+  const payStatus   = PAYMENT_STATUSES.includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
   const parkingType = clean(d.parkingType, 20) || sub.parking_type || null;
   const launchPrd   = clean(d.boatLaunchPeriod, 20) || sub.boat_launch_period || null;
   const amountDue   = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : (estTotal || null);
 
-  const id = await insertReservation(env, {
+  const r = {
     siteId, checkIn, checkOut, name,
     email:     sub.email || '',
     phone:     null,
@@ -132,7 +118,18 @@ export async function onRequestPost(context) {
     parkingType,
     boatLaunchPeriod: launchPrd,
     submissionId
-  });
+  };
+
+  /* availability guard — only exclusive numbered campsite/moorage slots.
+     Atomic insert refuses to create an overlapping confirmed booking. */
+  let id;
+  if (isExclusive(site.type)) {
+    const out = await insertReservationGuarded(env, r);
+    if (out.conflict) return json({ error: 'That site is already booked for those dates.' }, 409);
+    id = out.id;
+  } else {
+    id = await insertReservation(env, r);
+  }
 
   /* mark submission accepted + link (best-effort if columns exist) */
   const subCols = await tableCols(env, 'booking_submissions');
@@ -140,7 +137,8 @@ export async function onRequestPost(context) {
     const sets = ['status = ?'], vals = ['accepted'];
     if (subCols.has('reservation_id')) { sets.push('reservation_id = ?'); vals.push(id); }
     vals.push(submissionId);
-    await env.DB.prepare(`UPDATE booking_submissions SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run().catch(() => {});
+    await env.DB.prepare(`UPDATE booking_submissions SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run()
+      .catch((e) => console.error('submission accept-link update failed —', e && e.message));
   }
 
   /* Acceptance email — only when the admin opted to send it, with their note.

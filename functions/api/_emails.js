@@ -3,6 +3,7 @@
    theme used across the booking + day-end-report emails. */
 
 import { esc } from './_lib.js';
+import { nightsBetween } from './_calc.js';
 
 const GREEN = '#2e5d33';
 const AMBER = '#d4830a';
@@ -53,7 +54,7 @@ function totalBlock(estTotal, gstAmt) {
    `adminMessage` is a short staff note shown up top; `payMethod` decides the
    payment instructions (etransfer shows the address + reference). */
 export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, estTotal, gstAmt, resId, adminMessage, payMethod }) {
-  const nights = Math.max(1, Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)) || 0;
+  const nights = Math.max(1, nightsBetween(checkIn, checkOut));
   const label  = siteLabel(site, parkingType);
   const amtNote = estTotal > 0 ? `$${estTotal.toFixed(2)} CAD` : 'your balance';
 
@@ -90,7 +91,7 @@ export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, es
    Leads with the hold notice, then the same payment instructions style as the
    acceptance email. `amountDue` is the figure the guest still owes. */
 export function paymentRequestEmail({ name, site, parkingType, checkIn, checkOut, amountDue, resId, payMethod }) {
-  const nights = Math.max(1, Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)) || 0;
+  const nights = Math.max(1, nightsBetween(checkIn, checkOut));
   const label  = siteLabel(site, parkingType);
   const amtNote = amountDue > 0 ? `$${amountDue.toFixed(2)} CAD` : 'your balance';
 
@@ -114,7 +115,7 @@ export function paymentRequestEmail({ name, site, parkingType, checkIn, checkOut
 
 /* Payment-received / booking-complete email sent when an admin marks paid. */
 export function paidEmail({ name, site, parkingType, checkIn, checkOut, estTotal, resId }) {
-  const nights = Math.max(1, Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)) || 0;
+  const nights = Math.max(1, nightsBetween(checkIn, checkOut));
   const label  = siteLabel(site, parkingType);
 
   const inner = `

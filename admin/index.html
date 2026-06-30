@@ -12,6 +12,7 @@
       --border: #e5e7eb; --radius: 8px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+    html { scroll-padding-top: 64px; }   /* keep focus clear of the sticky top bar (2.4.11) */
     body { background: #f9fafb; color: #111827; min-height: 100vh; }
 
     .top-bar { background: var(--green); color: #fff; padding: 0 1.5rem; height: 56px;
@@ -569,7 +570,7 @@
   <div class="modal">
     <div class="modal-head">
       <h2>Edit Reservation <span id="edit-id-label" style="color:var(--grey);font-size:.9rem"></span></h2>
-      <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
+      <button class="modal-close" aria-label="Close" onclick="closeModal('edit-modal')">✕</button>
     </div>
     <form id="edit-form">
       <input type="hidden" id="edit-id">
@@ -636,7 +637,7 @@
   <div class="modal confirm-modal">
     <div class="modal-head">
       <h2 id="confirm-title">Confirm Delete</h2>
-      <button class="modal-close" onclick="closeModal('confirm-modal')">✕</button>
+      <button class="modal-close" aria-label="Close" onclick="closeModal('confirm-modal')">✕</button>
     </div>
     <p id="confirm-body">Are you sure you want to permanently delete this record?<br>
       <span class="warn-detail">This action cannot be undone.</span>
@@ -653,7 +654,7 @@
   <div class="modal">
     <div class="modal-head">
       <h2>Accept Request &amp; Assign Site</h2>
-      <button class="modal-close" onclick="closeModal('accept-modal')">✕</button>
+      <button class="modal-close" aria-label="Close" onclick="closeModal('accept-modal')">✕</button>
     </div>
     <div class="sub-summary" id="accept-summary"></div>
     <form id="accept-form">
@@ -708,7 +709,7 @@
   <div class="modal">
     <div class="modal-head">
       <h2>Edit Request <span id="sub-edit-id-label" style="color:var(--grey);font-size:.9rem"></span></h2>
-      <button class="modal-close" onclick="closeModal('sub-edit-modal')">✕</button>
+      <button class="modal-close" aria-label="Close" onclick="closeModal('sub-edit-modal')">✕</button>
     </div>
     <form id="sub-edit-form">
       <input type="hidden" id="sub-edit-id">
@@ -1556,8 +1557,8 @@ function printReport() {
 /* ── Add booking ── */
 async function loadSites() {
   try {
-    const { available = [], booked = [] } = await (await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all')).json();
-    allSites = [...available, ...booked].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
+    const { sites = [] } = await (await fetch('/admin/api/sites')).json();
+    allSites = sites.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
     document.getElementById('add-site').innerHTML = siteOptions();
     /* populate site filter */
     const sf = document.getElementById('filter-site');
@@ -1591,9 +1592,40 @@ function esc(v) { return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g
 function val(id) { return document.getElementById(id).value; }
 function payMethodLabel(m) { return {etransfer:'e-Transfer',honesty_box:'Honesty box',on_arrival:'On arrival',other:'Other'}[m] || m; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v==null?'':v); }
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+/* Accessible modal: dialog semantics, focus move-in + trap, Esc to close,
+   and focus restored to the trigger on close (WCAG 2.1.2 / 2.4.3 / 4.1.2). */
+let _modalReturnFocus = null;
+function focusables(el) {
+  return Array.prototype.filter.call(
+    el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'),
+    function (n) { return n.offsetParent !== null; });
+}
+function openModal(id) {
+  const bg = document.getElementById(id); if (!bg) return;
+  _modalReturnFocus = document.activeElement;
+  bg.classList.add('open');
+  const dialog = bg.querySelector('.modal') || bg;
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  const f = focusables(dialog);
+  if (f.length) f[0].focus(); else { dialog.setAttribute('tabindex', '-1'); dialog.focus(); }
+  bg._keyHandler = function (e) {
+    if (e.key === 'Escape') { closeModal(id); return; }
+    if (e.key !== 'Tab') return;
+    const items = focusables(dialog); if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  bg.addEventListener('keydown', bg._keyHandler);
+}
+function closeModal(id) {
+  const bg = document.getElementById(id); if (!bg) return;
+  bg.classList.remove('open');
+  if (bg._keyHandler) { bg.removeEventListener('keydown', bg._keyHandler); bg._keyHandler = null; }
+  if (_modalReturnFocus && _modalReturnFocus.focus) { _modalReturnFocus.focus(); _modalReturnFocus = null; }
+}
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
 
 /* ── Init ── */
 document.getElementById('filter-month').value = today.slice(0,7);

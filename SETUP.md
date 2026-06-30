@@ -22,8 +22,18 @@ Copy the `database_id` it prints.
 
 ## 2. Create the tables
 
+For a **fresh database**, apply the canonical consolidated schema (it merges
+every migration into one idempotent file and adds the performance indexes):
+
 ```bash
-wrangler d1 execute centennialpark --file=./schema.sql --remote
+wrangler d1 execute centennialpark --file=./schema-full.sql --remote
+```
+
+For the **existing production database**, keep using the numbered migrations.
+If you haven't yet added the conflict/performance indexes, run:
+
+```bash
+wrangler d1 execute centennialpark --file=./schema-indexes.sql --remote
 ```
 
 ## 3. Set up Resend (email sending)
@@ -81,3 +91,31 @@ wrangler d1 execute centennialpark --remote \
 - **DB unbound, email ok** → you still get the live email.
 - **Both fail** → the form shows "please email/call us directly" so the visitor
   isn't left thinking it went through.
+
+---
+
+## Security checklist (do before going public)
+
+These two are **infrastructure** (Cloudflare dashboard), not code — the code
+fixes are already in the repo. They gate launch:
+
+1. **Set `TURNSTILE_SECRET`** (Cloudflare → Pages → Settings → Variables, both
+   Production and Preview). Without it the bot check fails *open* and the public
+   forms can be scripted (spam, fake bookings that block availability, and
+   exhaustion of the 3,000/month Resend quota). Pair it with the public
+   `data-sitekey` already in the HTML.
+
+2. **Add Rate Limiting rules** (Cloudflare → Security → WAF → Rate limiting).
+   Suggested:
+   - `POST /api/reserve`, `/api/booking`, `/api/contact` → **5 requests / minute / IP**, action: Managed Challenge or Block.
+   - `/admin/*` → **15 requests / minute / IP**, action: Block (slows password brute-force; Basic Auth has no lockout).
+
+3. **Set a strong `ADMIN_PASSWORD`.** The admin middleware now fails *closed*
+   (503) if it's unset — but a weak value is still brute-forceable without (2).
+   Best option: put Cloudflare Access in front of `/admin` for real MFA.
+
+Already handled in code: admin fails closed, CSRF Origin check on admin
+mutations, internal files & server source are 404'd, HSTS header, no DB error
+text leaked to anonymous callers, GST/overlap single-sourced, atomic
+double-booking guard, e-mail subjects CR/LF-stripped, admin-panel link removed
+from notification emails, `/api/settings` key-allowlisted.

@@ -7,6 +7,14 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://bamfieldparks.com/">
 
+  <!-- LCP: warm the hero-image origin and preload it (cross-origin, on the critical path) -->
+  <link rel="preconnect" href="https://bamfieldparks.com">
+  <link rel="preload" as="image" fetchpriority="high"
+        href="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <!-- Warm the other cross-origin asset hosts used lower on the page -->
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+
   <!-- Open Graph / social sharing -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://bamfieldparks.com/">
@@ -20,16 +28,17 @@
   <title>Eileen Scott Centennial Park — Bamfield, BC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&family=Bricolage+Grotesque:wght@600;700;800&family=Caveat:wght@600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&family=Bricolage+Grotesque:wght@600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/home.css">
-  <link rel="stylesheet" href="/css/booking-live.css">
+  <!-- booking-live.css and Leaflet (CSS+JS) are loaded on demand — see the
+       lazy-loaders before </body> — so they don't block first paint. -->
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
   <link rel="icon" href="/bear_logo4-150x150.png">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="one-page">
+  <a href="#main" class="skip-link">Skip to content</a>
   <div class="scroll-progress" aria-hidden="true"><span id="scroll-progress-bar"></span></div>
   <nav class="section-dots" aria-label="Page sections">
     <a href="#home"    data-section="home"    aria-label="Home"><span></span></a>
@@ -40,7 +49,7 @@
     <a href="#contact" data-section="contact" aria-label="Contact"><span></span></a>
   </nav>
 
-  <main id="main" class="one-page-main">
+  <main id="main" class="one-page-main" tabindex="-1">
 
     <!-- ════════════════════════════════════════ HERO -->
     <section id="home" class="panel panel-hero" aria-label="Welcome">
@@ -103,8 +112,8 @@
           <article class="offer-card" data-reveal>
             <div class="offer-visual offer-visual--1" data-slideshow>
               <div class="offer-slide is-active" style="background-image:url('https://bamfieldparks.com/wp-content/uploads/2017/03/campground.jpg')"></div>
-              <div class="offer-slide" style="background-image:url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=70')"></div>
-              <div class="offer-slide" style="background-image:url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=70')"></div>
+              <div class="offer-slide" data-bg="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=70"></div>
+              <div class="offer-slide" data-bg="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=70"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
               <button class="offer-photo-btn"
                 data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/03/campground.jpg"
@@ -120,8 +129,8 @@
           <article class="offer-card" data-reveal data-reveal-delay="1">
             <div class="offer-visual offer-visual--2" data-slideshow>
               <div class="offer-slide is-active" style="background-image:url('https://bamfieldparks.com/wp-content/uploads/2017/05/mist-over-boat-launch-1-e1494860221194.jpg')"></div>
-              <div class="offer-slide" style="background-image:url('https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=900&q=70')"></div>
-              <div class="offer-slide" style="background-image:url('https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg')"></div>
+              <div class="offer-slide" data-bg="https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=900&q=70"></div>
+              <div class="offer-slide" data-bg="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
               <button class="offer-photo-btn"
                 data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/05/mist-over-boat-launch-1-e1494860221194.jpg"
@@ -137,8 +146,8 @@
           <article class="offer-card" data-reveal data-reveal-delay="2">
             <div class="offer-visual offer-visual--3" data-slideshow>
               <div class="offer-slide is-active" style="background-image:url('https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg')"></div>
-              <div class="offer-slide" style="background-image:url('https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?auto=format&fit=crop&w=900&q=70')"></div>
-              <div class="offer-slide" style="background-image:url('https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg')"></div>
+              <div class="offer-slide" data-bg="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?auto=format&fit=crop&w=900&q=70"></div>
+              <div class="offer-slide" data-bg="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
               <button class="offer-photo-btn"
                 data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg"
@@ -234,7 +243,7 @@
               </tbody>
             </table>
           </div>
-          <p class="rates-fine-note"><small>* Campsite includes up to 4 adults; children under 18 free, no limit. All prices CAD, +5% GST unless noted.</small></p>
+          <p class="rates-fine-note"><small>* Campsite includes up to 4 adults; children under 18 free, no limit. All prices CAD, GST included (5% within the listed price). Showers by donation are GST-exempt.</small></p>
         </details>
       </div>
     </section>
@@ -532,7 +541,7 @@
         <div id="travel-drive" class="travel-pane is-active" role="tabpanel" aria-labelledby="tab-drive">
           <div class="travel-map-wrap" data-reveal>
             <div class="map-wrap">
-              <div id="drive-map-leaflet" class="leaflet-map" role="application" aria-label="Driving routes to Centennial Park"></div>
+              <div id="drive-map-leaflet" class="leaflet-map" role="img" aria-label="Driving routes to Centennial Park"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="drive" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>
@@ -588,7 +597,7 @@
         <div id="travel-ferry" class="travel-pane" role="tabpanel" aria-labelledby="tab-ferry" hidden>
           <div class="travel-map-wrap">
             <div class="map-wrap">
-              <div id="ferry-map-leaflet" class="leaflet-map" role="application" aria-label="Ferry route on the Alberni Inlet to Bamfield"></div>
+              <div id="ferry-map-leaflet" class="leaflet-map" role="img" aria-label="Ferry route on the Alberni Inlet to Bamfield"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="ferry" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>
@@ -606,7 +615,7 @@
         <div id="travel-fly" class="travel-pane" role="tabpanel" aria-labelledby="tab-fly" hidden>
           <div class="travel-map-wrap">
             <div class="map-wrap">
-              <div id="fly-map-leaflet" class="leaflet-map" role="application" aria-label="Floatplane routes to Bamfield"></div>
+              <div id="fly-map-leaflet" class="leaflet-map" role="img" aria-label="Floatplane routes to Bamfield"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="fly" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>
@@ -690,18 +699,67 @@
   <div id="site-footer"></div>
 
   <script src="/js/layout.js" defer></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin defer></script>
-  <script src="/js/route-map.js" defer></script>
   <script src="/js/translate.js" defer></script>
   <script src="/js/home.js?v=2" defer></script>
   <script src="/js/pricing.js" defer></script>
   <script src="/js/booking-wizard.js" defer></script>
   <script src="/js/booking-form.js" defer></script>
   <script src="/js/forms.js" defer></script>
-  <script src="/js/booking-live.js" defer></script>
   <script src="/js/booking-basic.js" defer></script>
   <script>
-    /* Switch booking UI based on park_settings.booking_mode: 'form' | 'basic' | 'live' */
+    /* Tiny on-demand loader helpers. */
+    function loadCss(href){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; if(/^https?:/.test(href)) l.crossOrigin=''; document.head.appendChild(l); }
+    function loadJs(src, onload){ var s=document.createElement('script'); s.src=src; if(/^https?:/.test(src)) s.crossOrigin=''; s.onload=onload||null; document.body.appendChild(s); }
+
+    /* ── Lazy-load the slideshow's non-active background images ──
+       They're opacity:0 (hidden) but would otherwise download eagerly on load.
+       Load them when the Stay section nears so they're ready before it cycles. */
+    (function () {
+      var stay = document.getElementById('stay');
+      var slides = [].slice.call(document.querySelectorAll('[data-bg]'));
+      if (!slides.length) return;
+      function reveal() {
+        slides.forEach(function (el) {
+          el.style.backgroundImage = "url('" + el.getAttribute('data-bg') + "')";
+          el.removeAttribute('data-bg');
+        });
+      }
+      if (stay && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) { reveal(); io.disconnect(); } });
+        }, { rootMargin: '600px' });
+        io.observe(stay);
+      } else {
+        window.addEventListener('load', reveal, { once: true });
+      }
+    })();
+
+    /* ── Lazy-load Leaflet + the route map only when the Visit section nears ──
+       Saves ~170 KB (Leaflet JS+CSS) + the unpkg origin for the ~majority of
+       visitors who never scroll to the map. route-map.js self-inits once L exists. */
+    (function () {
+      var visit = document.getElementById('visit');
+      if (!visit) return;
+      var loaded = false;
+      function loadMap() {
+        if (loaded) return; loaded = true;
+        loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+        loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function () {
+          loadJs('/js/route-map.js');
+        });
+      }
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) { loadMap(); io.disconnect(); } });
+        }, { rootMargin: '600px' });   // start fetching just before it's visible
+        io.observe(visit);
+      } else {
+        window.addEventListener('load', loadMap, { once: true });
+      }
+    })();
+
+    /* ── Switch booking UI by park_settings.booking_mode: 'form' | 'basic' | 'live'.
+       booking-live.js (25 KB) + its CSS load ONLY when live mode is actually on. */
     fetch('/api/settings').then(function(r){ return r.json(); }).then(function(s) {
       var mode  = s.booking_mode || 'form';
       var live  = mode === 'live';
@@ -719,6 +777,7 @@
       if (headForm)  headForm.hidden  = !full;
       if (headBasic) headBasic.hidden = !basic;
       if (headLive)  headLive.hidden  = !live;
+      if (live) { loadCss('/css/booking-live.css'); loadJs('/js/booking-live.js'); }
     }).catch(function(){});
   </script>
 </body>

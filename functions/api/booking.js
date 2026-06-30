@@ -19,12 +19,9 @@ function header(title, sub) {
   </div>`;
 }
 
-function adminBtn(url) {
-  return `<div style="margin:20px 0 8px">
-    <a href="${url}" style="display:inline-block;padding:10px 22px;background:${GREEN};color:#fff;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px">Open Admin Panel →</a>
-    <span style="font-size:12px;color:#9ca3af;margin-left:10px">Login required</span>
-  </div>`;
-}
+/* Collapse CR/LF so user-supplied text can't inject extra email headers when
+   placed in a Subject line. */
+function oneLine(v) { return String(v == null ? '' : v).replace(/[\r\n]+/g, ' ').trim(); }
 
 function priceRows(total, gst) {
   const t = parseFloat(total) || 0;
@@ -120,13 +117,20 @@ export async function onRequestPost(context) {
       stored = true;
       id = (res.meta && res.meta.last_row_id) || null;
     } catch (_e) {
+      /* The full insert failed — log WHY (so a real bug isn't masked as
+         "old schema") before falling back to the minimal column set. The
+         fallback intentionally drops optional fields to preserve the core
+         enquiry; the warning makes that trade-off visible in logs. */
+      console.warn('booking.js: full insert failed, using minimal fallback —', _e && _e.message);
       try {
         const res = await env.DB.prepare(
           'INSERT INTO booking_submissions (first_name,last_name,email,need_campsite,need_moorage,site_count,group_size,boat_length,check_in,check_out,additional_requests,ip,user_agent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
         ).bind(firstName, lastName, email, campsite, moorage, siteCount || null, groupSize || null, boatLength || null, checkIn || null, checkOut || null, notes || null, ipAddr, request.headers.get('User-Agent') || '').run();
         stored = true;
         id = (res.meta && res.meta.last_row_id) || null;
-      } catch (_e2) { /* fall through */ }
+      } catch (_e2) {
+        console.error('booking.js: minimal fallback insert ALSO failed —', _e2 && _e2.message);
+      }
     }
   }
 
@@ -152,12 +156,11 @@ export async function onRequestPost(context) {
       ${notes ? row('Notes', esc(notes).replace(/\n/g, '<br>')) : ''}
       ${priceRows(estTotal, gstAmt)}
     </table>
-    ${adminBtn(siteUrl + '/admin')}
-    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">From: ${esc(email)} · ${new Date().toUTCString()}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">Manage this in the Park Admin panel · From: ${esc(email)} · ${new Date().toUTCString()}</p>
   </div>`;
 
   const parkEmailed = await sendEmail(env, {
-    subject: `New booking request — ${firstName} ${lastName}`,
+    subject: oneLine(`New booking request — ${firstName} ${lastName}`),
     replyTo: email,
     html: parkHtml
   });
