@@ -151,8 +151,7 @@ export async function onRequestPost(context) {
         ${extraSvcs ? `<p>${esc(extraSvcs)}</p>` : ''}
         ${priceNote}
         ${notes?`<p>Notes: ${esc(notes)}</p>`:''}
-        <div style="margin:20px 0 8px"><a href="${env.SITE_URL||'https://centennialpark.pages.dev'}/admin" style="display:inline-block;padding:10px 22px;background:#2e5d33;color:#fff;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px">Open Admin Panel →</a></div>
-        <p style="color:#9ca3af;font-size:12px">Reservation #${rid} · source: online</p>
+        <p style="color:#9ca3af;font-size:12px">Manage this in the Park Admin panel · Reservation #${rid} · source: online</p>
       </div>`
   });
 

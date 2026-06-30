@@ -19,12 +19,9 @@ function header(title, sub) {
   </div>`;
 }
 
-function adminBtn(url) {
-  return `<div style="margin:20px 0 8px">
-    <a href="${url}" style="display:inline-block;padding:10px 22px;background:${GREEN};color:#fff;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px">Open Admin Panel →</a>
-    <span style="font-size:12px;color:#9ca3af;margin-left:10px">Login required</span>
-  </div>`;
-}
+/* Collapse CR/LF so user-supplied text can't inject extra email headers when
+   placed in a Subject line. */
+function oneLine(v) { return String(v == null ? '' : v).replace(/[\r\n]+/g, ' ').trim(); }
 
 function priceRows(total, gst) {
   const t = parseFloat(total) || 0;
@@ -159,12 +156,11 @@ export async function onRequestPost(context) {
       ${notes ? row('Notes', esc(notes).replace(/\n/g, '<br>')) : ''}
       ${priceRows(estTotal, gstAmt)}
     </table>
-    ${adminBtn(siteUrl + '/admin')}
-    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">From: ${esc(email)} · ${new Date().toUTCString()}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">Manage this in the Park Admin panel · From: ${esc(email)} · ${new Date().toUTCString()}</p>
   </div>`;
 
   const parkEmailed = await sendEmail(env, {
-    subject: `New booking request — ${firstName} ${lastName}`,
+    subject: oneLine(`New booking request — ${firstName} ${lastName}`),
     replyTo: email,
     html: parkHtml
   });
