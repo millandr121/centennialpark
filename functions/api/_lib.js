@@ -44,7 +44,12 @@ export async function tableCols(env, table) {
  * when a secret IS set but the token is missing or rejected.
  */
 export async function verifyTurnstile(env, token, ip) {
-  if (!env.TURNSTILE_SECRET) return true;        // not configured — skip
+  if (!env.TURNSTILE_SECRET) {
+    /* Fail OPEN so forms keep working before the secret is set — but make the
+       gap visible in logs rather than silently accepting every submission. */
+    console.warn('verifyTurnstile: TURNSTILE_SECRET not set — bot check skipped (forms unprotected).');
+    return true;
+  }
   if (!token) return false;
   try {
     const form = new URLSearchParams();

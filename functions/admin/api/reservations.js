@@ -3,6 +3,7 @@
 
 import { clean, tableCols, sendEmail } from '../../api/_lib.js';
 import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
+import { OVERLAP_WHERE } from '../../api/_calc.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
@@ -11,7 +12,7 @@ function json(o, s) {
 }
 
 /* Numbered slots are single-occupancy; generic service lots are not. */
-function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
+export function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
 
 /* 'YYYY-MM-DD HH:MM:SS' (UTC) — matches the DB's datetime('now') format. */
 function nowStamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
@@ -91,22 +92,23 @@ export async function onRequestPost(context) {
   const site = await env.DB.prepare('SELECT id, type FROM sites WHERE id = ?').bind(siteId).first();
   if (!site) return json({ error: 'Unknown site' }, 404);
 
-  /* Only numbered campsite/moorage slots are exclusive. Generic service lots
-     (parking, launch) hold many bookings at once — never conflict-check them. */
-  if (isExclusive(site.type)) {
-    const conflict = await env.DB.prepare(
-      `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
-       AND check_in < ? AND date(check_out, '+1 day') > ?`
-    ).bind(siteId, checkOut, checkIn).first();
-    if (conflict) return json({ error: 'Date conflict with reservation #' + conflict.id }, 409);
-  }
-
-  const id = await insertReservation(env, {
+  const r = {
     siteId, checkIn, checkOut, name, email, phone, partySize, boatLen, notes,
     source, status: 'confirmed', amountDue,
     paymentMethod: payMethod, paymentStatus: payStatus,
     submissionId: parseInt(d.submissionId) || null
-  });
+  };
+
+  /* Only numbered campsite/moorage slots are exclusive. Generic service lots
+     (parking, launch) hold many bookings at once — never conflict-check them.
+     The guarded insert checks availability and writes in ONE statement, so two
+     concurrent requests can't both win the same slot. */
+  if (isExclusive(site.type)) {
+    const out = await insertReservationGuarded(env, r);
+    if (out.conflict) return json({ error: 'Date conflict — that site is already booked for those dates.' }, 409);
+    return json({ ok: true, id: out.id });
+  }
+  const id = await insertReservation(env, r);
   return json({ ok: true, id });
 }
 
@@ -218,15 +220,17 @@ export async function onRequestDelete(context) {
   } catch (e) { return json({ error: e.message }, 500); }
 }
 
-/* Shared insert that only writes columns the table actually has. */
-export async function insertReservation(env, r) {
-  const cols = await tableCols(env, 'reservations');
+/* Build the column/value lists for a reservation insert, writing only the
+   columns the live table actually has (pre-migration safety). */
+function buildReservationInsert(cols, r) {
   const fields = ['site_id', 'check_in', 'check_out', 'guest_name', 'guest_email', 'guest_phone', 'notes'];
   const values = [r.siteId, r.checkIn, r.checkOut, r.name, r.email || '', r.phone || null, r.notes || null];
 
   const opt = (col, val) => { if (cols.has(col)) { fields.push(col); values.push(val); } };
   opt(cols.has('party_size') ? 'party_size' : 'people', r.partySize ?? null);
   opt('boat_length',   r.boatLen ?? null);
+  opt('boat_wash_qty', r.boatWash ?? 0);
+  opt('freezer_days',  r.freezer ?? 0);
   opt('source',        r.source || 'admin');
   opt('status',        r.status || 'confirmed');
   opt('payment_status', r.paymentStatus || 'unpaid');
@@ -239,10 +243,39 @@ export async function insertReservation(env, r) {
   opt('parking_type',       r.parkingType ?? null);
   opt('boat_launch_period', r.boatLaunchPeriod ?? null);
   opt('submission_id', r.submissionId ?? null);
+  return { fields, values };
+}
 
+/* Shared insert that only writes columns the table actually has. */
+export async function insertReservation(env, r) {
+  const cols = await tableCols(env, 'reservations');
+  const { fields, values } = buildReservationInsert(cols, r);
   const placeholders = fields.map(() => '?').join(',');
   const res = await env.DB.prepare(
     `INSERT INTO reservations (${fields.join(',')}) VALUES (${placeholders})`
   ).bind(...values).run();
   return res.meta && res.meta.last_row_id;
+}
+
+/* Atomic, conflict-safe insert for EXCLUSIVE sites (campsite/moorage).
+   Performs the overlap check and the write in a single INSERT…SELECT…WHERE
+   NOT EXISTS statement, so two concurrent bookings can't both take the same
+   slot (no check-then-act race). Returns { id } on success, { conflict:true }
+   if an overlapping confirmed reservation already exists. */
+export async function insertReservationGuarded(env, r) {
+  const cols = await tableCols(env, 'reservations');
+  const { fields, values } = buildReservationInsert(cols, r);
+  const placeholders = fields.map(() => '?').join(',');
+  const sql =
+    `INSERT INTO reservations (${fields.join(',')})
+     SELECT ${placeholders}
+     WHERE NOT EXISTS (
+       SELECT 1 FROM reservations
+       WHERE site_id = ? AND status = 'confirmed' AND ${OVERLAP_WHERE}
+     )`;
+  const res = await env.DB.prepare(sql)
+    .bind(...values, r.siteId, r.checkOut, r.checkIn)
+    .run();
+  if ((res.meta?.changes ?? 0) === 0) return { conflict: true };
+  return { id: res.meta && res.meta.last_row_id };
 }

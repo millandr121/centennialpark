@@ -2,7 +2,7 @@
    GET list · PUT edit/status · POST accept → convert to a real reservation. */
 
 import { clean, tableCols, sendEmail } from '../../api/_lib.js';
-import { insertReservation } from './reservations.js';
+import { insertReservation, insertReservationGuarded, isExclusive } from './reservations.js';
 import { acceptanceEmail } from '../../api/_emails.js';
 
 function json(o, s) {
@@ -93,15 +93,6 @@ export async function onRequestPost(context) {
   }
   if (!site) return json({ error: 'Unknown site' }, 404);
 
-  /* availability guard — only exclusive numbered campsite/moorage slots */
-  if (site.type === 'campsite' || site.type === 'moorage') {
-    const conflict = await env.DB.prepare(
-      `SELECT id FROM reservations WHERE site_id = ? AND status = 'confirmed'
-       AND check_in < ? AND date(check_out, '+1 day') > ?`
-    ).bind(siteId, checkOut, checkIn).first();
-    if (conflict) return json({ error: 'That site is already booked for those dates (reservation #' + conflict.id + ')' }, 409);
-  }
-
   const name = [sub.first_name, sub.last_name].filter(Boolean).join(' ') || 'Guest';
 
   /* Pricing + service fields: an admin override wins, else fall back to the
@@ -115,7 +106,7 @@ export async function onRequestPost(context) {
   const launchPrd   = clean(d.boatLaunchPeriod, 20) || sub.boat_launch_period || null;
   const amountDue   = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : (estTotal || null);
 
-  const id = await insertReservation(env, {
+  const r = {
     siteId, checkIn, checkOut, name,
     email:     sub.email || '',
     phone:     null,
@@ -132,7 +123,18 @@ export async function onRequestPost(context) {
     parkingType,
     boatLaunchPeriod: launchPrd,
     submissionId
-  });
+  };
+
+  /* availability guard — only exclusive numbered campsite/moorage slots.
+     Atomic insert refuses to create an overlapping confirmed booking. */
+  let id;
+  if (isExclusive(site.type)) {
+    const out = await insertReservationGuarded(env, r);
+    if (out.conflict) return json({ error: 'That site is already booked for those dates.' }, 409);
+    id = out.id;
+  } else {
+    id = await insertReservation(env, r);
+  }
 
   /* mark submission accepted + link (best-effort if columns exist) */
   const subCols = await tableCols(env, 'booking_submissions');

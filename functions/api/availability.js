@@ -1,5 +1,7 @@
 /* GET /api/availability?checkin=YYYY-MM-DD&checkout=YYYY-MM-DD[&type=campsite|moorage|all] */
 
+import { OVERLAP_WHERE } from './_calc.js';
+
 export async function onRequestGet(context) {
   const { env, request } = context;
   const url      = new URL(request.url);
@@ -32,12 +34,11 @@ export async function onRequestGet(context) {
     }
   }
 
-  /* Conflict: existing check_in < requested checkout AND existing check_out+1day > requested checkin */
+  /* Overlap (half-open intervals): existing.check_in < requested.checkout AND
+     existing.check_out > requested.checkin. Same-day turnover is allowed. */
   const bookedRes = await env.DB.prepare(
     `SELECT DISTINCT site_id FROM reservations
-     WHERE status='confirmed'
-       AND check_in < ?
-       AND date(check_out,'+1 day') > ?`
+     WHERE status='confirmed' AND ${OVERLAP_WHERE}`
   ).bind(checkOut, checkIn).all();
 
   const booked = new Set((bookedRes.results || []).map(r => r.site_id));

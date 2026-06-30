@@ -3,7 +3,17 @@
 export async function onRequest(context) {
   const { request, env, next } = context;
 
-  const pw       = env.ADMIN_PASSWORD || 'changeme';
+  const pw = env.ADMIN_PASSWORD;
+  /* Fail CLOSED: if the password isn't configured, lock the panel rather than
+     fall back to a guessable default. A misconfigured env var must never expose
+     guest PII, financial controls, or the DB-wipe endpoint. */
+  if (!pw) {
+    return new Response('Admin panel is not configured (ADMIN_PASSWORD is unset). Set it in the Cloudflare dashboard.', {
+      status: 503,
+      headers: { 'Cache-Control': 'no-store' }
+    });
+  }
+
   const expected = 'Basic ' + btoa('admin:' + pw);
   const actual   = request.headers.get('Authorization') || '';
 

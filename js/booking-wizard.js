@@ -210,10 +210,10 @@
       html += '<tr><td>' + l.label + '</td><td>' + fmt(l.amount) + '</td></tr>';
     });
     if (p.gst > 0) {
-      html += '<tr class="price-sub"><td>Subtotal</td><td>' + fmt(p.subtotal) + '</td></tr>';
-      html += '<tr class="price-sub"><td>GST (5%)</td><td>' + fmt(p.gst) + '</td></tr>';
+      html += '<tr class="price-sub"><td>Subtotal (ex. GST)</td><td>' + fmt(p.subtotal) + '</td></tr>';
+      html += '<tr class="price-sub"><td>GST (5%, included)</td><td>' + fmt(p.gst) + '</td></tr>';
     }
-    html += '<tr class="price-total"><td>Estimated total</td><td>' + fmt(p.total) + '</td></tr>';
+    html += '<tr class="price-total"><td>Estimated total (all-in)</td><td>' + fmt(p.total) + '</td></tr>';
     html += '</table>';
     if (pmeth) {
       var pmL = { etransfer: 'Interac e-Transfer', honesty_box: 'Honesty box at park office', on_arrival: 'Cash / card on arrival' };

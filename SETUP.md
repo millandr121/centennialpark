@@ -22,8 +22,18 @@ Copy the `database_id` it prints.
 
 ## 2. Create the tables
 
+For a **fresh database**, apply the canonical consolidated schema (it merges
+every migration into one idempotent file and adds the performance indexes):
+
 ```bash
-wrangler d1 execute centennialpark --file=./schema.sql --remote
+wrangler d1 execute centennialpark --file=./schema-full.sql --remote
+```
+
+For the **existing production database**, keep using the numbered migrations.
+If you haven't yet added the conflict/performance indexes, run:
+
+```bash
+wrangler d1 execute centennialpark --file=./schema-indexes.sql --remote
 ```
 
 ## 3. Set up Resend (email sending)

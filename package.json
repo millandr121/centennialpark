@@ -1,0 +1,11 @@
+{
+  "name": "centennialpark",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Eileen Scott Centennial Park reservation system (Cloudflare Pages + D1 + Resend).",
+  "scripts": {
+    "test": "node --test",
+    "build": "echo \"no build step — static assets + Pages Functions\""
+  }
+}

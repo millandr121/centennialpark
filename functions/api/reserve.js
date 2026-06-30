@@ -1,6 +1,7 @@
 /* POST /api/reserve — create a live reservation */
 
-import { json, clean, looksLikeEmail, sendEmail, verifyTurnstile } from './_lib.js';
+import { json, clean, looksLikeEmail, sendEmail, verifyTurnstile, esc } from './_lib.js';
+import { insertReservation, insertReservationGuarded, isExclusive } from '../admin/api/reservations.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -48,43 +49,36 @@ export async function onRequestPost(context) {
   }
   if (!site) return json({ error: 'That site is not available.' }, 404);
 
-  /* Race-condition guard — re-check availability */
-  const conflict = await env.DB.prepare(
-    `SELECT id FROM reservations WHERE site_id=? AND status='confirmed'
-     AND check_in<? AND date(check_out,'+1 day')>?`
-  ).bind(siteId, checkOut, checkIn).first();
-  if (conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
+  /* Idempotency shield: ignore an identical re-submit (double-click / retry on
+     flaky connections) within a 2-minute window so we don't create duplicate
+     reservations and duplicate confirmation emails. */
+  const dup = await env.DB.prepare(
+    `SELECT id FROM reservations
+     WHERE site_id=? AND check_in=? AND check_out=? AND guest_email=?
+       AND created_at >= datetime('now','-2 minutes')
+     ORDER BY id DESC LIMIT 1`
+  ).bind(siteId, checkIn, checkOut, email).first().catch(() => null);
+  if (dup) return json({ ok: true, reservationId: dup.id, duplicate: true });
 
-  /* Try full INSERT first; fall back to minimal if schema lacks optional columns.
-     Always confirmed so the site is immediately blocked and shows in admin. */
-  let res;
-  try {
-    res = await env.DB.prepare(
-      `INSERT INTO reservations
-       (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,
-        parking_type,boat_launch_period,boat_wash_qty,freezer_days,payment_method,
-        estimated_total,gst_amount,notes,source,status)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'online','confirmed')`
-    ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,
-      parkingType,launchPrd,boatWash,freezer,payMethod,
-      estTotal||null,gstAmt||null,notes||null).run();
-  } catch (_) {
-    try {
-      res = await env.DB.prepare(
-        `INSERT INTO reservations
-         (site_id,check_in,check_out,guest_name,guest_email,guest_phone,party_size,boat_length,notes,source,status)
-         VALUES (?,?,?,?,?,?,?,?,?,'online','confirmed')`
-      ).bind(siteId,checkIn,checkOut,name,email,phone||null,partySize,boatLen,notes||null).run();
-    } catch (_2) {
-      res = await env.DB.prepare(
-        `INSERT INTO reservations
-         (site_id,check_in,check_out,guest_name,guest_email,guest_phone,notes,status)
-         VALUES (?,?,?,?,?,?,?,'confirmed')`
-      ).bind(siteId,checkIn,checkOut,name,email,phone||null,notes||null).run();
-    }
+  /* Always confirmed so the site is immediately blocked and shows in admin.
+     The shared insert helpers write only the columns the live table has. */
+  const r = {
+    siteId, checkIn, checkOut, name, email, phone, partySize, boatLen, notes,
+    source: 'online', status: 'confirmed',
+    parkingType, boatLaunchPeriod: launchPrd, boatWash, freezer,
+    paymentMethod: payMethod, estimatedTotal: estTotal || null, gstAmount: gstAmt || null
+  };
+
+  let rid;
+  if (isExclusive(site.type)) {
+    /* Atomic check-and-write — no double-booking under concurrency. */
+    const out = await insertReservationGuarded(env, r);
+    if (out.conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
+    rid = out.id || '';
+  } else {
+    rid = (await insertReservation(env, r)) || '';
   }
 
-  const rid    = (res.meta && res.meta.last_row_id) || '';
   const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
   const row    = `padding:9px 12px;border-bottom:1px solid #e5e7eb;font-size:14px`;
   const head   = `background:#2e5d33;color:#fff;padding:9px 12px;font-size:12px;font-weight:600`;
@@ -166,8 +160,4 @@ export async function onRequestPost(context) {
     await env.DB.prepare('UPDATE reservations SET emailed=1 WHERE id=?').bind(rid).run().catch(()=>{});
 
   return json({ ok: true, reservationId: rid });
-}
-
-function esc(v) {
-  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }

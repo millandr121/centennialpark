@@ -35,13 +35,18 @@ good; complexity visible to the manager is bad.
 - Files at root (README, SETUP.md, schema files, CLAUDE.md) ARE accessible by URL — no secrets in them
 - `/admin/` is password-gated via HTTP Basic Auth middleware (`functions/admin/_middleware.js`)
   - Password stored in Cloudflare env var `ADMIN_PASSWORD`
+  - **Fails CLOSED**: if `ADMIN_PASSWORD` is unset the panel returns 503 (no `changeme` default)
+- Root `functions/_middleware.js` blocks public fetching of internal files (`*.sql`, `*.toml`, `*.md`, `/db`, `/test`, `package.json`) — `_headers` only de-indexes them, it does not block fetching.
 
 ### Database
 - **Cloudflare D1** (SQLite) — binding name `DB`
-- Tables: `reservations`, `booking_submissions`, `contact_submissions`, `misc_items`
+- Tables: `reservations`, `booking_submissions`, `contact_submissions`, `misc_items`, `sites`, `park_settings`
 - `sqlite_sequence` — AUTOINCREMENT counters; must be cleared alongside rows on full wipe
 - Pre-migration safety: all new columns guarded with `rCols.has(col)` before reads/writes
-- Run `schema.sql` first (original), then `schema-items.sql` for the new columns + misc_items table
+- **`schema-full.sql` is the canonical schema** (single source of truth for a FRESH database — merges every migration). Numbered files (`schema.sql` → `schema-v2.sql` → `schema-payments.sql` → `schema-migration.sql` → `schema-items.sql` → `schema-indexes.sql`) are the historical migration trail for the EXISTING prod DB.
+- ⚠ Live DB was hand-edited historically; code defends an alternate naming (`sites.label/status`, `reservations.people`). Before trusting `schema-full.sql`, dump live (`SELECT sql FROM sqlite_master WHERE type IN ('table','index')`) and reconcile.
+- `park_settings.schema_version` records the migration baseline (currently `2`).
+- Money: `amount_paid` is the AUTHORITATIVE receipt figure; `amount_due`/`estimated_total` are quotes only.
 
 ### Email (Resend)
 - **Free tier**: 3,000 emails/month (shared across all API keys on the account)
@@ -65,15 +70,22 @@ good; complexity visible to the manager is bad.
 | File | Purpose |
 |------|---------|
 | `admin/index.html` | Entire admin panel UI (single file, vanilla JS) |
-| `functions/admin/api/reservations.js` | Reservations CRUD + mark-paid + GST |
+| `functions/_middleware.js` | Root guard — 404s internal files (sql/toml/md/etc.) |
+| `functions/admin/_middleware.js` | Admin Basic Auth (fails closed if password unset) |
+| `functions/api/_calc.js` | **Shared business math** — GST 5/105 + date-overlap rule (unit-tested) |
+| `functions/admin/api/reservations.js` | Reservations CRUD + mark-paid + GST + atomic guarded insert |
 | `functions/admin/api/items.js` | Misc income items CRUD |
 | `functions/admin/api/cleanup.js` | Database wipe (with sqlite_sequence reset) |
 | `functions/admin/api/sites.js` | Campsite/moorage definitions |
 | `functions/admin/api/stats.js` | Dashboard summary stats |
-| `functions/api/booking.js` | Public booking form POST handler |
+| `functions/api/booking.js` | Public booking form POST handler (enquiry log) |
+| `functions/api/reserve.js` | Live-booking POST — atomic insert + dedupe |
 | `functions/api/contact.js` | Public contact form POST handler |
-| `schema.sql` | Original DB schema |
+| `js/pricing.js` | Client rate estimator (GST-inclusive, matches `_calc.js`) |
+| `schema-full.sql` | **Canonical schema** (fresh DB — merges all migrations) |
+| `schema-indexes.sql` | Migration: conflict/perf indexes for existing prod DB |
 | `schema-items.sql` | Migration: adds gst_exempt, paid_at, misc_items table |
+| `test/calc.test.js` | Unit tests for GST + overlap (`npm test`); CI in `.github/workflows/ci.yml` |
 | `workers/digest/` | Daily digest cron Worker |
 | `SETUP.md` | Step-by-step deployment guide |
 
@@ -96,6 +108,7 @@ good; complexity visible to the manager is bad.
 - `gst_exempt = 1` → GST amount forced to 0
 - Guest pays one number; park remits 5/105 of that to CRA
 - `paid_at` timestamp stamped when reservation is marked paid (income counted by receipt date)
+- **Single source of truth**: the formula lives in `functions/api/_calc.js` (`gstIncluded`). Both the server (`items.js`) and the client estimator (`js/pricing.js`) now follow the inclusive model — the booking estimate no longer adds 5% on top. To switch to GST-on-top, see the comment in `pricing.js`.
 
 ---
 
@@ -104,6 +117,8 @@ good; complexity visible to the manager is bad.
 - **campsite / moorage** → exclusive; date-conflict check enforced
 - **reserved** type lots → allow concurrent bookings (e.g. day-use areas)
 - `isExclusive(type)` function controls this in reservations.js
+- **Overlap rule** (half-open intervals, in `_calc.js` `OVERLAP_WHERE` / `datesOverlap`): `check_in < reqCheckout AND check_out > reqCheckin`. **Same-day turnover is allowed** — a guest may check in the day another checks out. (To add a 1-day cleaning buffer, edit `OVERLAP_WHERE`.)
+- **Atomic guard**: exclusive bookings are created with `insertReservationGuarded` (a single `INSERT…SELECT…WHERE NOT EXISTS`) so two concurrent requests can't double-book the same slot. Used by `reserve.js`, `submissions.js` (accept), and `reservations.js` (manual create).
 
 ---
 

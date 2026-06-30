@@ -4,17 +4,12 @@
    All routes require auth via _middleware.js. */
 
 import { clean, tableCols } from '../../api/_lib.js';
+import { gstIncluded } from '../../api/_calc.js';
 
 function json(o, s) {
   return new Response(JSON.stringify(o), {
     status: s || 200, headers: { 'Content-Type': 'application/json' }
   });
-}
-
-const GST_RATE = 0.05;
-/* GST portion already inside a tax-inclusive amount (amount × 5/105). */
-function gstIncluded(amount) {
-  return Math.round((amount * GST_RATE / (1 + GST_RATE)) * 100) / 100;
 }
 
 /* Normalise the money fields from a request body into what we store.

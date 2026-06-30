@@ -120,13 +120,20 @@ export async function onRequestPost(context) {
       stored = true;
       id = (res.meta && res.meta.last_row_id) || null;
     } catch (_e) {
+      /* The full insert failed — log WHY (so a real bug isn't masked as
+         "old schema") before falling back to the minimal column set. The
+         fallback intentionally drops optional fields to preserve the core
+         enquiry; the warning makes that trade-off visible in logs. */
+      console.warn('booking.js: full insert failed, using minimal fallback —', _e && _e.message);
       try {
         const res = await env.DB.prepare(
           'INSERT INTO booking_submissions (first_name,last_name,email,need_campsite,need_moorage,site_count,group_size,boat_length,check_in,check_out,additional_requests,ip,user_agent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
         ).bind(firstName, lastName, email, campsite, moorage, siteCount || null, groupSize || null, boatLength || null, checkIn || null, checkOut || null, notes || null, ipAddr, request.headers.get('User-Agent') || '').run();
         stored = true;
         id = (res.meta && res.meta.last_row_id) || null;
-      } catch (_e2) { /* fall through */ }
+      } catch (_e2) {
+        console.error('booking.js: minimal fallback insert ALSO failed —', _e2 && _e2.message);
+      }
     }
   }
 

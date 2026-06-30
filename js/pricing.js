@@ -84,11 +84,15 @@ function calcPricing(opts) {
     subtotal += frAmt;
   }
 
-  var taxable = lines.filter(function(l) { return !l.gstIncl; }).reduce(function(s, l) { return s + l.amount; }, 0);
-  var gst     = Math.round(taxable * GST_RATE * 100) / 100;
-  var total   = Math.round((subtotal + gst) * 100) / 100;
-
-  return { lines: lines, subtotal: Math.round(subtotal * 100) / 100, gst: gst, total: total };
+  /* All advertised rates are GST-INCLUSIVE (all-in) per CLAUDE.md: the guest
+     pays exactly the listed number and the GST is the 5/105 portion already
+     inside it — never added on top. `total` is what the guest pays; `gst` is
+     the portion within it; `subtotal` is the pre-GST remainder (total − gst).
+     (To switch to GST-on-top, set total = subtotal + subtotal*GST_RATE and
+     gst = subtotal*GST_RATE.) */
+  var total = Math.round(subtotal * 100) / 100;
+  var gst   = Math.round(total * GST_RATE / (1 + GST_RATE) * 100) / 100;
+  return { lines: lines, subtotal: Math.round((total - gst) * 100) / 100, gst: gst, total: total };
 }
 
 function fmtCAD(n) { return '$' + (+n).toFixed(2); }
