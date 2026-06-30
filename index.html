@@ -245,6 +245,7 @@
         <header class="panel-head panel-head-center" data-reveal>
           <p class="panel-eyebrow">Reserve your stay</p>
           <h2 id="book-heading" data-book-form-heading>Four quick steps.<br><em class="hand">We'll email you back.</em></h2>
+          <h2 id="book-heading-basic" data-book-basic-heading hidden>Request your stay.<br><em class="hand">We'll email you back.</em></h2>
           <h2 id="book-heading-live" data-book-live-heading hidden>Pick your dates.<br><em class="hand">Book in minutes.</em></h2>
         </header>
 
@@ -418,6 +419,94 @@
           <div class="wizard-nav">
             <button type="button" class="btn btn-text wizard-back" hidden>← Back</button>
             <button type="button" class="btn btn-primary wizard-primary" id="wizard-primary"><span>Continue</span></button>
+          </div>
+          <div class="form-status" role="status" aria-live="polite"></div>
+        </form>
+
+        <!-- Basic form (shown when booking_mode=basic) — camping & moorage only, no pricing -->
+        <form data-form="booking-basic" class="booking-wizard" novalidate data-book-basic hidden data-reveal>
+          <div class="hp-field" aria-hidden="true">
+            <label for="bkb-website">Website</label>
+            <input type="text" id="bkb-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
+          <p class="wizard-question">What are you booking?</p>
+          <div class="choice-chips">
+            <label class="choice-chip">
+              <input type="checkbox" id="bkbCampChip" value="yes">
+              <span>Campsite</span>
+            </label>
+            <label class="choice-chip">
+              <input type="checkbox" id="bkbMoorChip" value="yes">
+              <span>Moorage</span>
+            </label>
+          </div>
+          <p class="field-hint" data-basic-hint>Select all that apply</p>
+          <input type="hidden" name="needCampsite" id="bkbCamp" value="no">
+          <input type="hidden" name="needMoorage"  id="bkbMoor" value="no">
+          <input type="hidden" name="needParking"  value="no">
+          <input type="hidden" name="needLaunch"   value="no">
+
+          <div class="form-row" style="margin-top:1.4rem">
+            <div class="form-field">
+              <input type="text" id="bkbFirst" name="firstName" required autocomplete="given-name" placeholder=" ">
+              <label for="bkbFirst">First name</label>
+            </div>
+            <div class="form-field">
+              <input type="text" id="bkbLast" name="lastName" required autocomplete="family-name" placeholder=" ">
+              <label for="bkbLast">Last name</label>
+            </div>
+          </div>
+          <div class="form-field">
+            <input type="email" id="bkbEmail" name="email" required autocomplete="email" placeholder=" ">
+            <label for="bkbEmail">Email</label>
+          </div>
+
+          <div class="booking-section is-hidden" data-basic-section="camping">
+            <p class="wizard-subhead">Camping</p>
+            <div class="form-row">
+              <div class="form-field">
+                <input type="number" id="bkbSites" name="siteCount" min="1" max="14" value="1" placeholder=" ">
+                <label for="bkbSites">Sites</label>
+              </div>
+              <div class="form-field">
+                <input type="number" id="bkbPeople" name="groupSize" min="1" placeholder=" ">
+                <label for="bkbPeople">People</label>
+              </div>
+            </div>
+          </div>
+          <div class="booking-section is-hidden" data-basic-section="moorage">
+            <p class="wizard-subhead">Moorage</p>
+            <div class="form-field">
+              <input type="text" id="bkbBoat" name="boatLength" inputmode="decimal" placeholder=" ">
+              <label for="bkbBoat">Boat length (ft)</label>
+            </div>
+          </div>
+
+          <div class="booking-section">
+            <p class="wizard-subhead">Dates</p>
+            <div class="form-row">
+              <div class="form-field">
+                <input type="date" id="bkbIn" name="checkIn" required>
+                <label for="bkbIn">Check-in</label>
+              </div>
+              <div class="form-field">
+                <input type="date" id="bkbOut" name="checkOut" required>
+                <label for="bkbOut">Check-out</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <textarea id="bkbNotes" name="additionalRequests" rows="2" placeholder=" "></textarea>
+            <label for="bkbNotes">Notes (optional)</label>
+          </div>
+
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADkrvFsmB0Re_CbD" data-theme="light"></div>
+
+          <div class="wizard-nav">
+            <span></span>
+            <button type="submit" class="btn btn-primary wizard-primary"><span>Send request</span></button>
           </div>
           <div class="form-status" role="status" aria-live="polite"></div>
         </form>
@@ -610,18 +699,26 @@
   <script src="/js/booking-form.js" defer></script>
   <script src="/js/forms.js" defer></script>
   <script src="/js/booking-live.js" defer></script>
+  <script src="/js/booking-basic.js" defer></script>
   <script>
-    /* Switch booking UI based on park_settings.booking_mode */
+    /* Switch booking UI based on park_settings.booking_mode: 'form' | 'basic' | 'live' */
     fetch('/api/settings').then(function(r){ return r.json(); }).then(function(s) {
-      var live = s.booking_mode === 'live';
-      var liveRoot = document.getElementById('live-booking-root');
-      var formEl   = document.querySelector('[data-book-form]');
-      var headForm = document.querySelector('[data-book-form-heading]');
-      var headLive = document.querySelector('[data-book-live-heading]');
-      if (liveRoot) liveRoot.hidden = !live;
-      if (formEl)   formEl.hidden   =  live;
-      if (headForm) headForm.hidden =  live;
-      if (headLive) headLive.hidden = !live;
+      var mode  = s.booking_mode || 'form';
+      var live  = mode === 'live';
+      var basic = mode === 'basic';
+      var full  = mode === 'form';
+      var liveRoot  = document.getElementById('live-booking-root');
+      var formEl    = document.querySelector('[data-book-form]');
+      var basicEl   = document.querySelector('[data-book-basic]');
+      var headForm  = document.querySelector('[data-book-form-heading]');
+      var headBasic = document.querySelector('[data-book-basic-heading]');
+      var headLive  = document.querySelector('[data-book-live-heading]');
+      if (liveRoot)  liveRoot.hidden  = !live;
+      if (formEl)    formEl.hidden    = !full;
+      if (basicEl)   basicEl.hidden   = !basic;
+      if (headForm)  headForm.hidden  = !full;
+      if (headBasic) headBasic.hidden = !basic;
+      if (headLive)  headLive.hidden  = !live;
     }).catch(function(){});
   </script>
 </body>

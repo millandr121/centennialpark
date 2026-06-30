@@ -101,8 +101,9 @@
     .switch-row { display: flex; gap: .5rem; }
     .mode-opt { padding: .6em 1.4em; border-radius: 99px; font-size: .875rem; font-weight: 600;
       cursor: pointer; border: 2px solid var(--border); background: none; color: var(--grey); transition: all .2s; }
-    .mode-opt.active-form { border-color: var(--accent); background: #fff8ee; color: var(--accent); }
-    .mode-opt.active-live { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+    .mode-opt.active-form  { border-color: var(--accent); background: #fff8ee; color: var(--accent); }
+    .mode-opt.active-basic { border-color: #2563eb; background: #eff6ff; color: #1e40af; }
+    .mode-opt.active-live  { border-color: var(--green); background: var(--green-bg); color: var(--green); }
 
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
     .modal-bg.open { display: flex; }
@@ -421,16 +422,18 @@
       <div><p><strong>Visitor booking mode</strong>
         Controls which booking UI visitors see. Switch anytime — takes effect immediately. Either way, every booking lands in the same Reservations list.</p></div>
       <div class="switch-row">
-        <button class="mode-opt" id="mode-form" onclick="setMode('form')">📋 Request form</button>
+        <button class="mode-opt" id="mode-form" onclick="setMode('form')">📋 Full form</button>
+        <button class="mode-opt" id="mode-basic" onclick="setMode('basic')">✏️ Basic form</button>
         <button class="mode-opt" id="mode-live" onclick="setMode('live')">🗺 Live booking</button>
       </div>
     </div>
     <div class="card" style="max-width:600px">
-      <div class="card-title">How the two modes work together</div>
+      <div class="card-title">How the three modes work together</div>
       <p style="font-size:.875rem;line-height:1.7;color:#374151">
-        <strong>📋 Request form</strong> — visitors send a request (it lands in <em>Requests</em>). You review, then <em>Accept &amp; assign</em> a site, which creates a confirmed reservation.<br><br>
+        <strong>📋 Full form</strong> — the complete request wizard (campsite, moorage, parking, launch, add-ons) with a live price estimate. Lands in <em>Requests</em> for you to review and <em>Accept &amp; assign</em>.<br><br>
+        <strong>✏️ Basic form</strong> — a stripped-down request for <em>campsite &amp; moorage only</em>, with no totals or estimates. Same review flow, fewer fields for the visitor.<br><br>
         <strong>🗺 Live booking</strong> — visitors pick their own site and dates; a confirmed reservation is created instantly.<br><br>
-        Both paths feed the same <em>Reservations</em> backend with the same payment tracking — so you can flip to live booking whenever you're ready with zero data migration.
+        All three feed the same <em>Reservations</em> backend with the same payment tracking — so you can switch modes anytime with zero data migration.
       </p>
     </div>
     <div class="card" style="max-width:600px">
@@ -757,10 +760,12 @@ async function loadSettings() {
 }
 function applyMode(mode) {
   const badge = document.getElementById('header-mode-badge');
-  badge.textContent = mode === 'live' ? '🗺 Live booking ON' : '📋 Form mode';
+  const labels = { form: '📋 Full form mode', basic: '✏️ Basic form mode', live: '🗺 Live booking ON' };
+  badge.textContent = labels[mode] || labels.form;
   badge.className = 'mode-badge' + (mode === 'live' ? ' live' : '');
-  document.getElementById('mode-form').className = 'mode-opt' + (mode==='form' ? ' active-form' : '');
-  document.getElementById('mode-live').className = 'mode-opt' + (mode==='live' ? ' active-live' : '');
+  document.getElementById('mode-form').className  = 'mode-opt' + (mode==='form'  ? ' active-form'  : '');
+  document.getElementById('mode-basic').className = 'mode-opt' + (mode==='basic' ? ' active-basic' : '');
+  document.getElementById('mode-live').className  = 'mode-opt' + (mode==='live'  ? ' active-live'  : '');
 }
 async function setMode(mode) {
   try {
