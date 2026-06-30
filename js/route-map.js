@@ -156,7 +156,8 @@
     renfrew: { color: '#7b5ea7', weight: 4, opacity: 0.9 }
   };
 
-  /* gas bars on the routes — `geo` is geocoded live in-browser; `pos` is the fallback */
+  /* gas bars on the routes — `pos` is the marker location; `geo` is just a
+     human-readable address label (no longer geocoded at runtime — see placeGas) */
   var GAS_BARS = [
     {
       pos:   PORT_ALBERNI_PT,
@@ -179,19 +180,6 @@
       label: "<strong>Daly's Auto Center (Gas Bar), Youbou</strong> (10514 Youbou Rd) — limited hours; check with the business. Do not rely on it."
     }
   ];
-
-  /* live forward-geocode (browser can reach Nominatim; sandbox cannot) */
-  function geocode(query, cb) {
-    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ca&q=' +
-      encodeURIComponent(query);
-    fetch(url, { headers: { 'Accept': 'application/json' } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d && d[0] && d[0].lat) cb([parseFloat(d[0].lat), parseFloat(d[0].lon)]);
-        else cb(null);
-      })
-      .catch(function () { cb(null); });
-  }
 
   /* ── Tile layer with OSM → CARTO fallback ─────────────── */
   function addTiles(map) {
@@ -393,10 +381,13 @@
     parkMarker(driveMap);
     driveMap.setView([49.0, -124.3], 8);
 
-    /* place a gas marker at its fallback, then snap it to its real geocoded address */
+    /* Place a gas marker at its known coordinates (g.pos). We deliberately do
+       NOT live-geocode g.geo through Nominatim: its usage policy forbids
+       per-visitor / bulk lookups and would get the site rate-limited or blocked
+       under a traffic spike — and g.pos is already the correct location, so the
+       geocode only duplicated work it had already done. */
     function placeGas(i) {
       var g = GAS_BARS[i], m = gasMarker(driveMap, g.pos, g.label);
-      geocode(g.geo, function (ll) { if (ll && driveMap) m.setLatLng(ll); });
       return m;
     }
 
