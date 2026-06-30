@@ -38,6 +38,7 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="one-page">
+  <a href="#main" class="skip-link">Skip to content</a>
   <div class="scroll-progress" aria-hidden="true"><span id="scroll-progress-bar"></span></div>
   <nav class="section-dots" aria-label="Page sections">
     <a href="#home"    data-section="home"    aria-label="Home"><span></span></a>
@@ -48,7 +49,7 @@
     <a href="#contact" data-section="contact" aria-label="Contact"><span></span></a>
   </nav>
 
-  <main id="main" class="one-page-main">
+  <main id="main" class="one-page-main" tabindex="-1">
 
     <!-- ════════════════════════════════════════ HERO -->
     <section id="home" class="panel panel-hero" aria-label="Welcome">
@@ -540,7 +541,7 @@
         <div id="travel-drive" class="travel-pane is-active" role="tabpanel" aria-labelledby="tab-drive">
           <div class="travel-map-wrap" data-reveal>
             <div class="map-wrap">
-              <div id="drive-map-leaflet" class="leaflet-map" role="application" aria-label="Driving routes to Centennial Park"></div>
+              <div id="drive-map-leaflet" class="leaflet-map" role="img" aria-label="Driving routes to Centennial Park"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="drive" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>
@@ -596,7 +597,7 @@
         <div id="travel-ferry" class="travel-pane" role="tabpanel" aria-labelledby="tab-ferry" hidden>
           <div class="travel-map-wrap">
             <div class="map-wrap">
-              <div id="ferry-map-leaflet" class="leaflet-map" role="application" aria-label="Ferry route on the Alberni Inlet to Bamfield"></div>
+              <div id="ferry-map-leaflet" class="leaflet-map" role="img" aria-label="Ferry route on the Alberni Inlet to Bamfield"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="ferry" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>
@@ -614,7 +615,7 @@
         <div id="travel-fly" class="travel-pane" role="tabpanel" aria-labelledby="tab-fly" hidden>
           <div class="travel-map-wrap">
             <div class="map-wrap">
-              <div id="fly-map-leaflet" class="leaflet-map" role="application" aria-label="Floatplane routes to Bamfield"></div>
+              <div id="fly-map-leaflet" class="leaflet-map" role="img" aria-label="Floatplane routes to Bamfield"></div>
               <div class="map-toolbar">
                 <button type="button" class="map-expand-btn" data-map-expand="fly" aria-label="Expand map" aria-pressed="false" title="Full screen">⛶</button>
               </div>

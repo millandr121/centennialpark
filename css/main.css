@@ -17,6 +17,8 @@
   --clr-text-muted:    #6a7263;
   --clr-border:        #e3dcc9;
   --clr-mist:          #edf0e4;
+  --clr-accent-text:   #8a6410;   /* accent gold dark enough for body text on light (≥4.5:1) */
+  --focus-ring:        #1d3d21;   /* primary-dark — 9.6:1 on white, used for all focus outlines */
 
   --font-body:    'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Syne', system-ui, sans-serif;
@@ -99,7 +101,14 @@ p  { max-width: 62ch; }
   transition: color var(--transition), background var(--transition),
     box-shadow var(--transition), transform var(--transition);
 }
-.btn:focus-visible { outline: 3px solid var(--clr-accent); outline-offset: 3px; }
+.btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+/* Consistent, high-contrast focus ring for custom interactive controls (1.4.11 / 2.4.7) */
+.travel-tab:focus-visible, .route-btn:focus-visible, .map-expand-btn:focus-visible,
+.arrow-link:focus-visible, .scroll-hint:focus-visible, .rates-fine summary:focus-visible,
+.offer-photo-btn:focus-visible, a.skip-link:focus {
+  outline: 3px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px;
+}
+.section-dots a:focus-visible span { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .btn-lg { padding: .85em 2.2em; font-size: 1.05rem; }
 .btn-primary {
   background: var(--clr-primary); color: #fff;
@@ -181,6 +190,9 @@ p  { max-width: 62ch; }
 }
 .form-field.has-error input,
 .form-field.has-error textarea { border-color: #b8402f; animation: fieldShake .35s ease; }
+/* Per-field error text — errors must be conveyed in text, not color alone (1.4.1 / 3.3.1) */
+.field-error { color: #b3261e; font-size: .8rem; margin-top: .3rem; font-weight: 500; }
+.field-error:empty { display: none; }
 @keyframes fieldShake {
   0%,100% { transform: translateX(0); }
   25% { transform: translateX(-5px); } 75% { transform: translateX(5px); }
@@ -204,7 +216,7 @@ p  { max-width: 62ch; }
   transform: scale(1.04); box-shadow: 0 4px 14px rgba(46,93,51,.3);
 }
 .choice-chip:hover span { border-color: var(--clr-primary-light); transform: translateY(-2px); }
-.choice-chip input:focus-visible + span { outline: 3px solid var(--clr-accent); outline-offset: 2px; }
+.choice-chip input:focus-visible + span { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
 /* === Form status === */
 .form-status { min-height: 1.5rem; font-size: .9rem; margin-top: .8rem; }
@@ -227,9 +239,9 @@ th { font-family: var(--font-display); font-weight: 600; }
 .panel-head-center { text-align: center; }
 .panel-eyebrow {
   font-size: .78rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--clr-accent); margin-bottom: .9rem;
+  color: var(--clr-accent-text); margin-bottom: .9rem;   /* 4.5:1+ on light (was #c8941e = 2.7:1) */
 }
-.panel-eyebrow--light { color: var(--clr-accent-light); }
+.panel-eyebrow--light { color: var(--clr-accent-light); }   /* sits on dark sections — OK */
 .panel-sub { color: var(--clr-text-muted); margin-top: 1.1rem; font-size: 1rem; }
 .panel-sub--light { color: rgba(255,255,255,.6); }
 
@@ -245,7 +257,8 @@ th { font-family: var(--font-display); font-weight: 600; }
   position: fixed; right: 1.25rem; top: 50%; transform: translateY(-50%);
   display: flex; flex-direction: column; gap: .65rem; z-index: 100; mix-blend-mode: difference;
 }
-.section-dots a { display: flex; align-items: center; justify-content: center; width: 12px; height: 12px; }
+/* 24×24 hit area for the 2.5.8 Target Size minimum; the visible dot stays 7px */
+.section-dots a { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
 .section-dots a span {
   display: block; width: 7px; height: 7px; border-radius: 50%;
   background: rgba(255,255,255,.5);
@@ -253,6 +266,15 @@ th { font-family: var(--font-display); font-weight: 600; }
 }
 .section-dots a.is-active span, .section-dots a:hover span { background: #fff; transform: scale(1.6); }
 @media (max-width: 640px) { .section-dots { display: none; } }
+
+/* Skip link (2.4.1) — off-screen until focused */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 1000;
+  background: var(--clr-surface); color: var(--clr-primary);
+  padding: .6rem 1rem; border-radius: 0 0 var(--radius) 0;
+  font-weight: 600; text-decoration: none; box-shadow: var(--shadow);
+}
+.skip-link:focus { left: 0; }
 
 /* === Reveal animations === */
 [data-reveal] {

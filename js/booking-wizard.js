@@ -93,42 +93,64 @@
     window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
   }
 
+  /* ── Per-field error helpers — errors are conveyed in TEXT + aria-invalid,
+        not by colour alone (WCAG 1.4.1 / 3.3.1 / 4.1.3). ─────────────────── */
+  function setError(inp, msg) {
+    var field = inp.closest('.form-field'); if (!field) return;
+    field.classList.add('has-error');
+    inp.setAttribute('aria-invalid', 'true');
+    var e = field.querySelector('.field-error');
+    if (!e) {
+      e = document.createElement('p');
+      e.className = 'field-error';
+      e.setAttribute('role', 'alert');
+      if (!inp.id) inp.id = 'f' + Math.random().toString(36).slice(2, 8);
+      e.id = inp.id + '-err';
+      field.appendChild(e);
+    }
+    inp.setAttribute('aria-describedby', e.id);
+    e.textContent = msg;
+  }
+  function clearError(inp) {
+    var field = inp.closest('.form-field'); if (!field) return;
+    field.classList.remove('has-error');
+    inp.removeAttribute('aria-invalid');
+    var e = field.querySelector('.field-error'); if (e) e.textContent = '';
+  }
+
   /* ── Validation ───────────────────────────────────────── */
   function validateCurrent() {
     var panel = panels[current];
     var inputs = Array.from(panel.querySelectorAll('input[required], textarea[required]'));
     var ok = true;
     inputs.forEach(function (inp) {
-      var field = inp.closest('.form-field');
-      if (field) field.classList.remove('has-error');
+      clearError(inp);
       if (!inp.value.trim()) {
-        if (field) field.classList.add('has-error');
+        setError(inp, 'This field is required.');
         ok = false;
-      }
-      if (inp.type === 'email' && inp.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inp.value)) {
-        if (field) field.classList.add('has-error');
+      } else if (inp.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inp.value)) {
+        setError(inp, 'Enter a valid email address, e.g. name@example.com.');
         ok = false;
       }
     });
 
-    /* step 1: at least one selection */
+    /* step 1: at least one selection — announce in text, not just colour */
     if (current === 0) {
       var any = [campsiteChip, moorageChip, parkingChip, launchChip].some(function (c) { return c && c.checked; });
+      var hint = form.querySelector('.wizard-hint');
       if (!any) {
-        var hint = form.querySelector('.wizard-hint');
-        if (hint) hint.style.color = '#c0392b';
+        if (hint) { hint.textContent = 'Please choose at least one option to continue.'; hint.setAttribute('role', 'alert'); hint.classList.add('field-error'); }
         ok = false;
+      } else if (hint) {
+        hint.textContent = 'Select all that apply'; hint.removeAttribute('role'); hint.classList.remove('field-error');
       }
     }
 
     /* step 3: parking type required if parking selected */
     if (current === 2 && parkingChip && parkingChip.checked) {
       var ptSel = form.querySelector('#parkingType');
-      if (ptSel && !ptSel.value) {
-        var ptField = ptSel.closest('.form-field');
-        if (ptField) ptField.classList.add('has-error');
-        ok = false;
-      }
+      if (ptSel && !ptSel.value) { setError(ptSel, 'Please choose a parking type.'); ok = false; }
+      else if (ptSel) { clearError(ptSel); }
     }
 
     return ok;
