@@ -1,21 +1,15 @@
 /* Admin API: CRUD for reservations — the unified booking backend.
-   All routes require auth via _middleware.js. */
+   All routes require auth via _middleware.js. Data-layer helpers live in
+   functions/api/_reservations.js (shared with the public /api/reserve route). */
 
 import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
 import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
-import { OVERLAP_WHERE } from '../../api/_calc.js';
-
-/* Numbered slots are single-occupancy; generic service lots are not. */
-export function isExclusive(type) { return type === 'campsite' || type === 'moorage'; }
-
-/* 'YYYY-MM-DD HH:MM:SS' (UTC) — matches the DB's datetime('now') format. */
-function nowStamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
-
-/* Site row with schema fallback — this DB uses label/status, older code used name/active. */
-async function lookupSite(env, siteId) {
-  try { return await env.DB.prepare('SELECT id, name, type FROM sites WHERE id = ?').bind(siteId).first(); }
-  catch { return await env.DB.prepare('SELECT id, label as name, type FROM sites WHERE id = ?').bind(siteId).first(); }
-}
+import { clampMoney } from '../../api/_calc.js';
+import { PAYMENT_STATUSES, RES_STATUSES, MANUAL_SOURCES } from '../../api/_constants.js';
+import {
+  isExclusive, lookupSite, hasConflict,
+  insertReservation, insertReservationGuarded
+} from '../../api/_reservations.js';
 
 /* Build a "party size" SELECT expression that works on either schema. */
 function partyExpr(cols) {
@@ -45,7 +39,8 @@ export async function onRequestGet(context) {
            FROM reservations r JOIN sites s ON r.site_id = s.id WHERE 1=1`;
   const params = [];
 
-  if (month)   { q += ' AND r.check_in LIKE ?'; params.push(month + '%'); }
+  /* Indexed range beats a leading-prefix LIKE for the month filter. */
+  if (month)   { q += ' AND r.check_in >= ? AND r.check_in < ?'; params.push(month + '-01', month + '-32'); }
   if (status !== 'all') { q += ' AND r.status = ?'; params.push(status); }
   if (site)    { q += ' AND r.site_id = ?'; params.push(site); }
   if (payment && rCols.has('payment_status')) { q += ' AND r.payment_status = ?'; params.push(payment); }
@@ -55,7 +50,8 @@ export async function onRequestGet(context) {
     const res = await env.DB.prepare(q).bind(...params).all();
     return json({ reservations: res.results || [] });
   } catch (e) {
-    return json({ error: e.message }, 500);
+    console.error('reservations GET failed —', e && e.message);
+    return json({ error: 'Could not load reservations.' }, 500);
   }
 }
 
@@ -76,10 +72,10 @@ export async function onRequestPost(context) {
   const partySize = parseInt(d.partySize)  || null;
   const boatLen   = parseInt(d.boatLength) || null;
   const notes     = clean(d.notes, 2000);
-  const source    = ['phone', 'walkin', 'admin'].includes(d.source) ? d.source : 'admin';
-  const amountDue = d.amountDue != null && d.amountDue !== '' ? parseFloat(d.amountDue) : null;
+  const source    = MANUAL_SOURCES.includes(d.source) ? d.source : 'admin';
+  const amountDue = clampMoney(d.amountDue);
   const payMethod = clean(d.paymentMethod, 40) || null;
-  const payStatus = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
+  const payStatus = PAYMENT_STATUSES.includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
 
   if (!siteId || !checkIn || !checkOut || !name) return json({ error: 'Missing required fields' }, 422);
 
@@ -97,13 +93,18 @@ export async function onRequestPost(context) {
      (parking, launch) hold many bookings at once — never conflict-check them.
      The guarded insert checks availability and writes in ONE statement, so two
      concurrent requests can't both win the same slot. */
-  if (isExclusive(site.type)) {
-    const out = await insertReservationGuarded(env, r);
-    if (out.conflict) return json({ error: 'Date conflict — that site is already booked for those dates.' }, 409);
-    return json({ ok: true, id: out.id });
+  try {
+    if (isExclusive(site.type)) {
+      const out = await insertReservationGuarded(env, r);
+      if (out.conflict) return json({ error: 'Date conflict — that site is already booked for those dates.' }, 409);
+      return json({ ok: true, id: out.id });
+    }
+    const id = await insertReservation(env, r);
+    return json({ ok: true, id });
+  } catch (e) {
+    console.error('reservations POST failed —', e && e.message);
+    return json({ error: 'Could not create the reservation.' }, 500);
   }
-  const id = await insertReservation(env, r);
-  return json({ ok: true, id });
 }
 
 /* PUT /admin/api/reservations — update any field incl. status + payment */
@@ -118,8 +119,30 @@ export async function onRequestPut(context) {
   if (!id) return json({ error: 'Missing id' }, 422);
 
   const rCols  = await tableCols(env, 'reservations');
-  const status = ['confirmed', 'cancelled', 'pending'].includes(d.status) ? d.status : null;
-  const pay    = ['unpaid', 'deposit', 'paid'].includes(d.paymentStatus) ? d.paymentStatus : null;
+  const status = RES_STATUSES.includes(d.status) ? d.status : null;
+  const pay    = PAYMENT_STATUSES.includes(d.paymentStatus) ? d.paymentStatus : null;
+
+  /* Conflict guard for the EDIT path: if the admin moves a booking to a new
+     site or new dates, make sure it doesn't land on an occupied exclusive slot.
+     Inserts are already atomic; this closes the same hole on updates. */
+  if (d.siteId || d.checkIn || d.checkOut) {
+    const cur = await env.DB.prepare(
+      'SELECT site_id, check_in, check_out, status FROM reservations WHERE id = ?'
+    ).bind(id).first();
+    if (cur) {
+      const effSite   = d.siteId   ? clean(d.siteId, 10)   : cur.site_id;
+      const effIn     = d.checkIn  ? clean(d.checkIn, 12)  : cur.check_in;
+      const effOut    = d.checkOut ? clean(d.checkOut, 12) : cur.check_out;
+      const effStatus = status || cur.status || 'confirmed';
+      if (effStatus === 'confirmed' && effIn < effOut) {
+        const site = await lookupSite(env, effSite);
+        if (site && isExclusive(site.type)) {
+          const conflict = await hasConflict(env, effSite, effIn, effOut, id);
+          if (conflict) return json({ error: 'Date conflict — that site is already booked for those dates (#' + conflict.id + ').' }, 409);
+        }
+      }
+    }
+  }
 
   const sets = [], vals = [];
   if (status)                     { sets.push('status = ?');      vals.push(status); }
@@ -142,16 +165,16 @@ export async function onRequestPut(context) {
     if (pay === 'paid')        sets.push("paid_at = COALESCE(paid_at, datetime('now'))");
     else if (pay === 'unpaid') sets.push('paid_at = NULL');
   }
-  if (d.amountDue  !== undefined && rCols.has('amount_due'))  { sets.push('amount_due = ?');  vals.push(d.amountDue === '' ? null : parseFloat(d.amountDue)); }
-  if (d.amountPaid !== undefined && rCols.has('amount_paid')) { sets.push('amount_paid = ?'); vals.push(d.amountPaid === '' ? null : parseFloat(d.amountPaid)); }
+  if (d.amountDue  !== undefined && rCols.has('amount_due'))  { sets.push('amount_due = ?');  vals.push(clampMoney(d.amountDue)); }
+  if (d.amountPaid !== undefined && rCols.has('amount_paid')) { sets.push('amount_paid = ?'); vals.push(clampMoney(d.amountPaid)); }
   if (d.paymentMethod   !== undefined && rCols.has('payment_method'))     { sets.push('payment_method = ?');     vals.push(clean(d.paymentMethod, 50) || null); }
-  if (d.estimatedTotal  !== undefined && rCols.has('estimated_total'))     { sets.push('estimated_total = ?');    vals.push(d.estimatedTotal === '' ? null : parseFloat(d.estimatedTotal)); }
+  if (d.estimatedTotal  !== undefined && rCols.has('estimated_total'))     { sets.push('estimated_total = ?');    vals.push(clampMoney(d.estimatedTotal)); }
   /* GST: an exempt booking always stores 0; otherwise store what was sent. */
   const gstExempt = d.gstExempt === true || d.gstExempt === 1 || d.gstExempt === '1';
   if (d.gstExempt !== undefined && rCols.has('gst_exempt')) { sets.push('gst_exempt = ?'); vals.push(gstExempt ? 1 : 0); }
   if (rCols.has('gst_amount') && (d.gstAmount !== undefined || d.gstExempt !== undefined)) {
     sets.push('gst_amount = ?');
-    vals.push(gstExempt ? 0 : (d.gstAmount === '' || d.gstAmount == null ? null : parseFloat(d.gstAmount)));
+    vals.push(gstExempt ? 0 : clampMoney(d.gstAmount));
   }
   if (d.parkingType     !== undefined && rCols.has('parking_type'))        { sets.push('parking_type = ?');       vals.push(clean(d.parkingType, 50) || null); }
   if (d.boatLaunchPeriod !== undefined && rCols.has('boat_launch_period')) { sets.push('boat_launch_period = ?'); vals.push(clean(d.boatLaunchPeriod, 50) || null); }
@@ -160,7 +183,10 @@ export async function onRequestPut(context) {
     vals.push(id);
     try {
       await env.DB.prepare(`UPDATE reservations SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
-    } catch (e) { return json({ error: e.message }, 500); }
+    } catch (e) {
+      console.error('reservations PUT failed —', e && e.message);
+      return json({ error: 'Could not save the reservation.' }, 500);
+    }
   }
 
   /* Optional: email the guest that payment was received and their booking is
@@ -178,7 +204,7 @@ export async function onRequestPut(context) {
         });
         paidEmailSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
       }
-    } catch (_e) { /* email is best-effort */ }
+    } catch (_e) { console.error('paid email failed —', _e && _e.message); }
   }
 
   /* Optional: email the guest a payment request with a 48-hour hold. Admin-triggered. */
@@ -196,7 +222,7 @@ export async function onRequestPut(context) {
         });
         paymentRequestSent = await sendEmail(env, { subject, html, to: r.guest_email, replyTo: env.NOTIFY_TO });
       }
-    } catch (_e) { /* best-effort */ }
+    } catch (_e) { console.error('payment-request email failed —', _e && _e.message); }
   }
 
   return json({ ok: true, paidEmailSent, paymentRequestSent });
@@ -211,65 +237,8 @@ export async function onRequestDelete(context) {
   try {
     await env.DB.prepare('DELETE FROM reservations WHERE id = ?').bind(id).run();
     return json({ ok: true });
-  } catch (e) { return json({ error: e.message }, 500); }
-}
-
-/* Build the column/value lists for a reservation insert, writing only the
-   columns the live table actually has (pre-migration safety). */
-function buildReservationInsert(cols, r) {
-  const fields = ['site_id', 'check_in', 'check_out', 'guest_name', 'guest_email', 'guest_phone', 'notes'];
-  const values = [r.siteId, r.checkIn, r.checkOut, r.name, r.email || '', r.phone || null, r.notes || null];
-
-  const opt = (col, val) => { if (cols.has(col)) { fields.push(col); values.push(val); } };
-  opt(cols.has('party_size') ? 'party_size' : 'people', r.partySize ?? null);
-  opt('boat_length',   r.boatLen ?? null);
-  opt('boat_wash_qty', r.boatWash ?? 0);
-  opt('freezer_days',  r.freezer ?? 0);
-  opt('source',        r.source || 'admin');
-  opt('status',        r.status || 'confirmed');
-  opt('payment_status', r.paymentStatus || 'unpaid');
-  opt('amount_due',    r.amountDue ?? null);
-  opt('payment_method',     r.paymentMethod ?? null);
-  opt('estimated_total',    r.estimatedTotal ?? null);
-  opt('gst_amount',         r.gstAmount ?? null);
-  opt('gst_exempt',         r.gstExempt ? 1 : 0);
-  opt('paid_at',            r.paidAt ?? (r.paymentStatus === 'paid' ? nowStamp() : null));
-  opt('parking_type',       r.parkingType ?? null);
-  opt('boat_launch_period', r.boatLaunchPeriod ?? null);
-  opt('submission_id', r.submissionId ?? null);
-  return { fields, values };
-}
-
-/* Shared insert that only writes columns the table actually has. */
-export async function insertReservation(env, r) {
-  const cols = await tableCols(env, 'reservations');
-  const { fields, values } = buildReservationInsert(cols, r);
-  const placeholders = fields.map(() => '?').join(',');
-  const res = await env.DB.prepare(
-    `INSERT INTO reservations (${fields.join(',')}) VALUES (${placeholders})`
-  ).bind(...values).run();
-  return res.meta && res.meta.last_row_id;
-}
-
-/* Atomic, conflict-safe insert for EXCLUSIVE sites (campsite/moorage).
-   Performs the overlap check and the write in a single INSERT…SELECT…WHERE
-   NOT EXISTS statement, so two concurrent bookings can't both take the same
-   slot (no check-then-act race). Returns { id } on success, { conflict:true }
-   if an overlapping confirmed reservation already exists. */
-export async function insertReservationGuarded(env, r) {
-  const cols = await tableCols(env, 'reservations');
-  const { fields, values } = buildReservationInsert(cols, r);
-  const placeholders = fields.map(() => '?').join(',');
-  const sql =
-    `INSERT INTO reservations (${fields.join(',')})
-     SELECT ${placeholders}
-     WHERE NOT EXISTS (
-       SELECT 1 FROM reservations
-       WHERE site_id = ? AND status = 'confirmed' AND ${OVERLAP_WHERE}
-     )`;
-  const res = await env.DB.prepare(sql)
-    .bind(...values, r.siteId, r.checkOut, r.checkIn)
-    .run();
-  if ((res.meta?.changes ?? 0) === 0) return { conflict: true };
-  return { id: res.meta && res.meta.last_row_id };
+  } catch (e) {
+    console.error('reservations DELETE failed —', e && e.message);
+    return json({ error: 'Could not delete the reservation.' }, 500);
+  }
 }

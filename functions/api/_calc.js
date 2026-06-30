@@ -30,3 +30,20 @@ export function datesOverlap(aIn, aOut, bIn, bOut) {
    To switch to a one-day cleaning buffer after checkout, change to:
      "check_in < ? AND date(check_out,'+1 day') > ?"  */
 export const OVERLAP_WHERE = 'check_in < ? AND check_out > ?';
+
+/* Whole nights between two 'YYYY-MM-DD' dates. Dates parse as UTC midnight, so
+   this is DST-safe. Returns 0 for equal/invalid/reversed inputs. */
+export function nightsBetween(checkIn, checkOut) {
+  const a = new Date(checkIn), b = new Date(checkOut);
+  if (isNaN(a) || isNaN(b)) return 0;
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+/* Coerce a money input to a non-negative number, or null for blank/invalid.
+   Prevents negative amounts corrupting income/GST totals. */
+export function clampMoney(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(v);
+  if (isNaN(n)) return null;
+  return n < 0 ? 0 : n;
+}

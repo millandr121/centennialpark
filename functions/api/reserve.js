@@ -1,7 +1,7 @@
 /* POST /api/reserve — create a live reservation */
 
 import { json, clean, looksLikeEmail, sendEmail, verifyTurnstile, esc } from './_lib.js';
-import { insertReservation, insertReservationGuarded, isExclusive } from '../admin/api/reservations.js';
+import { insertReservation, insertReservationGuarded, isExclusive } from './_reservations.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -156,7 +156,8 @@ export async function onRequestPost(context) {
   });
 
   if (guestSent && rid)
-    await env.DB.prepare('UPDATE reservations SET emailed=1 WHERE id=?').bind(rid).run().catch(()=>{});
+    await env.DB.prepare('UPDATE reservations SET emailed=1 WHERE id=?').bind(rid).run()
+      .catch((e)=>console.error('reserve: emailed flag update failed —', e && e.message));
 
   return json({ ok: true, reservationId: rid });
 }

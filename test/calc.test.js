@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gstIncluded, datesOverlap, GST_RATE, OVERLAP_WHERE } from '../functions/api/_calc.js';
+import { gstIncluded, datesOverlap, GST_RATE, OVERLAP_WHERE, nightsBetween, clampMoney } from '../functions/api/_calc.js';
 
 test('GST is extracted as the 5/105 portion of an all-in amount', () => {
   assert.equal(GST_RATE, 0.05);
@@ -48,4 +48,21 @@ test('same-day turnover is ALLOWED (touching endpoints do not overlap)', () => {
 test('OVERLAP_WHERE binds as (requestedCheckOut, requestedCheckIn)', () => {
   // The SQL fragment must compare existing.check_in < ? and existing.check_out > ?.
   assert.equal(OVERLAP_WHERE, 'check_in < ? AND check_out > ?');
+});
+
+test('nightsBetween counts whole nights and is DST-safe', () => {
+  assert.equal(nightsBetween('2026-07-01', '2026-07-05'), 4);
+  assert.equal(nightsBetween('2026-07-05', '2026-07-05'), 0);   // same day
+  assert.equal(nightsBetween('2026-07-05', '2026-07-04'), 0);   // reversed → clamped
+  assert.equal(nightsBetween('2026-03-07', '2026-03-09'), 2);   // spans US DST change
+  assert.equal(nightsBetween('bad', '2026-07-05'), 0);          // invalid
+});
+
+test('clampMoney rejects negatives and blanks, keeps 0 and positives', () => {
+  assert.equal(clampMoney(''), null);
+  assert.equal(clampMoney(null), null);
+  assert.equal(clampMoney('abc'), null);
+  assert.equal(clampMoney(-5), 0);      // negative floored to 0
+  assert.equal(clampMoney(0), 0);       // legitimate $0 preserved
+  assert.equal(clampMoney('42.50'), 42.5);
 });

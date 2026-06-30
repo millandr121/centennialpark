@@ -1556,8 +1556,8 @@ function printReport() {
 /* ── Add booking ── */
 async function loadSites() {
   try {
-    const { available = [], booked = [] } = await (await fetch('/api/availability?checkin=2000-01-01&checkout=2000-01-02&type=all')).json();
-    allSites = [...available, ...booked].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
+    const { sites = [] } = await (await fetch('/admin/api/sites')).json();
+    allSites = sites.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
     document.getElementById('add-site').innerHTML = siteOptions();
     /* populate site filter */
     const sf = document.getElementById('filter-site');

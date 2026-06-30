@@ -76,8 +76,9 @@ good; complexity visible to the manager is bad.
 | `functions/admin/api/reservations.js` | Reservations CRUD + mark-paid + GST + atomic guarded insert |
 | `functions/admin/api/items.js` | Misc income items CRUD |
 | `functions/admin/api/cleanup.js` | Database wipe (with sqlite_sequence reset) |
-| `functions/admin/api/sites.js` | Campsite/moorage definitions |
-| `functions/admin/api/stats.js` | Dashboard summary stats |
+| `functions/admin/api/sites.js` | GET site list for the admin panel (pickers/filters) |
+| `functions/api/_reservations.js` | **Neutral reservation data layer** — insert/guarded-insert/overlap/site lookup (shared by public + admin) |
+| `functions/api/_constants.js` | Shared status/source enums |
 | `functions/api/booking.js` | Public booking form POST handler (enquiry log) |
 | `functions/api/reserve.js` | Live-booking POST — atomic insert + dedupe |
 | `functions/api/contact.js` | Public contact form POST handler |
