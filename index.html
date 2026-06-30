@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2e5d33">
   <meta name="description" content="Eileen Scott Centennial Park — camping and moorage in Bamfield, BC. Book online.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://bamfieldparks.com/">
@@ -16,14 +17,22 @@
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
   <!-- Open Graph / social sharing -->
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://bamfieldparks.com/">
-  <meta property="og:title"       content="Eileen Scott Centennial Park — Bamfield, BC">
-  <meta property="og:description" content="Camp or moor your boat at Eileen Scott Centennial Park in Bamfield, BC. Waterfront camping, full-service moorage, and easy online booking.">
-  <meta property="og:image"       content="https://bamfieldparks.com/bear_logo4-150x150.png">
-  <meta name="twitter:card"       content="summary_large_image">
-  <meta name="twitter:title"      content="Eileen Scott Centennial Park — Bamfield, BC">
+  <meta property="og:type"         content="website">
+  <meta property="og:site_name"    content="Eileen Scott Centennial Park">
+  <meta property="og:url"          content="https://bamfieldparks.com/">
+  <meta property="og:title"        content="Eileen Scott Centennial Park — Bamfield, BC">
+  <meta property="og:description"  content="Camp or moor your boat at Eileen Scott Centennial Park in Bamfield, BC. Waterfront camping, full-service moorage, and easy online booking.">
+  <!-- Use the real waterfront photo (1600×400), not the tiny logo, so shared
+       links render a proper large card instead of a blank/cropped thumbnail. -->
+  <meta property="og:image"        content="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <meta property="og:image:width"  content="1600">
+  <meta property="og:image:height" content="400">
+  <meta property="og:image:alt"    content="Bamfield harbour at Eileen Scott Centennial Park">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Eileen Scott Centennial Park — Bamfield, BC">
   <meta name="twitter:description" content="Camp or moor your boat in Bamfield, BC. Online booking available.">
+  <meta name="twitter:image"       content="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <meta name="twitter:image:alt"   content="Bamfield harbour at Eileen Scott Centennial Park">
 
   <title>Eileen Scott Centennial Park — Bamfield, BC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +45,43 @@
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
   <link rel="icon" href="/bear_logo4-150x150.png">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <!-- Structured data — lets Google show rich results and a local-pack/Maps
+       listing for "campground in Bamfield". Coordinates are the Bamfield
+       village centroid (approximate); refine if an exact lat/long is known. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Campground",
+    "name": "Eileen Scott Centennial Park",
+    "description": "Waterfront camping and full-service moorage in Bamfield, BC, on Vancouver Island's wild west coast. Open year-round, with online booking.",
+    "url": "https://bamfieldparks.com/",
+    "image": "https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg",
+    "logo": "https://bamfieldparks.com/bear_logo4-150x150.png",
+    "telephone": "+1-250-728-3006",
+    "email": "bamfieldcentennialpark@gmail.com",
+    "foundingDate": "1967",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "PO Box 931",
+      "addressLocality": "Bamfield",
+      "addressRegion": "BC",
+      "postalCode": "V0R 1B0",
+      "addressCountry": "CA"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 48.8353,
+      "longitude": -125.1357
+    },
+    "amenityFeature": [
+      { "@type": "LocationFeatureSpecification", "name": "Tent & RV camping", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Boat moorage", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Boat launch", "value": true }
+    ]
+  }
+  </script>
 </head>
 <body class="one-page">
   <a href="#main" class="skip-link">Skip to content</a>
