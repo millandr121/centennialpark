@@ -14,7 +14,6 @@
         href="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
   <!-- Warm the other cross-origin asset hosts used lower on the page -->
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
   <!-- Open Graph / social sharing -->
   <meta property="og:type"         content="website">
@@ -781,16 +780,18 @@
     })();
 
     /* ── Lazy-load Leaflet + the route map only when the Visit section nears ──
-       Saves ~170 KB (Leaflet JS+CSS) + the unpkg origin for the ~majority of
-       visitors who never scroll to the map. route-map.js self-inits once L exists. */
+       Saves ~170 KB (Leaflet JS+CSS) for the ~majority of visitors who never
+       scroll to the map. Leaflet is self-hosted (js/vendor/leaflet, pinned
+       1.9.4) so the maps don't depend on a third-party CDN staying up.
+       route-map.js self-inits once L exists. */
     (function () {
       var visit = document.getElementById('visit');
       if (!visit) return;
       var loaded = false;
       function loadMap() {
         if (loaded) return; loaded = true;
-        loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-        loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function () {
+        loadCss('/js/vendor/leaflet/leaflet.css');
+        loadJs('/js/vendor/leaflet/leaflet.js', function () {
           loadJs('/js/route-map.js');
         });
       }
