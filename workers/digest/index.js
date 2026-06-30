@@ -1,8 +1,16 @@
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runDigest(env));
+    ctx.waitUntil((async () => {
+      await runDigest(env);
+      // Monthly safety backup of the booking/income records, on the 1st.
+      if (new Date().getUTCDate() === 1) await runBackup(env);
+    })());
   },
   async fetch(request, env) {
+    // Manual triggers: /?backup=1 forces a backup now; anything else runs the digest.
+    if (new URL(request.url).searchParams.get('backup') === '1') {
+      return await runBackup(env);
+    }
     return await runDigest(env);
   }
 };
@@ -22,9 +30,9 @@ async function runDigest(env) {
   const bRows = bookings.results || [];
   const cRows = contacts.results || [];
 
-  if (bRows.length === 0 && cRows.length === 0) {
-    return new Response('No submissions in the last 24h — nothing to send.');
-  }
+  // Dead-man's-switch: send the digest EVERY day, even with zero activity, so a
+  // missing email is itself the alarm that the cron job has stopped working.
+  const isEmpty = bRows.length === 0 && cRows.length === 0;
 
   const wrap  = 'max-width:760px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;color:#1f2937';
   const table = 'border-collapse:collapse;width:100%;margin:0 0 2rem;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden';
@@ -39,6 +47,13 @@ async function runDigest(env) {
       '<div style="font-size:13px;opacity:.8;margin-top:2px">Daily inquiry digest &middot; last 24 hours</div>' +
     '</div>' +
     '<p style="color:#6b7280;font-size:13px;margin:0 0 1.5rem">Generated ' + fmt(new Date().toISOString()) + '</p>';
+
+  if (isEmpty) {
+    html += '<p style="background:#f0f7f1;border:1px solid #cfe3d3;border-radius:10px;' +
+      'padding:14px 16px;color:#2e5d33;font-size:13px;margin:0 0 1.5rem">' +
+      '&#10003; No new inquiries in the last 24 hours &mdash; all systems normal. ' +
+      'This note is sent daily on purpose: if it ever stops arriving, the digest itself has broken.</p>';
+  }
 
   if (bRows.length > 0) {
     html += '<h3 style="font-size:15px;margin:0 0 .6rem">Booking requests &middot; ' + bRows.length + '</h3>';
@@ -165,4 +180,83 @@ function fmt(ts) {
 function esc(v) {
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ── Monthly safety backup ──────────────────────────────────────────────────
+   Cloudflare D1 has no automatic off-site backup, and the admin panel can wipe
+   data, so this is the durable copy. It also covers CRA record-retention: the
+   reservations/misc-income tables are your income+GST records (keep ~6 years).
+   Exports each table as a CSV attachment and emails them to the park.
+   Runs monthly (1st, from scheduled) or on demand via the worker URL ?backup=1. */
+async function runBackup(env) {
+  const TABLES = ['reservations', 'misc_items', 'booking_submissions', 'contact_submissions'];
+  const stamp = new Date().toISOString().slice(0, 10);
+  const attachments = [];
+  const counts = [];
+
+  for (const t of TABLES) {
+    let rows = [];
+    try {
+      const res = await env.DB.prepare('SELECT * FROM ' + t + ' ORDER BY id').all();
+      rows = res.results || [];
+    } catch (e) {
+      counts.push(t + ': export error');
+      continue;
+    }
+    counts.push(t + ': ' + rows.length + ' rows');
+    attachments.push({
+      filename: t + '-' + stamp + '.csv',
+      content: toBase64(toCsv(rows) || (t + ' had no rows on ' + stamp))
+    });
+  }
+
+  const to   = env.NOTIFY_TO   || 'bamfieldcentennialpark@gmail.com';
+  const from = env.RESEND_FROM || 'Eileen Scott Centennial Park <onboarding@resend.dev>';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from, to,
+      subject: 'Monthly data backup — ' + stamp,
+      html: '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1f2937;max-width:600px;margin:0 auto">' +
+        '<h2 style="color:#2e5d33;font-size:18px">Monthly data backup &middot; ' + stamp + '</h2>' +
+        '<p style="font-size:13px;line-height:1.5">Attached are CSV exports of your booking and income ' +
+        'records. Keep them somewhere safe (e.g. Google Drive) — this is your off-site copy and your ' +
+        'tax record. CRA expects business records kept for ~6 years.</p>' +
+        '<ul style="font-size:13px">' + counts.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>',
+      attachments
+    })
+  });
+
+  const ok = res.ok ? 'sent' : 'failed (' + res.status + ')';
+  return new Response('Backup email ' + ok + '. ' + counts.join('; '));
+}
+
+/* rows[] -> CSV text (RFC-4180 quoting). Columns come from the first row's keys. */
+function toCsv(rows) {
+  if (!rows || !rows.length) return '';
+  const cols = Object.keys(rows[0]);
+  const cell = function (v) {
+    if (v == null) return '';
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const out = [cols.join(',')];
+  for (const r of rows) out.push(cols.map(function (c) { return cell(r[c]); }).join(','));
+  return out.join('\r\n');
+}
+
+/* UTF-8 safe base64 for Resend attachments (chunked to avoid call-stack limits). */
+function toBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
 }

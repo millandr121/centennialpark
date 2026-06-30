@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2e5d33">
   <meta name="description" content="Eileen Scott Centennial Park — camping and moorage in Bamfield, BC. Book online.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://bamfieldparks.com/">
@@ -13,17 +14,24 @@
         href="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
   <!-- Warm the other cross-origin asset hosts used lower on the page -->
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
   <!-- Open Graph / social sharing -->
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://bamfieldparks.com/">
-  <meta property="og:title"       content="Eileen Scott Centennial Park — Bamfield, BC">
-  <meta property="og:description" content="Camp or moor your boat at Eileen Scott Centennial Park in Bamfield, BC. Waterfront camping, full-service moorage, and easy online booking.">
-  <meta property="og:image"       content="https://bamfieldparks.com/bear_logo4-150x150.png">
-  <meta name="twitter:card"       content="summary_large_image">
-  <meta name="twitter:title"      content="Eileen Scott Centennial Park — Bamfield, BC">
+  <meta property="og:type"         content="website">
+  <meta property="og:site_name"    content="Eileen Scott Centennial Park">
+  <meta property="og:url"          content="https://bamfieldparks.com/">
+  <meta property="og:title"        content="Eileen Scott Centennial Park — Bamfield, BC">
+  <meta property="og:description"  content="Camp or moor your boat at Eileen Scott Centennial Park in Bamfield, BC. Waterfront camping, full-service moorage, and easy online booking.">
+  <!-- Use the real waterfront photo (1600×400), not the tiny logo, so shared
+       links render a proper large card instead of a blank/cropped thumbnail. -->
+  <meta property="og:image"        content="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <meta property="og:image:width"  content="1600">
+  <meta property="og:image:height" content="400">
+  <meta property="og:image:alt"    content="Bamfield harbour at Eileen Scott Centennial Park">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Eileen Scott Centennial Park — Bamfield, BC">
   <meta name="twitter:description" content="Camp or moor your boat in Bamfield, BC. Online booking available.">
+  <meta name="twitter:image"       content="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
+  <meta name="twitter:image:alt"   content="Bamfield harbour at Eileen Scott Centennial Park">
 
   <title>Eileen Scott Centennial Park — Bamfield, BC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +44,43 @@
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
   <link rel="icon" href="/bear_logo4-150x150.png">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <!-- Structured data — lets Google show rich results and a local-pack/Maps
+       listing for "campground in Bamfield". Coordinates are the Bamfield
+       village centroid (approximate); refine if an exact lat/long is known. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Campground",
+    "name": "Eileen Scott Centennial Park",
+    "description": "Waterfront camping and full-service moorage in Bamfield, BC, on Vancouver Island's wild west coast. Open year-round, with online booking.",
+    "url": "https://bamfieldparks.com/",
+    "image": "https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg",
+    "logo": "https://bamfieldparks.com/bear_logo4-150x150.png",
+    "telephone": "+1-250-728-3006",
+    "email": "bamfieldcentennialpark@gmail.com",
+    "foundingDate": "1967",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "PO Box 931",
+      "addressLocality": "Bamfield",
+      "addressRegion": "BC",
+      "postalCode": "V0R 1B0",
+      "addressCountry": "CA"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 48.8353,
+      "longitude": -125.1357
+    },
+    "amenityFeature": [
+      { "@type": "LocationFeatureSpecification", "name": "Tent & RV camping", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Boat moorage", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Boat launch", "value": true }
+    ]
+  }
+  </script>
 </head>
 <body class="one-page">
   <a href="#main" class="skip-link">Skip to content</a>
@@ -176,7 +221,7 @@
       </svg>
       <div class="panel-inner">
         <header class="panel-head" data-reveal>
-          <p class="panel-eyebrow panel-eyebrow--light">Simple pricing &middot; 2025 &middot; CAD +5% GST</p>
+          <p class="panel-eyebrow panel-eyebrow--light">Simple pricing &middot; CAD &middot; GST included</p>
           <h2 id="rates-heading">Honest rates,<br><em class="hand hand--gold">small-town style.</em></h2>
         </header>
 
@@ -220,7 +265,7 @@
           <summary>Full rate sheet</summary>
           <div class="table-wrap">
             <table>
-              <caption class="sr-only">Camping and moorage rates 2025 in Canadian dollars</caption>
+              <caption class="sr-only">Camping and moorage rates in Canadian dollars</caption>
               <thead><tr><th>Service</th><th>Daily</th><th>Weekly</th><th>Monthly</th><th>Annual</th></tr></thead>
               <tbody>
                 <tr><td>Campsite <small>*</small></td><td><span class="money notranslate" translate="no">C$30.00</span></td><td><span class="money notranslate" translate="no">C$187.50</span></td><td><span class="money notranslate" translate="no">C$735.00</span></td><td>n/a</td></tr>
@@ -233,7 +278,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <caption class="sr-only">Boat launch and amenity rates 2025</caption>
+              <caption class="sr-only">Boat launch and amenity rates</caption>
               <thead><tr><th>Service</th><th>Daily / unit</th><th>Seasonal</th><th>Annual</th></tr></thead>
               <tbody>
                 <tr><td>Boat launch (in &amp; out)</td><td><span class="money notranslate" translate="no">C$20.00</span> <small>GST incl.</small></td><td><span class="money notranslate" translate="no">C$142.00</span></td><td><span class="money notranslate" translate="no">C$216.00</span></td></tr>
@@ -735,16 +780,18 @@
     })();
 
     /* ── Lazy-load Leaflet + the route map only when the Visit section nears ──
-       Saves ~170 KB (Leaflet JS+CSS) + the unpkg origin for the ~majority of
-       visitors who never scroll to the map. route-map.js self-inits once L exists. */
+       Saves ~170 KB (Leaflet JS+CSS) for the ~majority of visitors who never
+       scroll to the map. Leaflet is self-hosted (js/vendor/leaflet, pinned
+       1.9.4) so the maps don't depend on a third-party CDN staying up.
+       route-map.js self-inits once L exists. */
     (function () {
       var visit = document.getElementById('visit');
       if (!visit) return;
       var loaded = false;
       function loadMap() {
         if (loaded) return; loaded = true;
-        loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-        loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function () {
+        loadCss('/js/vendor/leaflet/leaflet.css');
+        loadJs('/js/vendor/leaflet/leaflet.js', function () {
           loadJs('/js/route-map.js');
         });
       }

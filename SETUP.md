@@ -119,3 +119,48 @@ mutations, internal files & server source are 404'd, HSTS header, no DB error
 text leaked to anonymous callers, GST/overlap single-sourced, atomic
 double-booking guard, e-mail subjects CR/LF-stripped, admin-panel link removed
 from notification emails, `/api/settings` key-allowlisted.
+
+---
+
+## Operations & longevity (keep it healthy over the years)
+
+**The daily digest is now a heartbeat.** It emails `NOTIFY_TO` **every day**,
+even when there were zero inquiries ("all systems normal"). That's deliberate:
+if the daily email ever stops arriving, the cron itself has broken — silence is
+the alarm. (Don't filter these to a folder you never read.)
+
+**Monthly backup email.** On the 1st of each month the digest worker also emails
+CSV exports of `reservations`, `misc_items`, and the raw submission tables as
+attachments. **Save these** (e.g. to Google Drive) — D1 has no automatic
+off-site backup, the admin panel can wipe data, and these are your CRA tax
+records (keep ~6 years). Trigger one any time by visiting the worker URL with
+`?backup=1`.
+
+**Domain renewal — the #1 way the site disappears.** Cloudflare auto-renews the
+TLS certificate forever, but the **domain registration** is yours to keep paid.
+Turn on **auto-renew** at the registrar, keep a valid card on file, and keep the
+registrar contact email current. If the domain lapses, the website *and* the
+sending email domain both go down.
+
+**Re-check email deliverability ~yearly.** If the Resend sending domain's DNS
+records (SPF / DKIM / DMARC) get dropped during an unrelated DNS change, mail
+silently starts going to spam. Confirm the records in the Resend dashboard after
+any DNS work.
+
+**Annual content review.** Hardcoded business info rots: the season line
+("Manager on site May 15 – Sept 30"), ferry/floatplane operators, and gas-bar
+listings on the route map. Skim them once a season. The footer year and the
+date-picker minimums update themselves.
+
+**Known deferred items (not yet done):**
+- **Images** are still hotlinked from `bamfieldparks.com` / Unsplash — migrate
+  them into the repo (or R2) so they live and die with the site.
+- **Admin lists** now default to a recent window (reservations: recent + all
+  upcoming; requests: last 90 days) via `?recent=1`, with a **Show all** toggle
+  for full history — so the panel stays fast as tables grow. Dashboard and
+  income reports deliberately omit `recent` and still see all-time data. Still
+  worth adding later: an automatic **prune** of raw submissions older than
+  ~1–2 years (privacy + speed); the booking that matters is already a
+  reservation by then, and the monthly backup retains a copy.
+- **Leaflet** is self-hosted and pinned at 1.9.4 (`js/vendor/leaflet`). Check for
+  security advisories when bumping; re-vendor with `npm pack leaflet@<ver>`.

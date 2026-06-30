@@ -20,6 +20,11 @@ export async function onRequestGet(context) {
   const params = [];
   if (month) { q += ' AND (check_in LIKE ? OR created_at LIKE ?)'; params.push(month + '%', month + '%'); }
   if (status !== 'all' && cols.has('status')) { q += ' AND COALESCE(status,\'new\') = ?'; params.push(status); }
+  // Opt-in 90-day window for the admin inbox list (keeps it fast as the table
+  // grows). Off by default so dashboard/report callers still see everything.
+  if (url.searchParams.get('recent') === '1' && !month) {
+    q += " AND created_at >= date('now','-90 days')";
+  }
   q += ' ORDER BY created_at DESC';
 
   try {

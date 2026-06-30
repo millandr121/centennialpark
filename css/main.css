@@ -165,6 +165,14 @@ p  { max-width: 62ch; }
   background: var(--clr-surface); font: inherit; font-size: .95rem; color: var(--clr-text);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
+/* iOS Safari (and every iOS browser — all WebKit) zooms the viewport when a
+   focused control's font-size is < 16px. Keep the desktop size but floor inputs
+   at 16px on small/touch screens so focusing a field never triggers a zoom. */
+@media (max-width: 600px) {
+  .form-field input,
+  .form-field select,
+  .form-field textarea { font-size: 16px; }
+}
 .form-field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .95rem center; padding-right: 2.5rem; }
 .form-field input:focus,
 .form-field select:focus,

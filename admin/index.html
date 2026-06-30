@@ -277,6 +277,7 @@
         <option value="paid">Paid</option>
       </select>
       <button class="btn btn-outline" onclick="loadReservations()">Refresh</button>
+      <button class="btn btn-outline" id="res-showall" onclick="toggleResShowAll()" title="Default shows recent + upcoming. Toggle to load the full history.">Show all</button>
     </div>
     <div class="card tbl-wrap">
       <table>
@@ -307,6 +308,7 @@
       <button class="sub-tab" data-rstatus="accepted" onclick="setReqFilter('accepted')">Accepted</button>
       <button class="sub-tab" data-rstatus="declined" onclick="setReqFilter('declined')">Declined</button>
       <button class="sub-tab" data-rstatus="all"      onclick="setReqFilter('all')">All</button>
+      <button class="btn btn-outline btn-sm" id="req-showall" onclick="toggleReqShowAll()" title="Default shows the last 90 days. Toggle to load the full history." style="margin-left:auto">Show all</button>
     </div>
     <div class="card tbl-wrap">
       <table>
@@ -733,9 +735,23 @@
 </div>
 
 <script>
-const today = new Date().toISOString().slice(0,10);
+const today = (function(){ const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); })();
 let allSites = [];
 let reqFilter = 'new';
+let resShowAll = false;   // reservations list: false = recent window, true = all-time
+let reqShowAll = false;   // requests inbox: false = last 90 days, true = all-time
+function toggleResShowAll() {
+  resShowAll = !resShowAll;
+  const b = document.getElementById('res-showall');
+  if (b) { b.textContent = resShowAll ? '✓ Showing all' : 'Show all'; b.classList.toggle('btn-primary', resShowAll); }
+  loadReservations();
+}
+function toggleReqShowAll() {
+  reqShowAll = !reqShowAll;
+  const b = document.getElementById('req-showall');
+  if (b) { b.textContent = reqShowAll ? '✓ Showing all' : 'Show all'; b.classList.toggle('btn-primary', reqShowAll); }
+  loadRequests();
+}
 let allReservations = [];
 let sortCol = 'check_in', sortDir = 1; /* 1=asc, -1=desc */
 
@@ -942,6 +958,7 @@ async function loadReservations() {
   const params  = new URLSearchParams({ status });
   if (month) params.set('month', month);
   if (payment) params.set('payment', payment);
+  if (!resShowAll) params.set('recent', '1');   // default: recent + all upcoming
 
   try {
     const { reservations = [], error } = await (await fetch('/admin/api/reservations?' + params)).json();
@@ -1078,7 +1095,9 @@ function setReqFilter(s) {
 }
 async function loadRequests() {
   try {
-    const { submissions = [], error } = await (await fetch('/admin/api/submissions?status=' + reqFilter)).json();
+    const rqParams = new URLSearchParams({ status: reqFilter });
+    if (!reqShowAll) rqParams.set('recent', '1');   // default: last 90 days
+    const { submissions = [], error } = await (await fetch('/admin/api/submissions?' + rqParams)).json();
     const tbody = document.getElementById('req-tbody');
     if (error) { tbody.innerHTML = `<tr><td colspan="13" class="empty">Error: ${esc(error)}</td></tr>`; return; }
     if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No requests</td></tr>'; return; }

@@ -86,7 +86,9 @@ function tpl() {
 }
 
 function datePicker() {
-  var today = new Date().toISOString().slice(0,10);
+  // Local date — UTC toISOString() rolls a day ahead for evening Pacific users.
+  var _now = new Date();
+  var today = _now.getFullYear() + '-' + String(_now.getMonth() + 1).padStart(2, '0') + '-' + String(_now.getDate()).padStart(2, '0');
   return '<div class="lb-dates">' +
     '<div class="lb-dates-inner">' +
       '<div class="lb-field">' +
@@ -369,7 +371,7 @@ function bind() {
     ciEl.addEventListener('change', function() {
       state.checkin  = this.value;
       if (coEl && (!state.checkout || state.checkout <= state.checkin)) {
-        var d = new Date(state.checkin); d.setDate(d.getDate()+1);
+        var d = new Date(state.checkin + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+1);
         state.checkout = d.toISOString().slice(0,10);
       }
     });
