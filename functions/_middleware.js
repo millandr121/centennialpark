@@ -14,6 +14,8 @@ const BLOCKED = [
   /^\/db\//i,
   /^\/test\//i,
   /^\/\.github\//i,
+  /^\/functions\//i,   // server source (Pages compiles these — never serve raw)
+  /^\/workers\//i,     // digest worker source
   /(^|\/)package(-lock)?\.json$/i,
 ];
 

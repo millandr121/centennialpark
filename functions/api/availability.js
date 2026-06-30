@@ -31,7 +31,9 @@ export async function onRequestGet(context) {
       const r = await env.DB.prepare(q).bind(...(type === 'all' ? [] : [type])).all();
       sites = r.results || [];
     } catch (e2) {
-      return err('Could not load sites: ' + e2.message, 500);
+      /* Don't leak DB error text (schema/column names) to anonymous callers. */
+      console.error('availability: site query failed —', e2 && e2.message);
+      return err('Booking system temporarily unavailable.', 500);
     }
   }
 
