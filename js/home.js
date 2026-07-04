@@ -183,6 +183,7 @@
   }
 
   document.querySelectorAll('.offer-photo-btn').forEach(function (btn) {
+    if (btn.hasAttribute('data-park-info')) return;   // opens the info drawer, not the lightbox
     btn.addEventListener('click', function () {
       openModal(btn.getAttribute('data-photo-src'), btn.getAttribute('data-photo-alt'));
     });
@@ -193,6 +194,52 @@
     modal.querySelector('.photo-modal-backdrop').addEventListener('click', closeModal);
     modal.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeModal();
+    });
+  }
+
+  /* ── Park info slide-out drawer ───────────────────────── */
+  var drawer = document.getElementById('park-info');
+  var infoTrigger = null;
+
+  function openDrawer(trigger) {
+    if (!drawer) return;
+    infoTrigger = trigger || null;
+    drawer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var firstTab = drawer.querySelector('.info-tab');
+    if (firstTab) firstTab.focus();
+  }
+  function closeDrawer() {
+    if (!drawer || drawer.hidden) return;
+    drawer.hidden = true;
+    document.body.style.overflow = '';
+    if (infoTrigger) { infoTrigger.focus(); infoTrigger = null; }
+  }
+
+  document.querySelectorAll('[data-park-info]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openDrawer(btn); });
+  });
+
+  if (drawer) {
+    drawer.querySelectorAll('[data-info-close]').forEach(function (el) {
+      el.addEventListener('click', closeDrawer);
+    });
+    drawer.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDrawer();
+    });
+
+    /* tab switching */
+    var tabs = Array.prototype.slice.call(drawer.querySelectorAll('.info-tab'));
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.classList.toggle('is-active', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          var pane = document.getElementById(t.getAttribute('aria-controls'));
+          if (pane) { pane.hidden = !on; pane.classList.toggle('is-active', on); }
+        });
+      });
     });
   }
 

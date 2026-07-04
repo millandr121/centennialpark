@@ -428,3 +428,92 @@
   .leaflet-map { height: 280px; }
   .hero-cta .btn { width: 100%; }
 }
+
+/* ── Park info slide-out drawer ───────────────────────────── */
+.info-drawer { position: fixed; inset: 0; z-index: 450; }
+.info-drawer[hidden] { display: none; }
+.info-drawer-backdrop {
+  position: absolute; inset: 0; background: rgba(16,24,18,.55);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  opacity: 0; animation: infoFade .3s ease forwards;
+}
+.info-drawer-panel {
+  position: absolute; top: 0; right: 0; height: 100%;
+  width: min(480px, 92vw); background: var(--clr-bg);
+  display: flex; flex-direction: column;
+  box-shadow: -14px 0 50px rgba(0,0,0,.32);
+  transform: translateX(100%); animation: infoSlide .35s var(--ease-out) forwards;
+}
+@keyframes infoFade  { to { opacity: 1; } }
+@keyframes infoSlide { to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .info-drawer-backdrop, .info-drawer-panel { animation-duration: .01ms; }
+}
+
+.info-drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  background: var(--clr-dark); color: #fff; padding: 1.5rem 1.4rem 1.3rem;
+}
+.info-drawer-eyebrow {
+  font-size: .7rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--clr-accent-light); margin-bottom: .35rem;
+}
+.info-drawer-head h2 { font-size: 1.5rem; line-height: 1.1; }
+.info-drawer-close {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.12); color: #fff; font-size: 1.6rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center; transition: background .2s, transform .2s;
+}
+.info-drawer-close:hover { background: rgba(255,255,255,.25); transform: scale(1.08); }
+.info-drawer-close:focus-visible { outline: 3px solid var(--clr-accent-light); outline-offset: 2px; }
+
+.info-tabs { display: flex; gap: .35rem; padding: 0 1rem; background: var(--clr-dark); }
+.info-tab {
+  flex: 1; padding: .7em .4em; border-radius: 10px 10px 0 0;
+  font-family: var(--font-display); font-weight: 600; font-size: .8rem;
+  color: rgba(255,255,255,.6); background: transparent; white-space: nowrap;
+  transition: color .2s, background .2s;
+}
+.info-tab:hover { color: #fff; }
+.info-tab.is-active { background: var(--clr-bg); color: var(--clr-primary); }
+.info-tab:focus-visible { outline: 3px solid var(--clr-accent-light); outline-offset: -3px; }
+
+.info-drawer-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 1.5rem 1.4rem; }
+.info-pane[hidden] { display: none; }
+.info-pane h3 {
+  font-size: 1rem; margin: 1.5rem 0 .55rem; color: var(--clr-dark);
+  font-family: var(--font-display);
+}
+.info-pane h3:first-child { margin-top: 0; }
+.info-list { display: flex; flex-direction: column; gap: .65rem; }
+.info-list li {
+  position: relative; padding-left: 1.1rem; font-size: .92rem; line-height: 1.55;
+  color: var(--clr-text);
+}
+.info-list li::before {
+  content: ''; position: absolute; left: 0; top: .5em;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--clr-accent);
+}
+.info-list li strong { color: var(--clr-dark); font-weight: 600; }
+.info-note {
+  background: var(--clr-surface); border: 1px solid var(--clr-border); border-radius: 10px;
+  padding: .85rem 1rem; font-size: .86rem; color: var(--clr-text-muted); margin-top: 1.1rem;
+}
+.info-note a { color: var(--clr-primary); font-weight: 600; }
+.info-alert {
+  border-left: 3px solid var(--clr-accent); background: rgba(200,148,30,.09);
+  border-radius: 8px; padding: .85rem 1rem; margin: 1.2rem 0 .2rem;
+  font-size: .9rem; line-height: 1.55;
+}
+.info-alert strong { color: var(--clr-dark); }
+
+.info-drawer-foot {
+  border-top: 1px solid var(--clr-border); background: var(--clr-surface);
+  padding: 1.1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.info-drawer-foot p { font-family: var(--font-display); font-weight: 600; color: var(--clr-dark); }
+
+@media (max-width: 420px) {
+  .info-drawer-panel { width: 100vw; }
+  .info-drawer-foot { flex-direction: column; align-items: stretch; text-align: center; }
+}
