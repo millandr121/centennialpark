@@ -194,9 +194,8 @@
               <div class="offer-slide" data-bg="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?auto=format&fit=crop&w=900&q=70"></div>
               <div class="offer-slide" data-bg="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
-              <button class="offer-photo-btn"
-                data-photo-src="https://bamfieldparks.com/wp-content/uploads/2017/06/infocentre.jpg"
-                data-photo-alt="Park office and gift shop">View the park</button>
+              <button class="offer-photo-btn" data-park-info aria-haspopup="dialog"
+                aria-controls="park-info">Park info &amp; rules</button>
             </div>
             <div class="offer-body">
               <h3>Park office &amp; gift shop</h3>
@@ -738,6 +737,105 @@
       <button class="photo-modal-close" aria-label="Close photo">&times;</button>
       <img id="photo-modal-img" src="" alt="" loading="lazy">
       <p id="photo-modal-cap" class="photo-modal-cap"></p>
+    </div>
+  </div>
+
+  <!-- ════════════ Park info slide-out drawer ════════════ -->
+  <div class="info-drawer" id="park-info" role="dialog" aria-modal="true" aria-labelledby="park-info-title" hidden>
+    <div class="info-drawer-backdrop" data-info-close></div>
+    <div class="info-drawer-panel">
+      <header class="info-drawer-head">
+        <div>
+          <p class="info-drawer-eyebrow">Good to know</p>
+          <h2 id="park-info-title">Park info &amp; rules</h2>
+        </div>
+        <button class="info-drawer-close" data-info-close aria-label="Close park info">&times;</button>
+      </header>
+
+      <div class="info-tabs" role="tablist" aria-label="Park information">
+        <button class="info-tab is-active" role="tab" aria-selected="true"  aria-controls="info-camping" id="tab-camping">Camping</button>
+        <button class="info-tab"           role="tab" aria-selected="false" aria-controls="info-moorage" id="tab-moorage">Moorage</button>
+        <button class="info-tab"           role="tab" aria-selected="false" aria-controls="info-safety"  id="tab-safety">Park &amp; safety</button>
+      </div>
+
+      <div class="info-drawer-body">
+        <!-- CAMPING -->
+        <section class="info-pane is-active" id="info-camping" role="tabpanel" aria-labelledby="tab-camping" tabindex="0">
+          <h3>Check-in &amp; check-out</h3>
+          <ul class="info-list">
+            <li><strong>Check-in 2:00&nbsp;PM &middot; Check-out 11:00&nbsp;AM.</strong> Please be off your site by 11&nbsp;AM on departure day.</li>
+            <li><strong>Late-night drive-ins</strong> without a reservation: find a vacant site and register at the office once we're open. You may be asked to move if the site is booked for the next day.</li>
+          </ul>
+          <h3>On your site</h3>
+          <ul class="info-list">
+            <li><strong>One tent/camper per site.</strong> Additional tents or campers, where allowed, are an extra charge.</li>
+            <li><strong>No tents in the playground area.</strong></li>
+            <li><strong>Keep tables &amp; fire pits in your site</strong> — please don't move them.</li>
+            <li>Please respect the <strong>privacy of other campers</strong>.</li>
+          </ul>
+          <h3>Quiet time</h3>
+          <ul class="info-list">
+            <li><strong>Quiet hours from 10:00&nbsp;PM.</strong> Excessive noise or partying earns a warning and a noise-disturbance fee; continued disturbance can mean eviction with no refund.</li>
+          </ul>
+          <h3>Fires &amp; firewood</h3>
+          <ul class="info-list">
+            <li><strong>Campfires are allowed</strong> when there is no fire ban in effect.</li>
+            <li><strong>Do not cut wood in the forest.</strong></li>
+          </ul>
+          <h3>Garbage</h3>
+          <ul class="info-list">
+            <li><strong>Pack out what you pack in.</strong> The transfer station is at the top of the hill on the way out of Bamfield.</li>
+            <li>Sites left unkept, or with toiletries left behind, are subject to a <strong>$50 cleaning fee</strong>.</li>
+          </ul>
+          <h3>Pets &amp; alcohol</h3>
+          <ul class="info-list">
+            <li><strong>Dogs must be leashed</strong> and never left unattended. Please pick up after your dog and keep barking down.</li>
+            <li>Keep <strong>alcohol in your campsite</strong> — it isn't permitted in public areas or on public beaches.</li>
+          </ul>
+          <p class="info-note">The park isn't responsible for vehicles or belongings brought into the park.</p>
+        </section>
+
+        <!-- MOORAGE -->
+        <section class="info-pane" id="info-moorage" role="tabpanel" aria-labelledby="tab-moorage" tabindex="0" hidden>
+          <h3>Moorage at Port Desire</h3>
+          <ul class="info-list">
+            <li><strong>Protected moorage</strong> with a public boat launch, kayak staging, and trailer parking.</li>
+            <li><strong>Space is limited.</strong> Reserve your overall boat length — bowsprit to stern gear.</li>
+          </ul>
+          <h3>Paying your fees</h3>
+          <ul class="info-list">
+            <li>Pay at the <strong>office during office hours</strong>, or use the <strong>Honour Box on the hydro pole</strong> outside office hours.</li>
+          </ul>
+          <p class="info-note">More detailed moorage info (slip sizes, tides, rates) is on the way. In the meantime, <a href="#contact" data-info-close>get in touch</a> and we'll help you plan.</p>
+        </section>
+
+        <!-- PARK & SAFETY -->
+        <section class="info-pane" id="info-safety" role="tabpanel" aria-labelledby="tab-safety" tabindex="0" hidden>
+          <h3>The park</h3>
+          <ul class="info-list">
+            <li><strong>Open year-round.</strong> Manager on site May&nbsp;15&nbsp;&ndash;&nbsp;Sept&nbsp;30.</li>
+            <li>The office has the <strong>gift shop, washrooms, Wi&#8209;Fi</strong> and picnic areas.</li>
+            <li>Pay at the office, or the <strong>Honour Box on the hydro pole</strong> after hours.</li>
+          </ul>
+          <h3>Be bear aware</h3>
+          <ul class="info-list">
+            <li><strong>Store all attractants securely</strong> (in a vehicle or locker): food, coolers, garbage, pet food, BBQ grease, fish, and scented items like soap, sunscreen, and bug spray.</li>
+            <li><strong>Never</strong> feed or approach wildlife, keep food in your tent, leave food unattended, or burn trash in the fire pit.</li>
+          </ul>
+          <h3>Cougars &amp; bears live here</h3>
+          <ul class="info-list">
+            <li>Keep your <strong>food locked up</strong>, dogs leashed, and help prevent any encounters.</li>
+          </ul>
+          <div class="info-alert">
+            <strong>&#127754; Tsunami zone.</strong> The Bamfield Volunteer Fire Dept. tests the siren most <strong>Wednesdays around 6:30&nbsp;PM</strong> — no need to evacuate then. If the <strong>two-tone siren</strong> sounds at any other time, head to <strong>high ground</strong>. The gathering point is the <strong>Fire Hall</strong> — don't try to drive out of town; the road runs through the tsunami zone.
+          </div>
+        </section>
+      </div>
+
+      <footer class="info-drawer-foot">
+        <p>Have more questions?</p>
+        <a href="#contact" class="btn btn-primary" data-info-close><span>Get in touch</span></a>
+      </footer>
     </div>
   </div>
 
