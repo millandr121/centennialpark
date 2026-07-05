@@ -191,6 +191,7 @@
 
   document.querySelectorAll('.offer-photo-btn').forEach(function (btn) {
     if (btn.hasAttribute('data-park-info')) return;   // opens the info drawer, not the lightbox
+    if (btn.hasAttribute('data-moorage')) return;     // opens the wharf explorer, not the lightbox
     btn.addEventListener('click', function () {
       openModal(btn.getAttribute('data-photo-src'), btn.getAttribute('data-photo-alt'));
     });
@@ -247,6 +248,64 @@
           if (pane) { pane.hidden = !on; pane.classList.toggle('is-active', on); }
         });
       });
+    });
+  }
+
+  /* ── Interactive wharf / moorage explorer ─────────────── */
+  var mex = document.getElementById('moorage-explorer');
+  var mexTrigger = null;
+
+  function clearMexActive() {
+    if (!mex) return;
+    mex.querySelectorAll('.mex-pin.is-active, .mex-legend li.is-active')
+       .forEach(function (el) { el.classList.remove('is-active'); });
+  }
+  function setMexActive(n) {
+    clearMexActive();
+    if (!mex || !n) return;
+    var p = mex.querySelector('.mex-pin[data-n="' + n + '"]');
+    var l = mex.querySelector('.mex-legend li[data-n="' + n + '"]');
+    if (p) p.classList.add('is-active');
+    if (l) l.classList.add('is-active');
+  }
+  function openMex(trigger) {
+    if (!mex) return;
+    mexTrigger = trigger || null;
+    mex.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = mex.querySelector('.mex-close');
+    if (c) c.focus();
+  }
+  function closeMex() {
+    if (!mex || mex.hidden) return;
+    mex.hidden = true;
+    document.body.style.overflow = '';
+    clearMexActive();
+    if (mexTrigger) { mexTrigger.focus(); mexTrigger = null; }
+  }
+
+  document.querySelectorAll('[data-moorage]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openMex(btn); });
+  });
+
+  if (mex) {
+    mex.querySelectorAll('[data-mex-close]').forEach(function (el) {
+      el.addEventListener('click', closeMex);
+    });
+    mex.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMex(); });
+
+    /* tap a pin → toggle its label (and matching legend row) */
+    mex.querySelectorAll('.mex-pin').forEach(function (p) {
+      p.addEventListener('click', function () {
+        var on = p.classList.contains('is-active');
+        clearMexActive();
+        if (!on) setMexActive(p.getAttribute('data-n'));
+      });
+    });
+    /* hover a legend row → highlight the matching pin (desktop nicety) */
+    mex.querySelectorAll('.mex-legend li').forEach(function (li) {
+      li.addEventListener('mouseenter', function () { setMexActive(li.getAttribute('data-n')); });
+      li.addEventListener('mouseleave', clearMexActive);
     });
   }
 

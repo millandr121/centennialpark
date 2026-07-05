@@ -180,9 +180,8 @@
               <div class="offer-slide" data-bg="/img/moorage/IMG_9322.webp"></div>
               <div class="offer-slide" data-bg="/img/moorage/IMG_9324.webp"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
-              <button class="offer-photo-btn"
-                data-photo-src="/img/moorage/aerial-moorage.webp"
-                data-photo-alt="Aerial view of the moorage docks and boat launch at Port Desire">View moorage</button>
+              <button class="offer-photo-btn" data-moorage aria-haspopup="dialog"
+                aria-controls="moorage-explorer">Explore the wharf</button>
             </div>
             <div class="offer-body">
               <h3>Moorage at Port Desire</h3>
@@ -857,6 +856,42 @@
         <p>Have more questions?</p>
         <a href="#contact" class="btn btn-primary" data-info-close><span>Get in touch</span></a>
       </footer>
+    </div>
+  </div>
+
+  <!-- ═══════════ Interactive wharf / moorage explorer ═══════════ -->
+  <div class="mex" id="moorage-explorer" role="dialog" aria-modal="true" aria-labelledby="mex-title" hidden>
+    <div class="mex-backdrop" data-mex-close></div>
+    <div class="mex-panel">
+      <button class="mex-close" data-mex-close aria-label="Close">&times;</button>
+      <div class="mex-head">
+        <p class="mex-eyebrow">Grappler Inlet Wharf &middot; Port Desire</p>
+        <h2 id="mex-title">The wharf, from above</h2>
+        <p class="mex-hint">Tap a numbered marker to see what's what.</p>
+      </div>
+      <div class="mex-body">
+        <div class="mex-figure">
+          <img src="/img/moorage/aerial-moorage.webp" alt="Aerial view of the Port Desire moorage docks, boat launch and parking" width="1600" height="1066" loading="lazy">
+          <button class="mex-pin" style="left:18%;top:87%" data-n="1"><span class="mex-pin-dot">1</span><span class="mex-pin-label">Loading-only car park</span></button>
+          <button class="mex-pin" style="left:38%;top:86%" data-n="2"><span class="mex-pin-dot">2</span><span class="mex-pin-label">Boat launch</span></button>
+          <button class="mex-pin" style="left:44%;top:93%" data-n="3"><span class="mex-pin-dot">3</span><span class="mex-pin-label">Kayak &amp; canoe launch</span></button>
+          <button class="mex-pin" style="left:60%;top:73%" data-n="4"><span class="mex-pin-dot">4</span><span class="mex-pin-label">Loading zone</span></button>
+          <button class="mex-pin" style="left:74%;top:67%" data-n="5"><span class="mex-pin-dot">5</span><span class="mex-pin-label">Day-use parking</span></button>
+        </div>
+        <div class="mex-side">
+          <ol class="mex-legend">
+            <li data-n="1"><b>Loading-only car park</b> — active loading &amp; unloading only.</li>
+            <li data-n="2"><b>Boat launch</b> — pay launch fees at the office.</li>
+            <li data-n="3"><b>Kayak &amp; canoe launch</b> — hand-launch off the shore.</li>
+            <li data-n="4"><b>Loading zone</b> — 30 minutes max; stay with your vehicle.</li>
+            <li data-n="5"><b>Day-use parking</b> — 2 hours max, for boats &amp; day users.</li>
+          </ol>
+          <div class="mex-facts">
+            <p>Protected moorage, <strong>charged by the foot</strong> — every vessel tied or rafted to the dock is charged. Day moorage at the dock is limited to <strong>3 hours</strong> (temporary use). No commercial vessels.</p>
+            <p>Pay launch &amp; moorage fees at the <strong>office</strong>, or the <strong>honour box</strong> after hours. To reserve, <a href="#book" data-mex-close>submit a request</a> or <a href="#contact" data-mex-close>get in touch</a>.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -520,3 +520,77 @@
   .info-drawer-panel { width: 100vw; }
   .info-drawer-foot { flex-direction: column; align-items: stretch; text-align: center; }
 }
+
+/* ── Interactive wharf / moorage explorer ─────────────────── */
+.mex {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.mex[hidden] { display: none; }
+.mex-backdrop {
+  position: absolute; inset: 0; background: rgba(16,24,18,.72);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  opacity: 0; animation: infoFade .3s ease forwards;
+}
+.mex-panel {
+  position: relative; z-index: 1; background: var(--clr-bg); border-radius: var(--radius-lg);
+  width: min(1080px, 100%); max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow-lg); animation: mexPop .3s var(--ease-out) both;
+}
+@keyframes mexPop { from { opacity: 0; transform: scale(.97) translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .mex-backdrop, .mex-panel { animation-duration: .01ms; } }
+.mex-close {
+  position: absolute; top: .75rem; right: .75rem; z-index: 3; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(16,24,18,.55); color: #fff; font-size: 1.6rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center; transition: background .2s;
+}
+.mex-close:hover { background: rgba(16,24,18,.82); }
+.mex-close:focus-visible { outline: 3px solid var(--clr-accent-light); outline-offset: 2px; }
+.mex-head { padding: 1.4rem 1.5rem .3rem; }
+.mex-eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--clr-accent-text); margin-bottom: .3rem; }
+.mex-head h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); }
+.mex-hint { font-size: .85rem; color: var(--clr-text-muted); margin-top: .35rem; }
+.mex-body { display: grid; grid-template-columns: 1.55fr 1fr; gap: 1.5rem; padding: 1rem 1.5rem 1.6rem; align-items: start; }
+@media (max-width: 760px) { .mex-body { grid-template-columns: 1fr; } }
+
+.mex-figure { position: relative; line-height: 0; }
+.mex-figure img { width: 100%; height: auto; display: block; border-radius: var(--radius); }
+.mex-pin {
+  position: absolute; transform: translate(-50%, -50%); z-index: 2;
+  display: flex; align-items: center; gap: .4rem; padding: 0; background: none; cursor: pointer;
+}
+.mex-pin-dot {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: var(--clr-accent); color: #1a1205; font-weight: 700; font-size: .82rem;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  transition: transform .18s var(--ease-out);
+}
+.mex-pin-label {
+  white-space: nowrap; font-family: var(--font-display); font-weight: 600; font-size: .8rem; line-height: 1;
+  background: rgba(16,24,18,.92); color: #fff; padding: .4em .7em; border-radius: 99px;
+  opacity: 0; transform: translateX(-4px); pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.mex-pin:hover .mex-pin-dot,
+.mex-pin:focus-visible .mex-pin-dot,
+.mex-pin.is-active .mex-pin-dot { transform: scale(1.18); }
+.mex-pin:hover .mex-pin-label,
+.mex-pin:focus-visible .mex-pin-label,
+.mex-pin.is-active .mex-pin-label { opacity: 1; transform: translateX(0); }
+.mex-pin:focus-visible { outline: none; }
+.mex-pin:focus-visible .mex-pin-dot { outline: 3px solid #fff; outline-offset: 2px; }
+
+.mex-legend { display: flex; flex-direction: column; gap: .55rem; margin-bottom: 1.1rem; }
+.mex-legend li { position: relative; padding-left: 2rem; font-size: .9rem; line-height: 1.5; color: var(--clr-text); }
+.mex-legend li::before {
+  content: attr(data-n); position: absolute; left: 0; top: .02em;
+  width: 1.45rem; height: 1.45rem; border-radius: 50%; background: var(--clr-accent); color: #1a1205;
+  font-family: var(--font-display); font-weight: 700; font-size: .78rem;
+  display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s;
+}
+.mex-legend li b { color: var(--clr-dark); }
+.mex-legend li.is-active::before { transform: scale(1.15); box-shadow: 0 0 0 3px rgba(200,148,30,.3); }
+.mex-facts { border-top: 1px solid var(--clr-border); padding-top: 1rem; }
+.mex-facts p { font-size: .88rem; line-height: 1.55; color: var(--clr-text-muted); margin-bottom: .7rem; }
+.mex-facts p:last-child { margin-bottom: 0; }
+.mex-facts a { color: var(--clr-primary); font-weight: 600; }
