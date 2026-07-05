@@ -80,7 +80,7 @@ export async function onRequestPost(context) {
   }
 
   const fullName = esc([firstName, lastName].filter(Boolean).join(' '));
-  const siteUrl  = env.SITE_URL || 'https://centennialpark.pages.dev';
+  const siteUrl  = env.SITE_URL || 'https://bamfieldparks.com';
 
   const services = [];
   if (campsite === 'yes') services.push('Campsite');

@@ -39,7 +39,7 @@ export async function onRequestPost(context) {
     return json({ error: 'Please provide your name, a valid email, and a message.' }, 422);
   }
 
-  const siteUrl = env.SITE_URL || 'https://centennialpark.pages.dev';
+  const siteUrl = env.SITE_URL || 'https://bamfieldparks.com';
 
   /* ── DB insert ── */
   let stored = false, id = null;
