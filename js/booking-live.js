@@ -430,7 +430,7 @@ function bind() {
   if (tsWrap) {
     var renderTs = function () {
       try { if (window._lbTsWidget != null) turnstile.remove(window._lbTsWidget); } catch (e) {}
-      try { window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADkrvFsmB0Re_CbD', theme: 'dark' }); } catch (e) {}
+      try { window._lbTsWidget = turnstile.render(tsWrap, { sitekey: '0x4AAAAAADwHWoGYyTU7yneB', theme: 'dark' }); } catch (e) {}
     };
     if (window.turnstile) renderTs();
     else window.onloadTurnstileCallback = renderTs;
