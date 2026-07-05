@@ -5,6 +5,13 @@
 
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ── Hero video: honour reduced-motion (WCAG) — pause to the poster frame
+        for visitors who ask for less motion. Otherwise autoplay handles it. ── */
+  (function () {
+    var hv = document.querySelector('.hero-video');
+    if (hv && prefersReduced) { hv.removeAttribute('autoplay'); hv.pause(); }
+  })();
+
   /* ── Split hero titles into word-reveal spans ─────────── */
   document.querySelectorAll('[data-words]').forEach(function (el) {
     var words = el.textContent.trim().split(/\s+/);
