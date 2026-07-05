@@ -8,10 +8,9 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://bamfieldparks.com/">
 
-  <!-- LCP: warm the hero-image origin and preload it (cross-origin, on the critical path) -->
+  <!-- LCP: preload the hero video's poster frame (same-origin, on the critical path) -->
+  <link rel="preload" as="image" fetchpriority="high" href="/promostill.webp">
   <link rel="preconnect" href="https://bamfieldparks.com">
-  <link rel="preload" as="image" fetchpriority="high"
-        href="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg">
   <!-- Warm the other cross-origin asset hosts used lower on the page -->
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 
@@ -99,7 +98,11 @@
     <!-- ════════════════════════════════════════ HERO -->
     <section id="home" class="panel panel-hero" aria-label="Welcome">
       <div class="hero-media" data-parallax aria-hidden="true">
-        <img src="https://bamfieldparks.com/wp-content/uploads/2021/04/Harbour_DSC01969b-1600x400-1.jpg" alt="" width="1600" height="400" fetchpriority="high" decoding="async">
+        <video class="hero-video" autoplay muted loop playsinline preload="auto"
+               poster="/promostill.webp">
+          <source src="/promo.webm" type="video/webm">
+          <img src="/promostill.webp" alt="" width="1920" height="1080" fetchpriority="high" decoding="async">
+        </video>
       </div>
       <div class="hero-grain" aria-hidden="true"></div>
       <div class="panel-inner hero-inner">
