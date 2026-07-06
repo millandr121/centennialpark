@@ -607,6 +607,14 @@
   display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s;
 }
 .mex-legend li b { color: var(--clr-dark); }
+/* Plain variant for lists with no numbered pin to match (e.g. parking rates) —
+   a small dot instead of a numbered circle. */
+.mex-legend--plain li { padding-left: 1.1rem; }
+.mex-legend--plain li::before {
+  content: ''; width: 6px; height: 6px; top: .55em; left: 0;
+  background: var(--clr-accent); border-radius: 50%;
+}
+.mex-side-title { font-size: 1rem; margin-bottom: .7rem; color: var(--clr-dark); font-family: var(--font-display); }
 .mex-legend li.is-active::before { transform: scale(1.15); box-shadow: 0 0 0 3px rgba(200,148,30,.3); }
 .mex-facts { border-top: 1px solid var(--clr-border); padding-top: 1rem; }
 .mex-facts p { font-size: .88rem; line-height: 1.55; color: var(--clr-text-muted); margin-bottom: .7rem; }

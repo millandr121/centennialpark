@@ -51,7 +51,7 @@ async function runDigest(env) {
   if (isEmpty) {
     html += '<p style="background:#f0f7f1;border:1px solid #cfe3d3;border-radius:10px;' +
       'padding:14px 16px;color:#2e5d33;font-size:13px;margin:0 0 1.5rem">' +
-      '&#10003; No new inquiries in the last 24 hours &mdash; all systems normal. ' +
+      'No new inquiries in the last 24 hours &mdash; all systems normal. ' +
       'This note is sent daily on purpose: if it ever stops arriving, the digest itself has broken.</p>';
   }
 
@@ -105,7 +105,7 @@ async function runDigest(env) {
         '<td style="' + cell + ';font-weight:600;color:#2e5d33">' + esc(totalStr) + '</td>' +
         '<td style="' + cell + '">' + esc(pmStr) + '</td>' +
         '<td style="' + cell + '">' + esc(r.additional_requests || '—').replace(/\n/g, '<br>') + '</td>' +
-        '<td style="' + cell + '">' + (r.emailed ? '✓' : '⚠️') + '</td>' +
+        '<td style="' + cell + '">' + (r.emailed ? 'Sent' : 'Not sent') + '</td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -129,7 +129,7 @@ async function runDigest(env) {
         '<td style="' + cell + '"><a href="mailto:' + esc(r.email) + '" style="color:#2e5d33">' + esc(r.email) + '</a></td>' +
         '<td style="' + cell + '">' + esc(r.subject || '—') + '</td>' +
         '<td style="' + cell + '">' + esc(r.message || '—').replace(/\n/g, '<br>') + '</td>' +
-        '<td style="' + cell + '">' + (r.emailed ? '✓' : '⚠️') + '</td>' +
+        '<td style="' + cell + '">' + (r.emailed ? 'Sent' : 'Not sent') + '</td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -137,7 +137,7 @@ async function runDigest(env) {
 
   html += '<p style="color:#9ca3af;font-size:12px;border-top:1px solid #eef0f2;padding-top:1rem">' +
     'Eileen Scott Centennial Park &middot; Bamfield, BC &middot; automated digest. ' +
-    '✓ = a live email was already sent for this entry.</p></div>';
+    'Sent = a live email was already sent for this entry.</p></div>';
 
   const to   = env.NOTIFY_TO   || 'bamfieldcentennialpark@gmail.com';
   const from = env.RESEND_FROM || 'Eileen Scott Centennial Park <onboarding@resend.dev>';

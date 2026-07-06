@@ -60,7 +60,7 @@ export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, es
 
   const payBlock = payMethod === 'etransfer'
     ? `<div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-        <strong style="color:${AMBER}">💳 Payment — Interac e-Transfer</strong><br><br>
+        <strong style="color:${AMBER}">Payment — Interac e-Transfer</strong><br><br>
         Please send ${amtNote} to:<br>
         <strong>${ETRANSFER_TO}</strong><br>
         Reference: <strong>#${resId} ${esc(name)}</strong><br><br>
@@ -68,11 +68,11 @@ export function acceptanceEmail({ name, site, parkingType, checkIn, checkOut, es
       </div>`
     : payMethod === 'on_arrival'
     ? `<div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-        <strong style="color:${AMBER}">💳 Payment — On arrival</strong><br><br>
+        <strong style="color:${AMBER}">Payment — On arrival</strong><br><br>
         ${amtNote !== 'your balance' ? amtNote + ' is ' : ''}payable by cash or card when you arrive at the park.
       </div>`
     : `<div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-        <strong style="color:${AMBER}">💳 Payment</strong><br><br>
+        <strong style="color:${AMBER}">Payment</strong><br><br>
         Please pay ${amtNote} via the park honesty box, e-Transfer to <strong>${ETRANSFER_TO}</strong>, or on arrival.
       </div>`;
 
@@ -103,7 +103,7 @@ export function paymentRequestEmail({ name, site, parkingType, checkIn, checkOut
     <p>Hi <strong>${esc(name)}</strong>,</p>
     <p style="font-size:15px;color:#1f2937">This is a friendly reminder that payment is needed to confirm your reservation.</p>
     <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-      <strong style="color:${AMBER}">⏳ Held for 48 hours</strong><br><br>
+      <strong style="color:${AMBER}">Held for 48 hours</strong><br><br>
       ${payLine}<br><br>
       <span style="color:#6b7280;font-size:13px">Your spot is held for 48 hours. If payment isn't received by then it may be released to other guests.</span>
     </div>
@@ -121,7 +121,7 @@ export function paidEmail({ name, site, parkingType, checkIn, checkOut, estTotal
   const inner = `
     <p>Hi <strong>${esc(name)}</strong>,</p>
     <div style="background:#ecfdf3;border:1px solid #16a34a;border-radius:8px;padding:14px 18px;margin:1rem 0">
-      <strong style="color:#15803d">✓ Payment received — your reservation is complete!</strong>
+      <strong style="color:#15803d">Payment received — your reservation is complete!</strong>
     </div>
     ${detailsTable(label, checkIn, checkOut, nights)}
     ${estTotal > 0 ? `<p style="color:#374151">Paid in full: <strong>$${estTotal.toFixed(2)} CAD</strong>. Thank you!</p>` : '<p style="color:#374151">Thank you!</p>'}

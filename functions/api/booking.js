@@ -139,7 +139,7 @@ export async function onRequestPost(context) {
 
   /* ── Park notification ── */
   const parkHtml = `<div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-    ${header('📋 New Booking Request', 'Eileen Scott Centennial Park · Bamfield, BC')}
+    ${header('New Booking Request', 'Eileen Scott Centennial Park · Bamfield, BC')}
     <div style="background:#f0f7f1;padding:14px 24px;border:1px solid #c6dfc9;border-top:none;border-bottom:none">
       <strong style="font-size:15px">${fullName}</strong> is requesting a booking${id ? ` <span style="color:#6b7280;font-size:13px">(Request #${id})</span>` : ''}
     </div>
