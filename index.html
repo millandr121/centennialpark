@@ -869,12 +869,21 @@
       </div>
       <div class="mex-body">
         <div class="mex-figure">
-          <img src="/img/moorage/aerial-moorage.webp" alt="Aerial view of the Port Desire moorage docks, boat launch and parking" width="1600" height="1066" loading="lazy">
-          <button class="mex-pin" style="left:33.4%;top:88%" data-n="1"><span class="mex-pin-dot">1</span><span class="mex-pin-label">Loading-only car park</span></button>
-          <button class="mex-pin" style="left:40.6%;top:89%" data-n="2"><span class="mex-pin-dot">2</span><span class="mex-pin-label">Boat launch</span></button>
-          <button class="mex-pin" style="left:50.3%;top:97%" data-n="3"><span class="mex-pin-dot">3</span><span class="mex-pin-label">Kayak &amp; canoe launch</span></button>
-          <button class="mex-pin" style="left:69.5%;top:77.8%" data-n="4"><span class="mex-pin-dot">4</span><span class="mex-pin-label">Loading zone</span></button>
-          <button class="mex-pin" style="left:86.5%;top:78.8%" data-n="5"><span class="mex-pin-dot">5</span><span class="mex-pin-label">Day-use parking</span></button>
+          <img id="mex-main-img" src="/img/moorage/aerial-moorage.webp" alt="Aerial view of the Port Desire moorage docks, boat launch and parking" width="1600" height="1066" loading="lazy">
+
+          <button class="mex-arrow mex-arrow-left" data-mex-view="trailer" aria-label="Show the boat trailer parking lot">&lsaquo;</button>
+          <button class="mex-arrow mex-arrow-right" data-mex-view="moorage" hidden aria-label="Back to the moorage view">&rsaquo;</button>
+
+          <div class="mex-pins-moorage">
+            <button class="mex-pin" style="left:33.4%;top:88%" data-n="1"><span class="mex-pin-dot">1</span><span class="mex-pin-label">Loading-only car park</span></button>
+            <button class="mex-pin" style="left:40.6%;top:89%" data-n="2"><span class="mex-pin-dot">2</span><span class="mex-pin-label">Boat launch</span></button>
+            <button class="mex-pin" style="left:50.3%;top:97%" data-n="3"><span class="mex-pin-dot">3</span><span class="mex-pin-label">Kayak &amp; canoe launch</span></button>
+            <button class="mex-pin" style="left:69.5%;top:77.8%" data-n="4"><span class="mex-pin-dot">4</span><span class="mex-pin-label">Loading zone</span></button>
+            <button class="mex-pin" style="left:86.5%;top:78.8%" data-n="5"><span class="mex-pin-dot">5</span><span class="mex-pin-label">Day-use parking</span></button>
+          </div>
+          <div class="mex-pins-trailer" hidden>
+            <button class="mex-pin" style="left:38%;top:48%" data-n="p"><span class="mex-pin-dot">P</span><span class="mex-pin-label">Boat &amp; trailer parking lot</span></button>
+          </div>
         </div>
         <div class="mex-side">
           <ol class="mex-legend">
@@ -934,7 +943,7 @@
       </div>
 
       <footer class="cex-foot">
-        <p>Ready to pitch a tent?</p>
+        <p>Ready to camp?</p>
         <a href="#book" class="btn btn-primary" data-cex-close><span>Book a campsite</span></a>
       </footer>
     </div>

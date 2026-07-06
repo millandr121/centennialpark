@@ -282,7 +282,44 @@
     mex.hidden = true;
     document.body.style.overflow = '';
     clearMexActive();
+    showMexView('moorage');   // reset to the default view for next time it's opened
     if (mexTrigger) { mexTrigger.focus(); mexTrigger = null; }
+  }
+
+  /* Toggle between the moorage aerial (with its 5 pins) and the boat-trailer
+     parking lot aerial (single pin) — swaps the image + pin groups + arrows. */
+  var MEX_VIEWS = {
+    moorage: {
+      src: '/img/moorage/aerial-moorage.webp',
+      alt: 'Aerial view of the Port Desire moorage docks, boat launch and parking',
+      title: 'The wharf, from above',
+      hint: "Tap a numbered marker to see what's what."
+    },
+    trailer: {
+      src: '/img/parking/DJI_0024.webp',
+      alt: 'Aerial view of the boat trailer and vehicle parking lot',
+      title: 'Boat & trailer parking',
+      hint: 'This is the trailer lot up the road from the wharf.'
+    }
+  };
+  function showMexView(view) {
+    if (!mex) return;
+    var v = MEX_VIEWS[view] || MEX_VIEWS.moorage;
+    var img = mex.querySelector('#mex-main-img');
+    var title = mex.querySelector('#mex-title');
+    var hint = mex.querySelector('.mex-hint');
+    var pinsMoorage = mex.querySelector('.mex-pins-moorage');
+    var pinsTrailer = mex.querySelector('.mex-pins-trailer');
+    var arrowLeft = mex.querySelector('.mex-arrow-left');
+    var arrowRight = mex.querySelector('.mex-arrow-right');
+    if (img) { img.src = v.src; img.alt = v.alt; }
+    if (title) title.textContent = v.title;
+    if (hint) hint.textContent = v.hint;
+    if (pinsMoorage) pinsMoorage.hidden = view === 'trailer';
+    if (pinsTrailer) pinsTrailer.hidden = view !== 'trailer';
+    if (arrowLeft)  arrowLeft.hidden  = view === 'trailer';
+    if (arrowRight) arrowRight.hidden = view !== 'trailer';
+    clearMexActive();
   }
 
   document.querySelectorAll('[data-moorage]').forEach(function (btn) {
@@ -294,6 +331,10 @@
       el.addEventListener('click', closeMex);
     });
     mex.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMex(); });
+
+    mex.querySelectorAll('[data-mex-view]').forEach(function (btn) {
+      btn.addEventListener('click', function () { showMexView(btn.getAttribute('data-mex-view')); });
+    });
 
     /* tap a pin → toggle its label (and matching legend row) */
     mex.querySelectorAll('.mex-pin').forEach(function (p) {
