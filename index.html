@@ -157,13 +157,12 @@
         <div class="offer-grid">
           <article class="offer-card" data-reveal>
             <div class="offer-visual offer-visual--1" data-slideshow>
-              <div class="offer-slide is-active" style="background-image:url('/img/camping/IMG_9289.webp')"></div>
-              <div class="offer-slide" data-bg="/img/camping/campsiteexample.webp"></div>
+              <div class="offer-slide is-active" style="background-image:url('/img/camping/campsiteexample.webp')"></div>
               <div class="offer-slide" data-bg="/img/camping/campgroundls.webp"></div>
+              <div class="offer-slide" data-bg="/img/camping/IMG_9297.webp"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
-              <button class="offer-photo-btn"
-                data-photo-src="/img/camping/IMG_9289.webp"
-                data-photo-alt="Playground at Centennial Park campground">View campsites</button>
+              <button class="offer-photo-btn" data-camping aria-haspopup="dialog"
+                aria-controls="camping-explorer">Explore campsites</button>
             </div>
             <div class="offer-body">
               <h3>Forest camping</h3>
@@ -194,6 +193,7 @@
               <div class="offer-slide" data-bg="/img/park/IMG_9306.webp"></div>
               <div class="offer-slide" data-bg="/img/park/IMG_9312.webp"></div>
               <div class="offer-slide" data-bg="/img/park/IMG_9294.webp"></div>
+              <div class="offer-slide" data-bg="/img/park/IMG_9289.webp"></div>
               <div class="offer-scrim" aria-hidden="true"></div>
               <button class="offer-photo-btn" data-park-info aria-haspopup="dialog"
                 aria-controls="park-info">Park info &amp; rules</button>
@@ -870,11 +870,11 @@
       <div class="mex-body">
         <div class="mex-figure">
           <img src="/img/moorage/aerial-moorage.webp" alt="Aerial view of the Port Desire moorage docks, boat launch and parking" width="1600" height="1066" loading="lazy">
-          <button class="mex-pin" style="left:24.9%;top:88%" data-n="1"><span class="mex-pin-dot">1</span><span class="mex-pin-label">Loading-only car park</span></button>
+          <button class="mex-pin" style="left:33.4%;top:88%" data-n="1"><span class="mex-pin-dot">1</span><span class="mex-pin-label">Loading-only car park</span></button>
           <button class="mex-pin" style="left:40.6%;top:89%" data-n="2"><span class="mex-pin-dot">2</span><span class="mex-pin-label">Boat launch</span></button>
           <button class="mex-pin" style="left:50.3%;top:97%" data-n="3"><span class="mex-pin-dot">3</span><span class="mex-pin-label">Kayak &amp; canoe launch</span></button>
-          <button class="mex-pin" style="left:61%;top:77.8%" data-n="4"><span class="mex-pin-dot">4</span><span class="mex-pin-label">Loading zone</span></button>
-          <button class="mex-pin" style="left:78%;top:78.8%" data-n="5"><span class="mex-pin-dot">5</span><span class="mex-pin-label">Day-use parking</span></button>
+          <button class="mex-pin" style="left:69.5%;top:77.8%" data-n="4"><span class="mex-pin-dot">4</span><span class="mex-pin-label">Loading zone</span></button>
+          <button class="mex-pin" style="left:86.5%;top:78.8%" data-n="5"><span class="mex-pin-dot">5</span><span class="mex-pin-label">Day-use parking</span></button>
         </div>
         <div class="mex-side">
           <ol class="mex-legend">
@@ -891,6 +891,52 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ Camping explorer ═══════════ -->
+  <div class="cex" id="camping-explorer" role="dialog" aria-modal="true" aria-labelledby="cex-title" hidden>
+    <div class="cex-backdrop" data-cex-close></div>
+    <div class="cex-panel">
+      <button class="cex-close" data-cex-close aria-label="Close">&times;</button>
+      <div class="cex-head">
+        <p class="cex-eyebrow">Forest camping &middot; 14 sites</p>
+        <h2 id="cex-title">Camp under the trees</h2>
+        <p class="cex-hint">A closer look at the campground.</p>
+      </div>
+
+      <div class="cex-body">
+        <div class="cex-gallery">
+          <div class="cex-main">
+            <img id="cex-main-img" src="/img/camping/campsiteexample.webp" alt="A quiet forest campsite with a picnic table" loading="lazy">
+          </div>
+          <div class="cex-thumbs">
+            <button class="cex-thumb is-active" data-src="/img/camping/campsiteexample.webp" data-alt="A quiet forest campsite with a picnic table">
+              <img src="/img/camping/campsiteexample.webp" alt="" loading="lazy"></button>
+            <button class="cex-thumb" data-src="/img/camping/campgroundls.webp" data-alt="Forest campground road and sites">
+              <img src="/img/camping/campgroundls.webp" alt="" loading="lazy"></button>
+            <button class="cex-thumb" data-src="/img/camping/IMG_9297.webp" data-alt="Shared gazebo and picnic area at the campground">
+              <img src="/img/camping/IMG_9297.webp" alt="" loading="lazy"></button>
+          </div>
+        </div>
+
+        <div class="cex-side">
+          <ul class="cex-list">
+            <li><b>Check-in 2:00&nbsp;PM &middot; Check-out 11:00&nbsp;AM.</b></li>
+            <li><b>Quiet hours from 10:00&nbsp;PM.</b> A noise-disturbance fee applies after a warning.</li>
+            <li><b>One tent/camper per site.</b> No tents in the playground area.</li>
+            <li><b>Two bear-proof bins</b> live in the shared gazebo between sites&nbsp;4 &amp; 5 — sheltered cooking and eating for everyone.</li>
+            <li><b>Campfires allowed</b> when there's no fire ban. Please don't move the fire pits.</li>
+            <li><b>Pack out what you pack in</b> — a $50 fee applies if garbage or toiletries are left in the site.</li>
+          </ul>
+          <p class="cex-note"><strong>Sites book up quickly in season</strong> — reserving ahead is your best bet.</p>
+        </div>
+      </div>
+
+      <footer class="cex-foot">
+        <p>Ready to pitch a tent?</p>
+        <a href="#book" class="btn btn-primary" data-cex-close><span>Book a campsite</span></a>
+      </footer>
     </div>
   </div>
 

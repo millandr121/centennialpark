@@ -192,6 +192,7 @@
   document.querySelectorAll('.offer-photo-btn').forEach(function (btn) {
     if (btn.hasAttribute('data-park-info')) return;   // opens the info drawer, not the lightbox
     if (btn.hasAttribute('data-moorage')) return;     // opens the wharf explorer, not the lightbox
+    if (btn.hasAttribute('data-camping')) return;     // opens the camping explorer, not the lightbox
     btn.addEventListener('click', function () {
       openModal(btn.getAttribute('data-photo-src'), btn.getAttribute('data-photo-alt'));
     });
@@ -306,6 +307,47 @@
     mex.querySelectorAll('.mex-legend li').forEach(function (li) {
       li.addEventListener('mouseenter', function () { setMexActive(li.getAttribute('data-n')); });
       li.addEventListener('mouseleave', clearMexActive);
+    });
+  }
+
+  /* ── Camping explorer (photo gallery, no pins) ────────── */
+  var cex = document.getElementById('camping-explorer');
+  var cexTrigger = null;
+
+  function openCex(trigger) {
+    if (!cex) return;
+    cexTrigger = trigger || null;
+    cex.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = cex.querySelector('.cex-close');
+    if (c) c.focus();
+  }
+  function closeCex() {
+    if (!cex || cex.hidden) return;
+    cex.hidden = true;
+    document.body.style.overflow = '';
+    if (cexTrigger) { cexTrigger.focus(); cexTrigger = null; }
+  }
+
+  document.querySelectorAll('[data-camping]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openCex(btn); });
+  });
+
+  if (cex) {
+    cex.querySelectorAll('[data-cex-close]').forEach(function (el) {
+      el.addEventListener('click', closeCex);
+    });
+    cex.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCex(); });
+
+    var cexMainImg = cex.querySelector('#cex-main-img');
+    cex.querySelectorAll('.cex-thumb').forEach(function (t) {
+      t.addEventListener('click', function () {
+        if (cexMainImg) {
+          cexMainImg.src = t.getAttribute('data-src');
+          cexMainImg.alt = t.getAttribute('data-alt') || '';
+        }
+        cex.querySelectorAll('.cex-thumb').forEach(function (o) { o.classList.toggle('is-active', o === t); });
+      });
     });
   }
 
