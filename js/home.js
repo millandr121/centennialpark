@@ -269,6 +269,7 @@
     if (p) p.classList.add('is-active');
     if (l) l.classList.add('is-active');
   }
+  var mexTrailerWarmed = false;
   function openMex(trigger) {
     if (!mex) return;
     mexTrigger = trigger || null;
@@ -276,6 +277,14 @@
     document.body.style.overflow = 'hidden';
     var c = mex.querySelector('.mex-close');
     if (c) c.focus();
+    /* Warm the trailer-lot image into cache as soon as the popup opens, so
+       the first click on the left arrow doesn't show a blank/stale frame
+       while it loads over the network. */
+    if (!mexTrailerWarmed) {
+      mexTrailerWarmed = true;
+      var warm = new Image();
+      warm.src = '/img/parking/DJI_0024.webp';
+    }
   }
   function closeMex() {
     if (!mex || mex.hidden) return;
@@ -310,6 +319,8 @@
     var hint = mex.querySelector('.mex-hint');
     var pinsMoorage = mex.querySelector('.mex-pins-moorage');
     var pinsTrailer = mex.querySelector('.mex-pins-trailer');
+    var sideMoorage = mex.querySelector('.mex-side-moorage');
+    var sideTrailer = mex.querySelector('.mex-side-trailer');
     var arrowLeft = mex.querySelector('.mex-arrow-left');
     var arrowRight = mex.querySelector('.mex-arrow-right');
     if (img) { img.src = v.src; img.alt = v.alt; }
@@ -317,6 +328,8 @@
     if (hint) hint.textContent = v.hint;
     if (pinsMoorage) pinsMoorage.hidden = view === 'trailer';
     if (pinsTrailer) pinsTrailer.hidden = view !== 'trailer';
+    if (sideMoorage) sideMoorage.hidden = view === 'trailer';
+    if (sideTrailer) sideTrailer.hidden = view !== 'trailer';
     if (arrowLeft)  arrowLeft.hidden  = view === 'trailer';
     if (arrowRight) arrowRight.hidden = view !== 'trailer';
     clearMexActive();

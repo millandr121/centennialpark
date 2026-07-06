@@ -55,7 +55,7 @@ export async function onRequestPost(context) {
 
   /* ── Park notification ── */
   const parkHtml = `<div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-    ${header('💬 New Website Inquiry', 'Eileen Scott Centennial Park · Bamfield, BC')}
+    ${header('New Website Inquiry', 'Eileen Scott Centennial Park · Bamfield, BC')}
     <div style="background:#f0f7f1;padding:14px 24px;border:1px solid #c6dfc9;border-top:none;border-bottom:none">
       <strong style="font-size:15px">${esc(name)}</strong>
       ${subject ? ` &mdash; <em style="color:#6b7280">${esc(subject)}</em>` : ''}
@@ -69,7 +69,7 @@ export async function onRequestPost(context) {
       </table>
       <div style="background:#f9fafb;border:1px solid ${BORDER};border-radius:8px;padding:14px 18px;font-size:14px;line-height:1.7;white-space:pre-wrap">${esc(message)}</div>
     </div>
-    <p style="color:#9ca3af;font-size:12px;margin-top:1rem">Manage this in the Park Admin panel · Received ${new Date().toUTCString()}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-top:1rem">Received ${new Date().toUTCString()}</p>
   </div>`;
 
   const parkEmailed = await sendEmail(env, {

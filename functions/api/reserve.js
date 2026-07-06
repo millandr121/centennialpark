@@ -119,7 +119,7 @@ export async function onRequestPost(context) {
           ${extraSvcs ? `<br><span style="color:#6b7280;font-size:13px">${esc(extraSvcs)}</span>` : ''}
         </div>` : ''}
         <div style="background:#fff8ee;border:1px solid #f0b84a;border-radius:8px;padding:14px 18px;margin:1.2rem 0">
-          <strong style="color:#d4830a">💳 Payment</strong><br><br>
+          <strong style="color:#d4830a">Payment</strong><br><br>
           ${payMethod === 'etransfer'
             ? `Interac e-Transfer to <strong>bamfieldcentennialpark@gmail.com</strong><br>Reference: <strong>#${rid} ${esc(name)}</strong>`
             : payMethod === 'honesty_box'
