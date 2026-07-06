@@ -67,6 +67,7 @@ export async function onRequestPost(context) {
   const launchDays  = parseInt(data.launchDays)  || null;
   const boatWash    = parseInt(data.boatWashQty) || 0;
   const freezer     = parseInt(data.freezerDays) || 0;
+  const formVariant = clean(data.formVariant, 20);
   const payMethod   = clean(data.paymentMethod, 40);
   const estTotal    = parseFloat(data.estimatedTotal) || 0;
   const gstAmt      = parseFloat(data.gstAmount)      || 0;
@@ -147,7 +148,7 @@ export async function onRequestPost(context) {
       ${checkIn   ? row('Check-in',     esc(checkIn))  : ''}
       ${checkOut  ? row('Check-out',    esc(checkOut)) : ''}
       ${groupSize ? row('Party size',   esc(groupSize)) : ''}
-      ${siteCount ? row('Sites needed', esc(siteCount)) : ''}
+      ${(campsite === 'yes' && siteCount) ? row('Sites needed', esc(siteCount)) : ''}
       ${boatLength ? row('Boat length', esc(boatLength) + ' ft') : ''}
       ${boatWash  > 0 ? row('Boat washes',   String(boatWash)) : ''}
       ${freezer   > 0 ? row('Freezer days',  String(freezer))  : ''}
@@ -156,7 +157,7 @@ export async function onRequestPost(context) {
       ${notes ? row('Notes', esc(notes).replace(/\n/g, '<br>')) : ''}
       ${priceRows(estTotal, gstAmt)}
     </table>
-    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">Manage this in the Park Admin panel · From: ${esc(email)} · ${new Date().toUTCString()}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-top:1.5rem">${formVariant === 'basic' ? '' : 'Manage this in the Park Admin panel · '}From: ${esc(email)} · ${new Date().toUTCString()}</p>
   </div>`;
 
   const parkEmailed = await sendEmail(env, {

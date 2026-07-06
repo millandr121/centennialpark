@@ -479,6 +479,7 @@
 
         <!-- Basic form (shown when booking_mode=basic) — camping & moorage only, no pricing -->
         <form data-form="booking-basic" class="booking-wizard" novalidate data-book-basic hidden data-reveal>
+          <input type="hidden" name="formVariant" value="basic">
           <div class="hp-field" aria-hidden="true">
             <label for="bkb-website">Website</label>
             <input type="text" id="bkb-website" name="website" tabindex="-1" autocomplete="off">
