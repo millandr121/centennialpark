@@ -12,7 +12,7 @@ crons = ["0 15 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "centennialpark"
-database_id = "f4f569e4-ae10-4704-a683-713b45fd71da"
+database_id = "42f2c31b-b763-4ba6-b88d-76b59258dcfc"
 
 # Non-secret defaults (the Gmail destination + verified sender).
 # RESEND_API_KEY must be set as a secret:  wrangler secret put RESEND_API_KEY
