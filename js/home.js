@@ -191,6 +191,8 @@
 
   document.querySelectorAll('.offer-photo-btn').forEach(function (btn) {
     if (btn.hasAttribute('data-park-info')) return;   // opens the info drawer, not the lightbox
+    if (btn.hasAttribute('data-moorage')) return;     // opens the wharf explorer, not the lightbox
+    if (btn.hasAttribute('data-camping')) return;     // opens the camping explorer, not the lightbox
     btn.addEventListener('click', function () {
       openModal(btn.getAttribute('data-photo-src'), btn.getAttribute('data-photo-alt'));
     });
@@ -246,6 +248,146 @@
           var pane = document.getElementById(t.getAttribute('aria-controls'));
           if (pane) { pane.hidden = !on; pane.classList.toggle('is-active', on); }
         });
+      });
+    });
+  }
+
+  /* ── Interactive wharf / moorage explorer ─────────────── */
+  var mex = document.getElementById('moorage-explorer');
+  var mexTrigger = null;
+
+  function clearMexActive() {
+    if (!mex) return;
+    mex.querySelectorAll('.mex-pin.is-active, .mex-legend li.is-active')
+       .forEach(function (el) { el.classList.remove('is-active'); });
+  }
+  function setMexActive(n) {
+    clearMexActive();
+    if (!mex || !n) return;
+    var p = mex.querySelector('.mex-pin[data-n="' + n + '"]');
+    var l = mex.querySelector('.mex-legend li[data-n="' + n + '"]');
+    if (p) p.classList.add('is-active');
+    if (l) l.classList.add('is-active');
+  }
+  function openMex(trigger) {
+    if (!mex) return;
+    mexTrigger = trigger || null;
+    mex.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = mex.querySelector('.mex-close');
+    if (c) c.focus();
+  }
+  function closeMex() {
+    if (!mex || mex.hidden) return;
+    mex.hidden = true;
+    document.body.style.overflow = '';
+    clearMexActive();
+    showMexView('moorage');   // reset to the default view for next time it's opened
+    if (mexTrigger) { mexTrigger.focus(); mexTrigger = null; }
+  }
+
+  /* Toggle between the moorage aerial (with its 5 pins) and the boat-trailer
+     parking lot aerial (single pin) — swaps the image + pin groups + arrows. */
+  var MEX_VIEWS = {
+    moorage: {
+      src: '/img/moorage/aerial-moorage.webp',
+      alt: 'Aerial view of the Port Desire moorage docks, boat launch and parking',
+      title: 'The wharf, from above',
+      hint: "Tap a numbered marker to see what's what."
+    },
+    trailer: {
+      src: '/img/parking/DJI_0024.webp',
+      alt: 'Aerial view of the boat trailer and vehicle parking lot',
+      title: 'Boat & trailer parking',
+      hint: 'This is the trailer lot up the road from the wharf.'
+    }
+  };
+  function showMexView(view) {
+    if (!mex) return;
+    var v = MEX_VIEWS[view] || MEX_VIEWS.moorage;
+    var img = mex.querySelector('#mex-main-img');
+    var title = mex.querySelector('#mex-title');
+    var hint = mex.querySelector('.mex-hint');
+    var pinsMoorage = mex.querySelector('.mex-pins-moorage');
+    var pinsTrailer = mex.querySelector('.mex-pins-trailer');
+    var arrowLeft = mex.querySelector('.mex-arrow-left');
+    var arrowRight = mex.querySelector('.mex-arrow-right');
+    if (img) { img.src = v.src; img.alt = v.alt; }
+    if (title) title.textContent = v.title;
+    if (hint) hint.textContent = v.hint;
+    if (pinsMoorage) pinsMoorage.hidden = view === 'trailer';
+    if (pinsTrailer) pinsTrailer.hidden = view !== 'trailer';
+    if (arrowLeft)  arrowLeft.hidden  = view === 'trailer';
+    if (arrowRight) arrowRight.hidden = view !== 'trailer';
+    clearMexActive();
+  }
+
+  document.querySelectorAll('[data-moorage]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openMex(btn); });
+  });
+
+  if (mex) {
+    mex.querySelectorAll('[data-mex-close]').forEach(function (el) {
+      el.addEventListener('click', closeMex);
+    });
+    mex.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMex(); });
+
+    mex.querySelectorAll('[data-mex-view]').forEach(function (btn) {
+      btn.addEventListener('click', function () { showMexView(btn.getAttribute('data-mex-view')); });
+    });
+
+    /* tap a pin → toggle its label (and matching legend row) */
+    mex.querySelectorAll('.mex-pin').forEach(function (p) {
+      p.addEventListener('click', function () {
+        var on = p.classList.contains('is-active');
+        clearMexActive();
+        if (!on) setMexActive(p.getAttribute('data-n'));
+      });
+    });
+    /* hover a legend row → highlight the matching pin (desktop nicety) */
+    mex.querySelectorAll('.mex-legend li').forEach(function (li) {
+      li.addEventListener('mouseenter', function () { setMexActive(li.getAttribute('data-n')); });
+      li.addEventListener('mouseleave', clearMexActive);
+    });
+  }
+
+  /* ── Camping explorer (photo gallery, no pins) ────────── */
+  var cex = document.getElementById('camping-explorer');
+  var cexTrigger = null;
+
+  function openCex(trigger) {
+    if (!cex) return;
+    cexTrigger = trigger || null;
+    cex.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var c = cex.querySelector('.cex-close');
+    if (c) c.focus();
+  }
+  function closeCex() {
+    if (!cex || cex.hidden) return;
+    cex.hidden = true;
+    document.body.style.overflow = '';
+    if (cexTrigger) { cexTrigger.focus(); cexTrigger = null; }
+  }
+
+  document.querySelectorAll('[data-camping]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openCex(btn); });
+  });
+
+  if (cex) {
+    cex.querySelectorAll('[data-cex-close]').forEach(function (el) {
+      el.addEventListener('click', closeCex);
+    });
+    cex.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCex(); });
+
+    var cexMainImg = cex.querySelector('#cex-main-img');
+    cex.querySelectorAll('.cex-thumb').forEach(function (t) {
+      t.addEventListener('click', function () {
+        if (cexMainImg) {
+          cexMainImg.src = t.getAttribute('data-src');
+          cexMainImg.alt = t.getAttribute('data-alt') || '';
+        }
+        cex.querySelectorAll('.cex-thumb').forEach(function (o) { o.classList.toggle('is-active', o === t); });
       });
     });
   }
