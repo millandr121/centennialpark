@@ -602,7 +602,8 @@
 .mex-legend li { position: relative; padding-left: 2rem; font-size: .9rem; line-height: 1.5; color: var(--clr-text); }
 .mex-legend li::before {
   content: attr(data-n); position: absolute; left: 0; top: .02em;
-  width: 1.45rem; height: 1.45rem; border-radius: 50%; background: var(--clr-accent); color: #1a1205;
+  width: 1.45rem; height: 1.45rem; aspect-ratio: 1 / 1; flex-shrink: 0;
+  border-radius: 50%; background: var(--clr-accent); color: #1a1205;
   font-family: var(--font-display); font-weight: 700; font-size: .78rem;
   display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s;
 }
@@ -611,7 +612,8 @@
    a small dot instead of a numbered circle. */
 .mex-legend--plain li { padding-left: 1.1rem; }
 .mex-legend--plain li::before {
-  content: ''; width: 6px; height: 6px; top: .55em; left: 0;
+  content: ''; width: 6px; height: 6px; aspect-ratio: 1 / 1; flex-shrink: 0;
+  top: .55em; left: 0;
   background: var(--clr-accent); border-radius: 50%;
 }
 .mex-side-title { font-size: 1rem; margin-bottom: .7rem; color: var(--clr-dark); font-family: var(--font-display); }
