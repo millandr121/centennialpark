@@ -531,7 +531,9 @@ async function submitBooking(e) {
         '<div class="lb-success">' +
           '<div class="lb-success-icon">✓</div>' +
           '<h3>Booking confirmed!</h3>' +
-          '<p>Check your email for confirmation. A confirmation email has been sent to the address you provided.</p>' +
+          (res.emailSent === false
+            ? '<p>Your booking is confirmed and saved — but the confirmation email couldn\'t be sent right now. Please save this reference number, or call us to confirm details.</p>'
+            : '<p>Check your email for confirmation. A confirmation email has been sent to the address you provided.</p>') +
           '<p class="lb-success-details">' + esc(bookedId) + ' · ' + esc(state.checkin) + ' → ' + esc(state.checkout) + '</p>' +
           '<p style="color:#6b7280;font-size:.85rem">Payment is collected on arrival. Questions? Call 250-728-3006.</p>' +
           '<button type="button" class="lb-submit-btn" id="lb-book-another" style="margin-top:1rem">Book another site</button>' +
