@@ -753,6 +753,7 @@ function toggleReqShowAll() {
   loadRequests();
 }
 let allReservations = [];
+let allSubmissions = [];
 let sortCol = 'check_in', sortDir = 1; /* 1=asc, -1=desc */
 
 /* ── Tabs ── */
@@ -944,7 +945,7 @@ function renderReservations() {
         ${r.status==='confirmed'
           ? `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'cancelled')">Cancel</button>`
           : `<button class="btn btn-sm btn-outline" onclick="setResStatus(${r.id},'confirmed')">Restore</button>`}
-        <button class="btn btn-sm btn-red" onclick="confirmDelete('reservation',${r.id},'${esc(r.guest_name)} — ${esc(r.site_name||r.site_id)}, ${r.check_in}')">Del</button>
+        <button class="btn btn-sm btn-red" onclick="confirmDelete('reservation',${r.id})">Del</button>
       </td>
     </tr>`;
   }).join('');
@@ -1100,6 +1101,7 @@ async function loadRequests() {
     const { submissions = [], error } = await (await fetch('/admin/api/submissions?' + rqParams)).json();
     const tbody = document.getElementById('req-tbody');
     if (error) { tbody.innerHTML = `<tr><td colspan="13" class="empty">Error: ${esc(error)}</td></tr>`; return; }
+    allSubmissions = submissions;
     if (!submissions.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty">No requests</td></tr>'; return; }
 
     tbody.innerHTML = submissions.map(s => {
@@ -1125,7 +1127,7 @@ async function loadRequests() {
           ${st!=='accepted' ? `<button class="btn btn-sm btn-green" onclick='openAccept(${s.id})'>Accept</button>` : ''}
           <button class="btn btn-sm btn-accent" onclick='openSubEdit(${s.id})'>Edit</button>
           ${st!=='declined' && st!=='accepted' ? `<button class="btn btn-sm btn-outline" onclick="declineSub(${s.id})">Decline</button>` : ''}
-          <button class="btn btn-sm btn-red" onclick="confirmDelete('submission',${s.id},'${esc(name)} — received ${(s.created_at||'').slice(0,10)}')">Del</button>
+          <button class="btn btn-sm btn-red" onclick="confirmDelete('submission',${s.id})">Del</button>
         </td>
       </tr>`;
     }).join('');
@@ -1241,7 +1243,26 @@ document.getElementById('sub-edit-form').addEventListener('submit', async functi
 });
 
 /* ── Confirm delete modal ── */
-function confirmDelete(type, id, label) {
+function confirmDelete(type, id) {
+  /* Look up the display label from already-loaded data instead of accepting it
+     as a function argument threaded through an inline onclick attribute — a
+     guest-controlled name containing a quote could otherwise break out of the
+     JS string literal in the HTML source (HTML-entity-escaping alone does NOT
+     prevent this, since the browser decodes entities before handing the
+     string to the JS parser). Passing only the numeric id (safe) and building
+     the label here means untrusted text only ever reaches esc()+innerHTML,
+     never gets embedded as JS source. */
+  var label = '';
+  if (type === 'reservation') {
+    var r = allReservations.find(function (x) { return x.id === id; });
+    if (r) label = (r.guest_name || '') + ' — ' + (r.site_name || r.site_id || '') + ', ' + (r.check_in || '');
+  } else {
+    var s = allSubmissions.find(function (x) { return x.id === id; });
+    if (s) {
+      var nm = [s.first_name, s.last_name].filter(Boolean).join(' ');
+      label = nm + ' — received ' + String(s.created_at || '').slice(0, 10);
+    }
+  }
   document.getElementById('confirm-title').textContent = type === 'reservation' ? 'Delete Reservation' : 'Delete Request';
   document.getElementById('confirm-body').innerHTML =
     `Are you sure you want to permanently delete <strong>${esc(label)}</strong>?<br>
