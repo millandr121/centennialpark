@@ -238,10 +238,10 @@
     });
 
     /* tab switching */
-    var tabs = Array.prototype.slice.call(drawer.querySelectorAll('.info-tab'));
-    tabs.forEach(function (tab) {
+    var infoTabs = Array.prototype.slice.call(drawer.querySelectorAll('.info-tab'));
+    infoTabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
-        tabs.forEach(function (t) {
+        infoTabs.forEach(function (t) {
           var on = t === tab;
           t.classList.toggle('is-active', on);
           t.setAttribute('aria-selected', on ? 'true' : 'false');
