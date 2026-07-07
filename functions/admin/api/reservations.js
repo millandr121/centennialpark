@@ -4,7 +4,7 @@
 
 import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
 import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
-import { clampMoney } from '../../api/_calc.js';
+import { clampMoney, gstIncluded } from '../../api/_calc.js';
 import { PAYMENT_STATUSES, RES_STATUSES, MANUAL_SOURCES } from '../../api/_constants.js';
 import {
   isExclusive, lookupSite, hasConflict,
@@ -81,6 +81,11 @@ export async function onRequestPost(context) {
   const amountDue = clampMoney(d.amountDue);
   const payMethod = clean(d.paymentMethod, 40) || null;
   const payStatus = PAYMENT_STATUSES.includes(d.paymentStatus) ? d.paymentStatus : 'unpaid';
+  const gstExempt = d.gstExempt === true || d.gstExempt === 1 || d.gstExempt === '1';
+  /* Manual bookings only ever record one all-in figure (amountDue), so derive
+     GST from it the same way the live/public path does — otherwise the
+     Income & GST report counts the full revenue but $0 GST remitted. */
+  const gstAmount = gstExempt ? 0 : gstIncluded(amountDue);
 
   if (!siteId || !checkIn || !checkOut || !name) return json({ error: 'Missing required fields' }, 422);
 
@@ -91,6 +96,7 @@ export async function onRequestPost(context) {
     siteId, checkIn, checkOut, name, email, phone, partySize, boatLen, notes,
     source, status: 'confirmed', amountDue,
     paymentMethod: payMethod, paymentStatus: payStatus,
+    gstAmount, gstExempt,
     submissionId: parseInt(d.submissionId) || null
   };
 
