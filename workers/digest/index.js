@@ -1,9 +1,12 @@
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
-      await runDigest(env);
-      // Monthly safety backup of the booking/income records, on the 1st.
-      if (new Date().getUTCDate() === 1) await runBackup(env);
+      // Run independently — a digest failure (e.g. Resend down) must never
+      // skip the monthly backup, and vice versa.
+      try { await runDigest(env); } catch (e) { console.error('digest: runDigest failed —', e && e.message); }
+      if (new Date().getUTCDate() === 1) {
+        try { await runBackup(env); } catch (e) { console.error('digest: runBackup failed —', e && e.message); }
+      }
     })());
   },
   async fetch(request, env) {
@@ -18,21 +21,27 @@ export default {
 async function runDigest(env) {
   const since = new Date(Date.now() - 86400000).toISOString();
 
-  const [bookings, contacts] = await Promise.all([
+  const [bookings, contacts, liveReservations] = await Promise.all([
     env.DB.prepare(
       'SELECT * FROM booking_submissions WHERE created_at >= ? ORDER BY created_at DESC'
     ).bind(since).all(),
     env.DB.prepare(
       'SELECT * FROM contact_submissions WHERE created_at >= ? ORDER BY created_at DESC'
-    ).bind(since).all()
+    ).bind(since).all(),
+    // Live /api/reserve bookings write straight to `reservations` (source='online')
+    // and never touch booking_submissions, so without this they'd be invisible here.
+    env.DB.prepare(
+      "SELECT * FROM reservations WHERE source = 'online' AND created_at >= ? ORDER BY created_at DESC"
+    ).bind(since).all().catch(() => ({ results: [] }))
   ]);
 
   const bRows = bookings.results || [];
   const cRows = contacts.results || [];
+  const lRows = liveReservations.results || [];
 
   // Dead-man's-switch: send the digest EVERY day, even with zero activity, so a
   // missing email is itself the alarm that the cron job has stopped working.
-  const isEmpty = bRows.length === 0 && cRows.length === 0;
+  const isEmpty = bRows.length === 0 && cRows.length === 0 && lRows.length === 0;
 
   const wrap  = 'max-width:760px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;color:#1f2937';
   const table = 'border-collapse:collapse;width:100%;margin:0 0 2rem;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden';
@@ -111,6 +120,33 @@ async function runDigest(env) {
     html += '</tbody></table>';
   }
 
+  if (lRows.length > 0) {
+    html += '<h3 style="font-size:15px;margin:0 0 .6rem">Live online bookings &middot; ' + lRows.length + '</h3>';
+    html += '<table style="' + table + '"><thead><tr>' +
+      '<th style="' + th + '">Received</th>' +
+      '<th style="' + th + '">Name</th>' +
+      '<th style="' + th + '">Email</th>' +
+      '<th style="' + th + '">Site</th>' +
+      '<th style="' + th + '">Dates</th>' +
+      '<th style="' + th + '">Total</th>' +
+      '<th style="' + th + '">Sent</th>' +
+      '</tr></thead><tbody>';
+    lRows.forEach(function (r, i) {
+      var cell = i % 2 === 0 ? td : tdAlt;
+      var totalStr = r.estimated_total > 0 ? '$' + (+r.estimated_total).toFixed(2) : '—';
+      html += '<tr>' +
+        '<td style="' + cell + '"><span style="' + time + '">' + esc(fmt(r.created_at)) + '</span></td>' +
+        '<td style="' + cell + '">' + esc(r.guest_name) + '</td>' +
+        '<td style="' + cell + '"><a href="mailto:' + esc(r.guest_email) + '" style="color:#2e5d33">' + esc(r.guest_email) + '</a></td>' +
+        '<td style="' + cell + '">' + esc(r.site_id) + '</td>' +
+        '<td style="' + cell + '">' + esc(r.check_in || '—') + (r.check_out ? ' → ' + esc(r.check_out) : '') + '</td>' +
+        '<td style="' + cell + ';font-weight:600;color:#2e5d33">' + esc(totalStr) + '</td>' +
+        '<td style="' + cell + '">' + (r.emailed ? 'Sent' : 'Not sent') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
   if (cRows.length > 0) {
     html += '<h3 style="font-size:15px;margin:0 0 .6rem">Contact messages &middot; ' + cRows.length + '</h3>';
     html += '<table style="' + table + '"><thead><tr>' +
@@ -150,13 +186,13 @@ async function runDigest(env) {
     },
     body: JSON.stringify({
       from, to,
-      subject: 'Daily digest — ' + bRows.length + ' booking(s), ' + cRows.length + ' message(s)',
+      subject: 'Daily digest — ' + bRows.length + ' booking(s), ' + lRows.length + ' live, ' + cRows.length + ' message(s)',
       html
     })
   });
 
   const ok = res.ok ? 'sent' : 'failed (' + res.status + ')';
-  return new Response('Digest email ' + ok + '. Bookings: ' + bRows.length + ', contacts: ' + cRows.length);
+  return new Response('Digest email ' + ok + '. Bookings: ' + bRows.length + ', live: ' + lRows.length + ', contacts: ' + cRows.length);
 }
 
 /* Format a UTC timestamp ("2026-06-14 19:00:00" or ISO) as Pacific local time. */

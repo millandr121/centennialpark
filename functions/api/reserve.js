@@ -2,6 +2,12 @@
 
 import { json, clean, looksLikeEmail, sendEmail, verifyTurnstile, esc } from './_lib.js';
 import { insertReservation, insertReservationGuarded, isExclusive } from './_reservations.js';
+import { clampMoney, gstIncluded } from './_calc.js';
+
+/* Sanity ceiling for a single booking's all-in total — generous enough for a
+   long stay at the priciest site, but low enough to reject garbage/typo'd
+   client-side estimates (e.g. a stray extra digit) before they hit email/DB. */
+const MAX_REASONABLE_TOTAL = 20000;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -28,13 +34,19 @@ export async function onRequestPost(context) {
   const boatWash    = parseInt(data.boatWashQty)  || 0;
   const freezer     = parseInt(data.freezerDays)  || 0;
   const payMethod   = clean(data.paymentMethod, 40)     || null;
-  const estTotal    = parseFloat(data.estimatedTotal)   || 0;
-  const gstAmt      = parseFloat(data.gstAmount)        || 0;
+  /* Never trust the client's math: clamp the total to a sane range and derive
+     GST server-side with the same 5/105 rule used everywhere else, instead of
+     trusting whatever gstAmount the browser sent (it's only ever a display
+     estimate, and a mismatched pair would let revenue/GST silently diverge). */
+  const estTotal    = Math.min(clampMoney(data.estimatedTotal) || 0, MAX_REASONABLE_TOTAL);
+  const gstAmt      = gstIncluded(estTotal);
 
   if (!siteId || !checkIn || !checkOut || !name || !looksLikeEmail(email))
     return json({ error: 'Please fill in all required fields.' }, 422);
   if (checkIn >= checkOut)
     return json({ error: 'Check-out must be after check-in.' }, 422);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn) || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut) || isNaN(new Date(checkIn)) || isNaN(new Date(checkOut)))
+    return json({ error: 'Please provide valid check-in/check-out dates.' }, 422);
   if (!env.DB)
     return json({ error: 'Booking system unavailable — please use the request form.' }, 503);
 
@@ -70,13 +82,18 @@ export async function onRequestPost(context) {
   };
 
   let rid;
-  if (isExclusive(site.type)) {
-    /* Atomic check-and-write — no double-booking under concurrency. */
-    const out = await insertReservationGuarded(env, r);
-    if (out.conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
-    rid = out.id || '';
-  } else {
-    rid = (await insertReservation(env, r)) || '';
+  try {
+    if (isExclusive(site.type)) {
+      /* Atomic check-and-write — no double-booking under concurrency. */
+      const out = await insertReservationGuarded(env, r);
+      if (out.conflict) return json({ error: 'Sorry, that site was just booked. Please choose another.' }, 409);
+      rid = out.id || '';
+    } else {
+      rid = (await insertReservation(env, r)) || '';
+    }
+  } catch (e) {
+    console.error('reserve: insert failed —', e && e.message);
+    return json({ error: 'Could not create your reservation. Please try again or use the request form.' }, 500);
   }
 
   const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
@@ -159,5 +176,7 @@ export async function onRequestPost(context) {
     await env.DB.prepare('UPDATE reservations SET emailed=1 WHERE id=?').bind(rid).run()
       .catch((e)=>console.error('reserve: emailed flag update failed —', e && e.message));
 
-  return json({ ok: true, reservationId: rid });
+  if (!guestSent) console.error(`reserve: guest confirmation email failed for reservation #${rid} (${email})`);
+
+  return json({ ok: true, reservationId: rid, emailSent: guestSent });
 }

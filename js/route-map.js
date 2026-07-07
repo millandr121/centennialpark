@@ -507,15 +507,20 @@
       dotMarker(ferryMap, s.pos, s.label, k === 'east' ? '#2e5d33' : '#1a5580');
     });
 
-    function drawFerryLine(pts) {
+    var ferryLineLayer = null;
+    function drawFerryLine(pts, opts) {
       if (!ferryMap) return;
       var dense = densify(pts, 8);
-      var poly = L.polyline([dense[0]], {
+      if (ferryLineLayer) ferryMap.removeLayer(ferryLineLayer);
+      var poly = ferryLineLayer = L.polyline([dense[0]], {
         color: '#1e6aad', weight: 5, opacity: 0.92,
         dashArray: '10 8', lineCap: 'round', lineJoin: 'round'
       }).addTo(ferryMap);
       ferryMap.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 11 });
-      animateLine(poly, dense, 3200, { cancelled: false });
+      /* Skip the draw-on animation for the instant fallback paint — only animate
+         once, when the (possibly upgraded) final route is known. */
+      if (opts && opts.instant) { poly.setLatLngs(dense); }
+      else { animateLine(poly, dense, 3200, { cancelled: false }); }
       ferryMap.invalidateSize();
     }
 
@@ -547,14 +552,18 @@
       drawFerryLine(orientAndExtend(pts && pts.length > 4 ? pts : FERRY_INLINE));
     }
 
-    /* local JSON first (if ever added), else live OSM way, else inline fallback */
+    /* Paint the known-good hand-traced route immediately — no network wait —
+       then quietly upgrade to the exact live OSM way in the background if a
+       more precise trace is available. Overpass alone can take 5-10s, which
+       is too long to leave the map blank. */
+    drawFerryLine(FERRY_INLINE, { instant: true });
     fetch('/js/ferry-route.json')
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (Array.isArray(data) && data.length > 4) { drawBest(data); return; }
-        fetchFerryWay(drawBest);
+        fetchFerryWay(function (pts) { if (pts) drawBest(pts); });
       })
-      .catch(function () { fetchFerryWay(drawBest); });
+      .catch(function () { fetchFerryWay(function (pts) { if (pts) drawBest(pts); }); });
 
     ferryMap.fitBounds(
       L.latLngBounds([FERRY_STOPS.alberni.pos, FERRY_STOPS.west.pos, FERRY_STOPS.east.pos, PARK]),
