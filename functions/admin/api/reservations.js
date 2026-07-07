@@ -6,6 +6,7 @@ import { clean, tableCols, sendEmail, json } from '../../api/_lib.js';
 import { paidEmail, paymentRequestEmail } from '../../api/_emails.js';
 import { clampMoney, gstIncluded } from '../../api/_calc.js';
 import { PAYMENT_STATUSES, RES_STATUSES, MANUAL_SOURCES } from '../../api/_constants.js';
+import { OVERLAP_WHERE } from '../../api/_calc.js';
 import {
   isExclusive, lookupSite, hasConflict,
   insertReservation, insertReservationGuarded
@@ -135,7 +136,12 @@ export async function onRequestPut(context) {
 
   /* Conflict guard for the EDIT path: if the admin moves a booking to a new
      site or new dates, make sure it doesn't land on an occupied exclusive slot.
-     Inserts are already atomic; this closes the same hole on updates. */
+     Inserts are already atomic; the pre-check below gives a fast, specific
+     error, but — since it's still check-then-act — the actual UPDATE (below)
+     also carries a NOT EXISTS clause so a second admin request racing this
+     one can't both win the same slot (same close-the-gap pattern as
+     insertReservationGuarded). */
+  let needsAtomicGuard = false, guardSite = null, guardIn = null, guardOut = null;
   if (d.siteId || d.checkIn || d.checkOut) {
     const cur = await env.DB.prepare(
       'SELECT site_id, check_in, check_out, status FROM reservations WHERE id = ?'
@@ -150,6 +156,7 @@ export async function onRequestPut(context) {
         if (site && isExclusive(site.type)) {
           const conflict = await hasConflict(env, effSite, effIn, effOut, id);
           if (conflict) return json({ error: 'Date conflict — that site is already booked for those dates (#' + conflict.id + ').' }, 409);
+          needsAtomicGuard = true; guardSite = effSite; guardIn = effIn; guardOut = effOut;
         }
       }
     }
@@ -191,9 +198,20 @@ export async function onRequestPut(context) {
   if (d.boatLaunchPeriod !== undefined && rCols.has('boat_launch_period')) { sets.push('boat_launch_period = ?'); vals.push(clean(d.boatLaunchPeriod, 50) || null); }
 
   if (sets.length) {
+    let sql = `UPDATE reservations SET ${sets.join(', ')} WHERE id = ?`;
     vals.push(id);
+    if (needsAtomicGuard) {
+      sql += ` AND NOT EXISTS (
+        SELECT 1 FROM reservations
+        WHERE site_id = ? AND status = 'confirmed' AND id != ? AND ${OVERLAP_WHERE}
+      )`;
+      vals.push(guardSite, id, guardOut, guardIn);
+    }
     try {
-      await env.DB.prepare(`UPDATE reservations SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+      const res = await env.DB.prepare(sql).bind(...vals).run();
+      if (needsAtomicGuard && (res.meta?.changes ?? 0) === 0) {
+        return json({ error: 'Date conflict — that site was just booked for those dates by another request.' }, 409);
+      }
     } catch (e) {
       console.error('reservations PUT failed —', e && e.message);
       return json({ error: 'Could not save the reservation.' }, 500);
